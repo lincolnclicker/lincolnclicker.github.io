@@ -3,18 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lincoln Clicker: Full Control Edition</title>
+    <title>Lincoln Clicker: 20-Trophy Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --primary: #6c5ce7;
-            --secondary: #a29bfe;
-            --bg: #1e272e;
-            --gold: #f1c40f;
-            --chat-bg: #1a1e26;
-            --card-bg: rgba(0, 0, 0, 0.7);
-            --danger: #ff4757;
-            --success: #55efc4;
+            --primary: #6c5ce7; --secondary: #a29bfe; --bg: #1e272e;
+            --gold: #f1c40f; --chat-bg: #1a1e26; --card-bg: rgba(0, 0, 0, 0.7);
+            --danger: #ff4757; --success: #55efc4;
         }
 
         body {
@@ -25,21 +20,22 @@
 
         #game-layout { display: flex; flex: 1; height: calc(100vh - 70px); overflow: hidden; }
         
-        /* Panels */
         .left-panel { flex: 1.4; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; position: relative; }
         .right-panel { flex: 1; background: rgba(0,0,0,0.4); border-left: 2px solid #333; display: flex; flex-direction: column; padding: 15px; }
 
-        /* Admin UI */
+        .view-overlay { display: none; position: absolute; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 10; padding: 40px; box-sizing: border-box; }
+        .view-overlay.active { display: block; overflow-y: auto; }
+
+        /* Admin Panel */
         #admin-panel {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: #2f3542; border: 3px solid var(--gold); padding: 25px; border-radius: 15px;
             z-index: 10001; width: 340px; box-shadow: 0 0 100px #000;
         }
         .admin-input { width: 100%; margin-bottom: 10px; padding: 10px; box-sizing: border-box; background: #1e272e; border: 1px solid #444; color: white; border-radius: 5px; }
-        .admin-btn { width: 100%; margin: 5px 0; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .admin-btn:hover { filter: brightness(1.2); }
+        .admin-btn { width: 100%; margin: 5px 0; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
 
-        /* Clicker UI */
+        /* Main Game UI */
         #score-panel { text-align: center; background: var(--card-bg); padding: 20px; border-radius: 20px; border: 2px solid var(--primary); margin-bottom: 20px; width: 85%; }
         #score-text { font-size: 3.5rem; margin: 0; color: var(--gold); }
         
@@ -50,7 +46,7 @@
         }
         #lincoln-main:active { transform: scale(0.94); }
 
-        /* Shop */
+        /* Shop & Achievements */
         .scroll-area { flex: 1; overflow-y: auto; }
         .upgrade {
             width: 100%; background: #2f3542; border: 2px solid #444; border-radius: 12px;
@@ -61,16 +57,16 @@
         .upgrade:disabled { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; }
         .stat-inc { font-size: 0.75rem; color: var(--success); font-weight: bold; }
 
-        /* Chat */
+        .trophy-card { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid #444; }
+        .trophy-card.unlocked { border-left-color: var(--gold); background: rgba(241, 196, 15, 0.1); }
+
         #chat-btn { position: fixed; bottom: 85px; right: 20px; width: 60px; height: 60px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 25px; z-index: 1000; }
         #chat-box { position: fixed; bottom: 155px; right: 20px; width: 320px; height: 450px; background: var(--chat-bg); border: 2px solid var(--primary); border-radius: 15px; display: none; flex-direction: column; z-index: 1000; overflow: hidden; }
         #chat-msgs { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.85rem; }
-        .msg { background: rgba(255,255,255,0.05); padding: 6px; border-radius: 6px; margin-bottom: 5px; }
 
         #nav-bar { height: 70px; background: #2d3436; display: flex; justify-content: space-around; align-items: center; border-top: 2px solid var(--primary); }
         .nav-item { cursor: pointer; opacity: 0.6; font-weight: bold; }
         .nav-item.active { opacity: 1; color: var(--secondary); }
-
         .particle { position: fixed; pointer-events: none; animation: flyUp 0.8s forwards; font-weight: bold; color: var(--gold); z-index: 999; }
         @keyframes flyUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-120px); opacity: 0; } }
     </style>
@@ -81,18 +77,13 @@
 
 <div id="admin-panel">
     <h3 style="margin-top:0; color:var(--gold); text-align:center;">ADMIN OVERRIDE</h3>
-    <label style="font-size:0.8rem;">Target Username</label>
-    <input type="text" id="admin-target" class="admin-input" placeholder="e.g. LincolnFan123">
-    
-    <label style="font-size:0.8rem;">Amount (Mass or Minutes)</label>
-    <input type="number" id="admin-amount" class="admin-input" placeholder="e.g. 5000">
-
-    <button class="admin-btn" style="background:var(--success); color:#111;" onclick="doAdminAction('mass')">Give Mass</button>
-    <button class="admin-btn" style="background:#ffa502;" onclick="doAdminAction('timeout')">Timeout (Minutes)</button>
-    <button class="admin-btn" style="background:var(--danger); color:white;" onclick="doAdminAction('ban')">Permanent Ban</button>
-    <button class="admin-btn" style="background:#2ed573; color:white;" onclick="doAdminAction('unban')">Unban User</button>
-    
-    <button class="admin-btn" style="background:#57606f; color:white; margin-top:15px;" onclick="document.getElementById('admin-panel').style.display='none'">Close Panel</button>
+    <input type="text" id="admin-target" class="admin-input" placeholder="Username">
+    <input type="number" id="admin-amount" class="admin-input" placeholder="Amount (Mass/Min)">
+    <button class="admin-btn" style="background:var(--success);" onclick="doAdminAction('mass')">Give Mass</button>
+    <button class="admin-btn" style="background:#ffa502;" onclick="doAdminAction('timeout')">Timeout (Mins)</button>
+    <button class="admin-btn" style="background:var(--danger); color:white;" onclick="doAdminAction('ban')">Ban</button>
+    <button class="admin-btn" style="background:#2ed573; color:white;" onclick="doAdminAction('unban')">Unban</button>
+    <button class="admin-btn" style="background:#57606f; color:white; margin-top:10px;" onclick="document.getElementById('admin-panel').style.display='none'">Close</button>
 </div>
 
 <div id="game-layout">
@@ -102,31 +93,37 @@
             <div style="color: #55efc4; font-size: 0.9rem;">
                 CLICK: +<span id="stat-click">1</span> | SEC: <span id="stat-cps">0</span>
             </div>
+            <div id="boost-text" style="font-size: 0.7rem; color: var(--gold); margin-top:5px;">Trophy Boost: +0%</div>
         </div>
         <img src="IMG_0668.jpg" id="lincoln-main">
+
+        <div id="view-trophies" class="view-overlay">
+            <h2 style="color:var(--gold)">🏆 Trophy Room</h2>
+            <p style="font-size:0.8rem; color:#888;">Every trophy adds +2% to your total power!</p>
+            <div id="achievement-list"></div>
+            <button onclick="closeOverlays(); setActiveNav(document.getElementById('nav-game'))" style="padding:10px; width:100%; cursor:pointer;">Back to Game</button>
+        </div>
     </div>
 
     <div class="right-panel">
-        <h3 style="margin-top:0; color:var(--primary); text-align:center;">UPGRADES</h3>
+        <h3 style="margin-top:0; color:var(--primary); text-align:center;">SHOP</h3>
         <div class="scroll-area" id="shop-list"></div>
     </div>
 </div>
 
 <div id="chat-btn" onclick="toggleChat()">💬</div>
 <div id="chat-box">
-    <div style="background:var(--primary); padding:12px; font-weight:bold; display:flex; justify-content:space-between;">
-        <span>Global Chat</span>
-        <span id="king-display" style="font-size:0.7rem; color:var(--gold);">👑 Loading...</span>
-    </div>
+    <div style="background:var(--primary); padding:12px; font-weight:bold;">Global Chat</div>
     <div id="chat-msgs"></div>
     <div style="padding:10px; display:flex; gap:5px; background:#111;">
-        <input type="text" id="chat-input" placeholder="Message..." onkeypress="if(event.key==='Enter') sendChat()" style="flex:1; padding:5px; background:#333; color:white; border:none;">
+        <input type="text" id="chat-input" placeholder="Message..." onkeypress="if(event.key==='Enter') sendChat()" style="flex:1; background:#333; color:white; border:none; padding:5px;">
         <button onclick="sendChat()" style="background:var(--primary); border:none; color:white; padding:0 10px;">Send</button>
     </div>
 </div>
 
 <div id="nav-bar">
-    <div class="nav-item active">🥩 Game</div>
+    <div id="nav-game" class="nav-item active" onclick="closeOverlays(); setActiveNav(this)">🥩 Game</div>
+    <div class="nav-item" onclick="openOverlay('trophies'); setActiveNav(this)">🏆 Trophies</div>
     <div class="nav-item" onclick="changeName()">⚙️ Name</div>
     <div class="nav-item" onclick="resetGame()">🗑️ Reset</div>
 </div>
@@ -139,51 +136,68 @@
     let energy = 0, clickPower = 1, cps = 0, totalClicks = 0, isAdmin = false;
     let chatName = localStorage.getItem('chat_name') || null;
 
-    const initialUpgrades = [
-        { id: 0, name: "Extra Torta", cost: 15, power: 0.1, type: "click" },
-        { id: 1, name: "Chud Burger", cost: 100, power: 0.3, type: "cps" },
-        { id: 2, name: "The Lard-o-Meter", cost: 500, power: 0.8, type: "cps" },
-        { id: 3, name: "Bulk Season", cost: 1200, power: 0.6, type: "click" },
-        { id: 4, name: "Torta Pounder 3000", cost: 3000, power: 2.5, type: "cps" },
-        { id: 5, name: "Infinite Buffet Pass", cost: 10000, power: 7.0, type: "cps" },
-        { id: 6, name: "Chudmosis", cost: 25000, power: 15.0, type: "cps" },
-        { id: 7, name: "Deep Fried Top Hat", cost: 85000, power: 50.0, type: "cps" },
-        { id: 8, name: "Torta Transfusion", cost: 200000, power: 12, type: "click" },
-        { id: 9, name: "Gravy Shower", cost: 500000, power: 150, type: "cps" },
-        { id: 10, name: "Mega-Chud Transformation", cost: 2000000, power: 500, type: "cps" },
-        { id: 11, name: "The Giga-Torta", cost: 8000000, power: 1500, type: "cps" },
-        { id: 12, name: "Sumo Lincoln", cost: 40000000, power: 1200, type: "click" },
-        { id: 13, name: "Event Horizon Gut", cost: 150000000, power: 18000, type: "cps" },
-        { id: 14, name: "The Final Chud-down", cost: 2500000000, power: 120000, type: "cps" }
+    // ALL 15 UPGRADES
+    const upgrades = [
+        { id: 0, name: "Extra Torta", cost: 15, power: 0.1, type: "click", count: 0 },
+        { id: 1, name: "Chud Burger", cost: 100, power: 0.3, type: "cps", count: 0 },
+        { id: 2, name: "The Lard-o-Meter", cost: 500, power: 0.8, type: "cps", count: 0 },
+        { id: 3, name: "Bulk Season", cost: 1200, power: 0.6, type: "click", count: 0 },
+        { id: 4, name: "Torta Pounder 3000", cost: 3000, power: 2.5, type: "cps", count: 0 },
+        { id: 5, name: "Infinite Buffet Pass", cost: 10000, power: 7.0, type: "cps", count: 0 },
+        { id: 6, name: "Chudmosis", cost: 25000, power: 15.0, type: "cps", count: 0 },
+        { id: 7, name: "Deep Fried Top Hat", cost: 85000, power: 50.0, type: "cps", count: 0 },
+        { id: 8, name: "Torta Transfusion", cost: 200000, power: 12, type: "click", count: 0 },
+        { id: 9, name: "Gravy Shower", cost: 500000, power: 150, type: "cps", count: 0 },
+        { id: 10, name: "Mega-Chud Transformation", cost: 2000000, power: 500, type: "cps", count: 0 },
+        { id: 11, name: "The Giga-Torta", cost: 8000000, power: 1500, type: "cps", count: 0 },
+        { id: 12, name: "Sumo Lincoln", cost: 40000000, power: 1200, type: "click", count: 0 },
+        { id: 13, name: "Event Horizon Gut", cost: 150000000, power: 18000, type: "cps", count: 0 },
+        { id: 14, name: "The Final Chud-down", cost: 2500000000, power: 120000, type: "cps", count: 0 }
     ];
-    let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
-    // Admin Action Logic
-    async function doAdminAction(actionType) {
-        const target = document.getElementById('admin-target').value.trim();
+    // 20 TROPHIES
+    const achievements = [
+        { id: 1, name: "Kitchen Hand", req: 10, type: 'click' },
+        { id: 2, name: "Torta Taster", req: 50, type: 'click' },
+        { id: 3, name: "Quick Fingers", req: 250, type: 'click' },
+        { id: 4, name: "Button Smasher", req: 1000, type: 'click' },
+        { id: 5, name: "Click Legend", req: 5000, type: 'click' },
+        { id: 6, name: "Gaining Weight", req: 1000, type: 'mass' },
+        { id: 7, name: "Heavyweight", req: 10000, type: 'mass' },
+        { id: 8, name: "Massive Growth", req: 100000, type: 'mass' },
+        { id: 9, name: "One Millionaire", req: 1000000, type: 'mass' },
+        { id: 10, name: "Torta Titan", req: 10000000, type: 'mass' },
+        { id: 11, name: "Billionaire", req: 1000000000, type: 'mass' },
+        { id: 12, name: "Infinite Appetite", req: 10000000000, type: 'mass' },
+        { id: 13, name: "Buffet Breaker", req: 1, type: 'upg', target: 5 },
+        { id: 14, name: "Full Belly", req: 1, type: 'upg', target: 10 },
+        { id: 15, name: "Mega-Chud", req: 1, type: 'upg', target: 11 },
+        { id: 16, name: "Sumo Status", req: 1, type: 'upg', target: 13 },
+        { id: 17, name: "The Final Form", req: 1, type: 'upg', target: 15 },
+        { id: 18, name: "Loyal Eater", req: 5000, type: 'click' },
+        { id: 19, name: "Catering King", req: 50000, type: 'mass' },
+        { id: 20, name: "Lincoln's Best Friend", req: 100000000, type: 'mass' }
+    ];
+    let unlockedAchievs = JSON.parse(localStorage.getItem('lincoln_achievs')) || [];
+
+    // System Logic
+    function openOverlay(id) { closeOverlays(); document.getElementById('view-' + id).classList.add('active'); }
+    function closeOverlays() { document.querySelectorAll('.view-overlay').forEach(v => v.classList.remove('active')); }
+    function setActiveNav(el) { document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
+
+    // Admin Panel
+    async function doAdminAction(type) {
+        const target = document.getElementById('admin-target').value;
         const amount = parseFloat(document.getElementById('admin-amount').value) || 0;
-
-        if (!target) return alert("Please enter a Target Username.");
-
-        if (actionType === 'mass') {
+        if(!target) return alert("Missing Username");
+        if(type==='mass') {
             const { data } = await _supabase.from('leaderboard').select('clicks').eq('username', target).maybeSingle();
-            let newMass = (data?.clicks || 0) + amount;
-            await _supabase.from('leaderboard').update({ clicks: newMass }).eq('username', target);
-            alert(`Added ${amount} mass to ${target}.`);
-        } 
-        else if (actionType === 'timeout') {
-            let until = new Date(Date.now() + amount * 60000).toISOString();
-            await _supabase.from('leaderboard').update({ timeout_until: until }).eq('username', target);
-            alert(`${target} timed out for ${amount} minutes.`);
-        }
-        else if (actionType === 'ban') {
-            await _supabase.from('leaderboard').update({ is_banned: true }).eq('username', target);
-            alert(`${target} has been banned.`);
-        }
-        else if (actionType === 'unban') {
-            await _supabase.from('leaderboard').update({ is_banned: false, timeout_until: null }).eq('username', target);
-            alert(`${target} has been unbanned.`);
-        }
+            await _supabase.from('leaderboard').update({ clicks: (data?.clicks || 0) + amount }).eq('username', target);
+        } else if(type==='timeout') {
+            await _supabase.from('leaderboard').update({ timeout_until: new Date(Date.now() + amount*60000).toISOString() }).eq('username', target);
+        } else if(type==='ban') await _supabase.from('leaderboard').update({ is_banned: true }).eq('username', target);
+        else if(type==='unban') await _supabase.from('leaderboard').update({ is_banned: false, timeout_until: null }).eq('username', target);
+        alert("Action Executed.");
     }
 
     async function checkAdmin() {
@@ -193,11 +207,13 @@
     }
     function openAdmin() { if(isAdmin) document.getElementById('admin-panel').style.display='block'; }
 
-    // Game Core
+    // Core Gameplay
     document.getElementById('lincoln-main').onclick = (e) => {
-        energy += clickPower; totalClicks++;
-        showParticle(e.clientX, e.clientY, `+${clickPower.toFixed(1)}`);
-        updateUI();
+        let mult = 1 + (unlockedAchievs.length * 0.02);
+        let val = clickPower * mult;
+        energy += val; totalClicks++;
+        showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
+        checkTrophies(); updateUI();
     };
 
     function buyUpgrade(id) {
@@ -206,35 +222,55 @@
             energy -= u.cost; u.count++;
             if (u.type === "click") clickPower += u.power; else cps += u.power;
             u.cost = Math.ceil(u.cost * 1.35);
-            updateUI(); cloudSave();
+            checkTrophies(); updateUI(); cloudSave();
         }
     }
 
+    function checkTrophies() {
+        achievements.forEach(a => {
+            if (!unlockedAchievs.includes(a.id)) {
+                let achieved = false;
+                if (a.type === 'click' && totalClicks >= a.req) achieved = true;
+                if (a.type === 'mass' && energy >= a.req) achieved = true;
+                if (a.type === 'upg' && upgrades[a.target-1].count > 0) achieved = true;
+                if (achieved) {
+                    unlockedAchievs.push(a.id);
+                    localStorage.setItem('lincoln_achievs', JSON.stringify(unlockedAchievs));
+                }
+            }
+        });
+    }
+
     function updateUI() {
+        let mult = 1 + (unlockedAchievs.length * 0.02);
         document.getElementById('score-text').innerText = Math.floor(energy).toLocaleString();
-        document.getElementById('stat-click').innerText = clickPower.toFixed(1);
-        document.getElementById('stat-cps').innerText = cps.toFixed(1);
+        document.getElementById('stat-click').innerText = (clickPower * mult).toFixed(1);
+        document.getElementById('stat-cps').innerText = (cps * mult).toFixed(1);
+        document.getElementById('boost-text').innerText = `Trophy Boost: +${(unlockedAchievs.length * 2)}%`;
         
         document.getElementById('shop-list').innerHTML = upgrades.map(u => `
             <button class="upgrade ${energy >= u.cost ? 'can-afford' : ''}" onclick="buyUpgrade(${u.id})" ${energy < u.cost ? 'disabled' : ''}>
                 <div style="text-align:left">
-                    <strong style="color:var(--secondary)">${u.name}</strong><br>
-                    <span class="stat-inc">+${u.power} ${u.type === 'click' ? 'Click Power' : 'CPS'}</span><br>
-                    <small style="color:#aaa">${u.cost.toLocaleString()} Mass</small>
+                    <strong>${u.name}</strong><br>
+                    <span class="stat-inc">+${u.power} ${u.type === 'click' ? 'Click' : 'CPS'}</span><br>
+                    <small>${u.cost.toLocaleString()} Mass</small>
                 </div>
-                <div style="font-weight:bold; opacity:0.7;">${u.count}</div>
-            </button>
-        `).join('');
+                <div>${u.count}</div>
+            </button>`).join('');
+
+        document.getElementById('achievement-list').innerHTML = achievements.map(a => `
+            <div class="trophy-card ${unlockedAchievs.includes(a.id) ? 'unlocked' : ''}">
+                <strong>${unlockedAchievs.includes(a.id) ? '🏆' : '🔒'} ${a.name}</strong><br>
+                <small>${unlockedAchievs.includes(a.id) ? 'Power Multiplier Active' : '???'}</small>
+            </div>`).join('');
     }
 
     async function changeName() {
-        const oldName = chatName;
-        const newName = prompt("Choose a new Profile Name:");
-        if (!newName || newName.trim() === oldName) return;
-        
-        if (oldName) await _supabase.from('leaderboard').delete().eq('username', oldName);
-        
-        chatName = newName.trim().substring(0, 15);
+        const old = chatName;
+        const n = prompt("New Name?");
+        if(!n || n === old) return;
+        if(old) await _supabase.from('leaderboard').delete().eq('username', old);
+        chatName = n.trim();
         localStorage.setItem('chat_name', chatName);
         cloudSave(); location.reload();
     }
@@ -243,33 +279,28 @@
         if (!chatName) return;
         const save = { energy, clickPower, cps, totalClicks, upgrades: upgrades.map(u => ({id:u.id, count:u.count, cost:u.cost})) };
         localStorage.setItem('lincoln_local_save', JSON.stringify(save));
-        await _supabase.from('leaderboard').upsert({ username: chatName, clicks: Math.floor(energy) }, { onConflict: 'username' });
+        await _supabase.from('leaderboard').upsert({ username: chatName, clicks: Math.floor(energy) });
     }
 
-    // Chat
     function toggleChat() {
         const c = document.getElementById('chat-box');
         c.style.display = (c.style.display === 'flex') ? 'none' : 'flex';
-        if (c.style.display === 'flex') fetchMessages();
+        if (c.style.display === 'flex') fetchMsgs();
     }
 
     async function sendChat() {
         if (!chatName) { chatName = prompt("Name?"); localStorage.setItem('chat_name', chatName); }
         const { data: user } = await _supabase.from('leaderboard').select('is_banned, timeout_until').eq('username', chatName).maybeSingle();
-        if (user?.is_banned) return alert("YOU ARE BANNED.");
-        if (user?.timeout_until && new Date(user.timeout_until) > new Date()) return alert("STILL TIMED OUT.");
+        if (user?.is_banned || (user?.timeout_until && new Date(user.timeout_until) > new Date())) return alert("Access Denied.");
         const input = document.getElementById('chat-input');
         if (!input.value) return;
         await _supabase.from('global_chat').insert([{ username: chatName, message: input.value }]);
-        input.value = ""; fetchMessages();
+        input.value = ""; fetchMsgs();
     }
 
-    async function fetchMessages() {
+    async function fetchMsgs() {
         const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(20);
-        if (data) {
-            document.getElementById('chat-msgs').innerHTML = data.reverse().map(m => `<div class="msg"><b>${m.username}:</b> ${m.message}</div>`).join('');
-            const c = document.getElementById('chat-msgs'); c.scrollTop = c.scrollHeight;
-        }
+        if (data) document.getElementById('chat-msgs').innerHTML = data.reverse().map(m => `<div><b>${m.username}:</b> ${m.message}</div>`).join('');
     }
 
     function showParticle(x, y, text) {
@@ -287,9 +318,9 @@
         updateUI(); checkAdmin();
     }
 
-    function resetGame() { if(confirm("Hard Reset?")) { localStorage.clear(); location.reload(); } }
+    function resetGame() { if(confirm("Reset?")) { localStorage.clear(); location.reload(); } }
 
-    setInterval(() => { energy += (cps / 10); updateUI(); }, 100);
+    setInterval(() => { let mult = 1 + (unlockedAchievs.length * 0.02); energy += (cps * mult / 10); updateUI(); }, 100);
     setInterval(cloudSave, 20000);
     loadGame();
 </script>
