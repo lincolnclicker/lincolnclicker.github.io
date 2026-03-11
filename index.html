@@ -122,7 +122,7 @@
 </head>
 <body class="bg-kitchen">
 
-<div id="admin-trigger" onclick="openAdmin()" style="position:fixed; top:0; right:0; width:40px; height:40px; cursor:pointer; opacity:0.01; z-index:9999;"></div>
+<div id="admin-trigger" onclick="openAdmin()" style="position:fixed; top:0; right:0; width:60px; height:60px; cursor:pointer; opacity:0.01; z-index:9999;"></div>
 
 <div id="admin-panel">
     <h3 style="margin-top:0; color:var(--gold); text-align:center;">ADMIN CONTROL</h3>
@@ -136,7 +136,7 @@
     <button onclick="adminAction('mass')" style="width:100%; background:var(--gold); padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">Give Mass</button>
     <button onclick="adminAction('timeout')" style="width:100%; background:#e67e22; padding:10px; border:none; margin-top:10px; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Set Timeout</button>
     <button onclick="clearChatNow()" style="width:100%; background:#ff4757; padding:10px; border:none; color:white; margin-top:10px; cursor:pointer; border-radius:5px; font-weight:bold;">FORCE CLEAR CHAT</button>
-    <button onclick="document.getElementById('admin-panel').style.display='none'" style="width:100%; background:none; border:none; color:#aaa; cursor:pointer; margin-top:15px; font-size:0.8rem;">Close</button>
+    <button onclick="document.getElementById('admin-panel').style.display='none'" style="width:100%; background:none; border:none; color:#aaa; cursor:pointer; margin-top:15px; font-size:0.8rem; display:block; margin: 15px auto 0 auto;">Close</button>
 </div>
 
 <div id="game-wrapper">
@@ -149,7 +149,7 @@
                     Per Click: <span id="stat-click">1</span> | Sec: <span id="stat-cps">0</span><br>
                     Golden Tortas: <span id="stat-prestige" style="color:var(--gold)">0</span>
                 </div>
-                <div id="sync-status" style="font-size: 0.65rem; color: #777; margin-top: 8px;">Connecting...</div>
+                <div id="sync-status" style="font-size: 0.65rem; color: #777; margin-top: 8px;">Sync Active</div>
             </div>
             <img src="IMG_0668.jpg" id="lincoln-main" alt="Lincoln">
             <button class="prestige-btn" id="prestige-btn" style="display:none;" onclick="prestige()">WEIGH IN</button>
@@ -192,7 +192,6 @@ const DB_URL = 'https://cnstrmbiosdykiqyxcua.supabase.co';
 const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuc3RybWJpb3NkeWtpcXl4Y3VhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDEzMDEsImV4cCI6MjA4ODc3NzMwMX0.hf6kiAniU-Hw1J3xuYPK_xlUO9BLR3d5vkEq41uf8co';
 const _supabase = supabase.createClient(DB_URL, DB_KEY);
 
-// --- 1. CORE VARIABLES ---
 let energy = 0, clickPower = 1, cps = 0, goldenTortas = 0, totalClicks = 0;
 let currentKing = "", chatName = localStorage.getItem('chat_name') || null;
 let eventMultiplier = 1; 
@@ -219,92 +218,15 @@ const initialUpgrades = [
 
 let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
-// --- 2. SAVE & LOAD SYSTEM (THE FIX) ---
+// --- FUNCTIONS ---
 
-async function cloudSave() {
-    const saveObj = { 
-        energy, clickPower, cps, goldenTortas, totalClicks,
-        upgrades: upgrades.map(u => ({ count: u.count, cost: u.cost }))
-    };
-    
-    // Save to browser
-    localStorage.setItem('lincoln_local_save', JSON.stringify(saveObj));
-    
-    // Save to Cloud
-    if (chatName) {
-        document.getElementById('sync-status').innerText = "Vaulting...";
-        const { error } = await _supabase.from('leaderboard').upsert({ 
-            username: chatName, 
-            clicks: Math.floor(energy), 
-            golden_tortas: goldenTortas 
-        }, { onConflict: 'username' });
-        
-        if (!error) document.getElementById('sync-status').innerText = "Cloud Synced ✅";
-    }
+function openAdmin() { document.getElementById('admin-panel').style.display = 'block'; }
+
+async function triggerEvent(type) {
+    const expiresAt = new Date(Date.now() + 5 * 60000).toISOString();
+    await _supabase.from('game_events').insert([{ event_type: type, expires_at: expiresAt }]);
+    document.getElementById('admin-panel').style.display = 'none';
 }
-
-async function cloudLoad() {
-    document.getElementById('sync-status').innerText = "Syncing...";
-    const local = localStorage.getItem('lincoln_local_save');
-    
-    if (local) {
-        const d = JSON.parse(local);
-        energy = d.energy || 0;
-        goldenTortas = d.golden_tortas || 0;
-        totalClicks = d.totalClicks || 0;
-
-        if (d.upgrades) {
-            // Reset base stats and recalculate from saved upgrades
-            clickPower = 1;
-            cps = 0;
-            d.upgrades.forEach((savedU, i) => { 
-                if(upgrades[i]) { 
-                    upgrades[i].count = savedU.count; 
-                    upgrades[i].cost = savedU.cost; 
-                    // Add the power back
-                    if (upgrades[i].type === "click") clickPower += (upgrades[i].power * savedU.count);
-                    else cps += (upgrades[i].power * savedU.count);
-                } 
-            });
-        }
-    }
-    updateUI(); 
-    fetchLeaderboard();
-}
-
-// --- 3. CORE GAMEPLAY ---
-
-document.getElementById('lincoln-main').addEventListener('click', (e) => {
-    let val = (clickPower * (1 + (goldenTortas * 0.1))) * eventMultiplier;
-    if (currentKing && chatName && chatName !== currentKing) val *= 0.99;
-    
-    energy += val; 
-    totalClicks++;
-    showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}${eventMultiplier > 1 ? ' 🔥' : ''}`);
-    updateUI();
-
-    if (totalClicks % 25 === 0) cloudSave(); // Backup save every 25 clicks
-});
-
-setInterval(() => { 
-    let boostedCPS = (cps * (1 + (goldenTortas * 0.1))) * (currentEvent === 'storm' ? 1 : eventMultiplier);
-    energy += (boostedCPS / 10); 
-    updateUI(); 
-}, 100);
-
-function buyUpgrade(id) {
-    const u = upgrades[id];
-    if (energy >= u.cost) {
-        energy -= u.cost; 
-        u.count++;
-        if (u.type === "click") clickPower += u.power; else cps += u.power;
-        u.cost = Math.ceil(u.cost * 1.35); 
-        updateUI(); 
-        cloudSave(); // Save instantly on purchase
-    }
-}
-
-// --- 4. EVENTS & SOCIAL ---
 
 function handleNewEvent(event) {
     if (eventTimer) clearInterval(eventTimer);
@@ -312,7 +234,6 @@ function handleNewEvent(event) {
     if (oldNotice) oldNotice.remove();
 
     const expiry = new Date(event.expires_at.replace(' ', 'T')).getTime();
-    
     const notice = document.createElement('div');
     notice.id = "event-notice";
     notice.style = "position:fixed; top:10%; left:50%; transform:translateX(-50%); color:black; padding:15px 30px; border-radius:50px; font-weight:bold; z-index:10000; box-shadow:0 0 20px black; animation: pulse-gold 1s infinite; text-align:center;";
@@ -321,41 +242,30 @@ function handleNewEvent(event) {
     eventTimer = setInterval(() => {
         const now = new Date().getTime();
         const timeLeft = expiry - now;
-
         if (timeLeft <= 0) {
-            eventMultiplier = 1;
-            currentEvent = null;
-            document.body.style.boxShadow = "none";
-            notice.remove();
-            clearInterval(eventTimer);
-            return;
+            eventMultiplier = 1; currentEvent = null;
+            document.body.style.boxShadow = "none"; notice.remove();
+            clearInterval(eventTimer); return;
         }
-
         const seconds = Math.ceil(timeLeft / 1000);
         currentEvent = event.event_type;
-
-        switch(event.event_type) {
-            case 'feast':
-                eventMultiplier = 2;
-                notice.style.background = "var(--gold)";
-                notice.innerText = `🔥 THE BUFFET IS OPEN! 2X MASS (${seconds}s) 🔥`;
-                break;
-            case 'storm':
-                eventMultiplier = 5; 
-                notice.style.background = "#00d2ff";
-                notice.innerText = `⚡ TORTA STORM! 5X CLICK (${seconds}s) ⚡`;
-                break;
-            case 'low_carb':
-                eventMultiplier = 0.5;
-                notice.style.background = "#ff4757";
-                notice.style.color = "white";
-                notice.innerText = `🥗 LOW CARB DAY... 0.5X MASS (${seconds}s) 🥗`;
-                break;
-        }
+        if (currentEvent === 'feast') { eventMultiplier = 2; notice.style.background = "var(--gold)"; notice.innerText = `🔥 FEAST! 2X MASS (${seconds}s)`; }
+        else if (currentEvent === 'storm') { eventMultiplier = 5; notice.style.background = "#00d2ff"; notice.innerText = `⚡ STORM! 5X CLICK (${seconds}s)`; }
+        else if (currentEvent === 'low_carb') { eventMultiplier = 0.5; notice.style.background = "#ff4757"; notice.innerText = `🥗 LOW CARB! 0.5X MASS (${seconds}s)`; }
     }, 1000);
 }
 
-// --- REST OF THE UI FUNCTIONS ---
+document.getElementById('lincoln-main').addEventListener('click', (e) => {
+    let val = (clickPower * (1 + (goldenTortas * 0.1))) * eventMultiplier;
+    energy += val; totalClicks++;
+    showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
+    updateUI();
+});
+
+setInterval(() => { 
+    let boostedCPS = (cps * (1 + (goldenTortas * 0.1))) * (currentEvent === 'storm' ? 1 : eventMultiplier);
+    energy += (boostedCPS / 10); updateUI(); 
+}, 100);
 
 function updateUI() {
     document.getElementById('score-text').innerText = Math.floor(energy).toLocaleString();
@@ -373,6 +283,43 @@ function updateUI() {
             document.getElementById(`count-${u.id}`).innerText = u.count;
         }
     });
+
+    const body = document.body; const label = document.getElementById('env-label');
+    if (energy < 100000) { body.className = 'bg-kitchen'; label.innerText = "LOCATION: THE KITCHEN"; }
+    else if (energy < 10000000) { body.className = 'bg-buffet'; label.innerText = "LOCATION: INFINITE BUFFET"; }
+    else if (energy < 1000000000) { body.className = 'bg-factory'; label.innerText = "LOCATION: TORTA FACTORY"; }
+    else { body.className = 'bg-space'; label.innerText = "LOCATION: OUTER SPACE"; }
+}
+
+async function cloudSave() {
+    if (!chatName) return;
+    const saveObj = { energy, clickPower, cps, goldenTortas, totalClicks, upgrades: upgrades.map(u => ({id: u.id, count: u.count, cost: u.cost})) };
+    localStorage.setItem('lincoln_local_save', JSON.stringify(saveObj));
+    await _supabase.from('leaderboard').upsert({ username: chatName, clicks: energy, golden_tortas: goldenTortas }, { onConflict: 'username' });
+}
+
+async function cloudLoad() {
+    const local = localStorage.getItem('lincoln_local_save');
+    if (local) {
+        const d = JSON.parse(local);
+        energy = d.energy || 0; clickPower = d.clickPower || 1; cps = d.cps || 0; 
+        goldenTortas = d.goldenTortas || 0; totalClicks = d.totalClicks || 0;
+        d.upgrades?.forEach((savedU, i) => { 
+            if(upgrades[i]) { upgrades[i].count = savedU.count; upgrades[i].cost = savedU.cost; } 
+        });
+    }
+    updateUI();
+}
+
+// Admin Logic
+async function adminAction(type) {
+    const target = document.getElementById('admin-target-user').value;
+    const val = document.getElementById('admin-value').value;
+    if (!target) return alert("Enter target");
+    if (type === 'mass') {
+        if (target === chatName) { energy += parseFloat(val); updateUI(); }
+        await _supabase.from('leaderboard').update({ clicks: parseFloat(val) }).eq('username', target);
+    }
 }
 
 function initShop() {
@@ -386,26 +333,13 @@ function initShop() {
     });
 }
 
-async function fetchLeaderboard() {
-    const { data } = await _supabase.from('leaderboard').select('username, clicks, golden_tortas').order('clicks', { ascending: false }).limit(10);
-    if (data) {
-        document.getElementById('lb-content').innerHTML = data.map((u, i) => `
-            <div class="lb-row"><span><span class="lb-rank">#${i+1}</span> ${u.username}</span><span>${Math.floor(u.clicks).toLocaleString()} <small>(${u.golden_tortas} GT)</small></span></div>`).join('');
+function buyUpgrade(id) {
+    const u = upgrades[id];
+    if (energy >= u.cost) {
+        energy -= u.cost; u.count++;
+        if (u.type === "click") clickPower += u.power; else cps += u.power;
+        u.cost = Math.ceil(u.cost * 1.35); updateUI(); cloudSave();
     }
-}
-
-async function fetchKing() {
-    const { data } = await _supabase.from('leaderboard').select('username').order('clicks', { ascending: false }).limit(1);
-    if (data && data.length > 0) {
-        currentKing = data[0].username;
-        document.getElementById('king-display').innerText = `👑 King: ${currentKing}`;
-    }
-}
-
-function showParticle(x, y, text) {
-    const p = document.createElement('div'); p.className = 'particle'; p.innerText = text;
-    p.style.left = x + 'px'; p.style.top = y + 'px';
-    document.body.appendChild(p); setTimeout(() => p.remove(), 800);
 }
 
 function toggleChat() {
@@ -429,28 +363,45 @@ async function fetchMessages() {
     }
 }
 
+async function sendChat(emoteMsg = null) {
+    if (!chatName) return;
+    const input = document.getElementById('chat-msg-input');
+    const message = emoteMsg || input.value;
+    if (!message) return;
+    await _supabase.from('global_chat').insert([{ username: chatName, message: message }]);
+    input.value = ""; fetchMessages();
+}
+
+function sendEmote(char) { sendChat(char); }
+
+async function fetchLeaderboard() {
+    const { data } = await _supabase.from('leaderboard').select('username, clicks, golden_tortas').order('clicks', { ascending: false }).limit(10);
+    if (data) {
+        document.getElementById('lb-content').innerHTML = data.map((u, i) => `
+            <div class="lb-row"><span><span class="lb-rank">#${i+1}</span> ${u.username}</span><span>${Math.floor(u.clicks).toLocaleString()} <small>(${u.golden_tortas} GT)</small></span></div>`).join('');
+        if (data[0]) { currentKing = data[0].username; document.getElementById('king-display').innerText = `👑 King: ${currentKing}`; }
+    }
+}
+
+function showParticle(x, y, text) {
+    const p = document.createElement('div'); p.className = 'particle'; p.innerText = text;
+    p.style.left = x + 'px'; p.style.top = y + 'px';
+    document.body.appendChild(p); setTimeout(() => p.remove(), 800);
+}
+
+function resetGame() { if (confirm("Reset everything?")) { localStorage.clear(); location.reload(); } }
+
 async function startGame() {
-    initShop(); 
-    await cloudLoad(); 
-    initRealtimeEvents();
-    await checkActiveEvents(); 
-    fetchKing();
-    
-    setInterval(cloudSave, 5000); // Save every 5 seconds
-    setInterval(fetchLeaderboard, 15000);
-    setInterval(fetchKing, 15000); 
-    setInterval(() => { 
-        if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); 
-    }, 5000);
+    initShop(); cloudLoad();
+    _supabase.channel('game-events').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, (p) => handleNewEvent(p.new)).subscribe();
+    const { data } = await _supabase.from('game_events').select('*').gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false }).limit(1);
+    if (data && data[0]) handleNewEvent(data[0]);
+    setInterval(cloudSave, 20000); setInterval(fetchLeaderboard, 15000);
+    setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
+    fetchLeaderboard();
 }
 
 startGame();
 </script>
 </body>
 </html>
-
-
-
-
-
-
