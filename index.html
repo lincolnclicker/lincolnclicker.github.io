@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lincoln Clicker: The Definitive Edition</title>
+    <title>Lincoln Clicker</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary: #6c5ce7; --secondary: #a29bfe; --bg: #1e272e;
             --gold: #f1c40f; --chat-bg: #252a34; --card-bg: rgba(0, 0, 0, 0.8);
+            --king-color: #ffda79;
         }
 
         body {
@@ -33,6 +34,9 @@
         .view-overlay { display: none; position: absolute; top:0; left:0; width:100%; height:100%; background: var(--bg); z-index: 10; padding: 20px; box-sizing: border-box; border-radius: 20px; border: 2px solid var(--primary); overflow-y: auto; }
         .view-overlay.active { display: block; }
 
+        /* King Banner */
+        #king-banner { background: linear-gradient(90deg, transparent, rgba(241, 196, 15, 0.2), transparent); padding: 5px; text-align: center; color: var(--gold); font-weight: bold; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid var(--gold); }
+
         /* Admin Panel */
         #admin-panel {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -42,7 +46,7 @@
         .admin-input { width: 100%; padding: 10px; margin-bottom: 10px; background: #1e222b; border: 1px solid #444; color: white; box-sizing: border-box; border-radius: 5px; }
 
         /* UI Elements */
-        #score-panel { text-align: center; background: var(--card-bg); padding: 15px; border-radius: 20px; border: 3px solid var(--primary); margin-bottom: 15px; width: 100%; backdrop-filter: blur(15px); }
+        #score-panel { text-align: center; background: var(--card-bg); padding: 15px; border-radius: 20px; border: 3px solid var(--primary); margin-bottom: 15px; width: 100%; backdrop-filter: blur(15px); position: relative; }
         #score-text { font-size: 3rem; margin: 0; color: var(--gold); }
         #player-tag { color: var(--secondary); cursor: pointer; text-decoration: underline; font-size: 0.9rem; }
         
@@ -66,13 +70,13 @@
 
         .trophy-card { background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; margin-bottom: 8px; border-left: 4px solid #444; }
         .trophy-card.unlocked { border-left-color: var(--gold); background: rgba(241, 196, 15, 0.1); }
-        .trophy-hint { font-size: 0.75rem; color: #aaa; }
 
         /* Chat */
         #chat-icon { position: fixed; bottom: 85px; right: 20px; width: 50px; height: 50px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; }
         #chat-box { position: fixed; bottom: 145px; right: 20px; width: 300px; height: 400px; background: var(--chat-bg); border: 2px solid var(--primary); border-radius: 12px; display: none; flex-direction: column; z-index: 1000; }
         #chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 0.8rem; background: #1a1e26; }
         .msg { margin-bottom: 5px; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.05); }
+        .king-msg { border-left: 3px solid var(--gold); background: rgba(241, 196, 15, 0.1); }
 
         #nav-bar { height: 70px; background: #2d3436; display: flex; justify-content: space-around; align-items: center; border-top: 2px solid var(--primary); }
         .nav-item { cursor: pointer; opacity: 0.6; font-weight: bold; }
@@ -83,12 +87,14 @@
 </head>
 <body class="bg-kitchen">
 
+<div id="king-banner">👑 Current King: <span id="king-name">Scanning...</span></div>
+
 <div onclick="openAdmin()" style="position:fixed; top:0; right:0; width:40px; height:40px; cursor:pointer; opacity:0.01; z-index:9999;"></div>
 
 <div id="admin-panel">
     <h3 style="color:var(--gold); text-align:center;">ADMIN PANEL</h3>
     <input type="text" id="admin-target-user" class="admin-input" placeholder="Target Username">
-    <input type="text" id="admin-value" class="admin-input" placeholder="Value (Mass/Mins)">
+    <input type="text" id="admin-value" class="admin-input" placeholder="Value">
     <button onclick="adminAction('mass')" style="width:100%; background:var(--gold); padding:8px; border:none; margin-bottom:5px; font-weight:bold; cursor:pointer;">Give Mass</button>
     <button onclick="adminAction('timeout')" style="width:100%; background:#e67e22; padding:8px; border:none; margin-bottom:5px; color:white; cursor:pointer;">Timeout</button>
     <button onclick="adminAction('ban')" style="width:48%; background:#e74c3c; padding:8px; border:none; color:white; cursor:pointer;">Ban</button>
@@ -157,8 +163,9 @@
 
     let energy = 0, clickPower = 1, cps = 0, goldenTortas = 0, totalClicks = 0;
     let chatName = localStorage.getItem('chat_name') || "Lincoln_" + Math.floor(Math.random()*999);
-    let isAdmin = false, currentKing = "";
+    let isAdmin = false, currentKing = "Scanning...";
 
+    // 15 Full Upgrades
     const upgradeData = [
         { id: 0, name: "Extra Torta", cost: 15, power: 0.1, type: "click", desc: "+0.1 Per Click" },
         { id: 1, name: "Chud Burger", cost: 100, power: 0.3, type: "cps", desc: "+0.3 Per Second" },
@@ -178,31 +185,32 @@
     ];
     let upgrades = upgradeData.map(u => ({...u, count: 0}));
 
+    // 20 Full Achievements
     const achievementData = [
-        { id: 1, name: "Kitchen Hand", req: 10, type: 'click', hint: "Click Lincoln 10 times" },
-        { id: 2, name: "Torta Taster", req: 50, type: 'click', hint: "Click Lincoln 50 times" },
-        { id: 3, name: "Quick Fingers", req: 250, type: 'click', hint: "Click Lincoln 250 times" },
-        { id: 4, name: "Button Smasher", req: 1000, type: 'click', hint: "Click Lincoln 1,000 times" },
-        { id: 5, name: "Click Legend", req: 5000, type: 'click', hint: "Click Lincoln 5,000 times" },
-        { id: 6, name: "Gaining Weight", req: 1000, type: 'mass', hint: "Reach 1,000 Total Mass" },
-        { id: 7, name: "Heavyweight", req: 10000, type: 'mass', hint: "Reach 10,000 Total Mass" },
-        { id: 8, name: "Massive Growth", req: 100000, type: 'mass', hint: "Reach 100,000 Total Mass" },
-        { id: 9, name: "One Millionaire", req: 1000000, type: 'mass', hint: "Reach 1,000,000 Total Mass" },
-        { id: 10, name: "Torta Titan", req: 10000000, type: 'mass', hint: "Reach 10,000,000 Total Mass" },
-        { id: 11, name: "Billionaire", req: 1000000000, type: 'mass', hint: "Reach 1,000,000,000 Total Mass" },
-        { id: 12, name: "Infinite Appetite", req: 10000000000, type: 'mass', hint: "Reach 10,000,000,000 Total Mass" },
-        { id: 13, name: "Buffet Breaker", req: 5, type: 'upg', hint: "Buy 5 different types of upgrades" },
-        { id: 14, name: "Full Belly", req: 10, type: 'upg', hint: "Buy 10 different types of upgrades" },
-        { id: 15, name: "Mega-Chud", req: 11, type: 'upg', hint: "Buy the Mega-Chud Transformation" },
-        { id: 16, name: "Sumo Status", req: 13, type: 'upg', hint: "Buy Sumo Lincoln" },
-        { id: 17, name: "The Final Form", req: 15, type: 'upg', hint: "Buy the Final Chud-down" },
-        { id: 18, name: "Loyal Eater", req: 1, type: 'prestige', hint: "Prestige for the first time" },
-        { id: 19, name: "Catering King", req: 5, type: 'prestige', hint: "Collect 5 Golden Tortas" },
-        { id: 20, name: "Lincoln's Best Friend", req: 10, type: 'prestige', hint: "Collect 10 Golden Tortas" }
+        { id: 1, name: "Kitchen Hand", req: 10, type: 'click' },
+        { id: 2, name: "Torta Taster", req: 50, type: 'click' },
+        { id: 3, name: "Quick Fingers", req: 250, type: 'click' },
+        { id: 4, name: "Button Smasher", req: 1000, type: 'click' },
+        { id: 5, name: "Click Legend", req: 5000, type: 'click' },
+        { id: 6, name: "Gaining Weight", req: 1000, type: 'mass' },
+        { id: 7, name: "Heavyweight", req: 10000, type: 'mass' },
+        { id: 8, name: "Massive Growth", req: 100000, type: 'mass' },
+        { id: 9, name: "One Millionaire", req: 1000000, type: 'mass' },
+        { id: 10, name: "Torta Titan", req: 10000000, type: 'mass' },
+        { id: 11, name: "Billionaire", req: 1000000000, type: 'mass' },
+        { id: 12, name: "Infinite Appetite", req: 10000000000, type: 'mass' },
+        { id: 13, name: "Buffet Breaker", req: 5, type: 'upg' },
+        { id: 14, name: "Full Belly", req: 10, type: 'upg' },
+        { id: 15, name: "Mega-Chud", req: 11, type: 'upg' },
+        { id: 16, name: "Sumo Status", req: 13, type: 'upg' },
+        { id: 17, name: "The Final Form", req: 15, type: 'upg' },
+        { id: 18, name: "Loyal Eater", req: 1, type: 'prestige' },
+        { id: 19, name: "Catering King", req: 5, type: 'prestige' },
+        { id: 20, name: "Lincoln's Best Friend", req: 10, type: 'prestige' }
     ];
     let unlockedAchievs = JSON.parse(localStorage.getItem('lincoln_achievs')) || [];
 
-    // Gameplay
+    // Main Gameplay
     document.getElementById('lincoln-main').onclick = (e) => {
         let val = clickPower * (1 + (goldenTortas * 0.1));
         energy += val; totalClicks++;
@@ -216,7 +224,7 @@
             energy -= u.cost; u.count++;
             if (u.type === "click") clickPower += u.power; else cps += u.power;
             u.cost = Math.ceil(u.cost * 1.35);
-            checkAchievements(); updateUI(); cloudSave();
+            updateUI(); cloudSave();
         }
     }
 
@@ -228,17 +236,26 @@
                 if (a.type === 'mass' && energy >= a.req) pass = true;
                 if (a.type === 'prestige' && goldenTortas >= a.req) pass = true;
                 if (a.type === 'upg') {
-                    if (a.id <= 14 && upgrades.filter(u => u.count > 0).length >= a.req) pass = true;
-                    if (a.id === 15 && upgrades[10].count > 0) pass = true;
-                    if (a.id === 16 && upgrades[12].count > 0) pass = true;
-                    if (a.id === 17 && upgrades[14].count > 0) pass = true;
+                   if (a.id <= 14 && upgrades.filter(u => u.count > 0).length >= a.req) pass = true;
+                   if (a.id === 15 && upgrades[10].count > 0) pass = true;
+                   if (a.id === 16 && upgrades[12].count > 0) pass = true;
+                   if (a.id === 17 && upgrades[14].count > 0) pass = true;
                 }
-                if (pass) {
-                    unlockedAchievs.push(a.id);
-                    localStorage.setItem('lincoln_achievs', JSON.stringify(unlockedAchievs));
-                }
+                if (pass) { unlockedAchievs.push(a.id); localStorage.setItem('lincoln_achievs', JSON.stringify(unlockedAchievs)); }
             }
         });
+    }
+
+    async function getKing() {
+        const { data } = await _supabase.from('leaderboard').select('username').order('clicks', { ascending: false }).limit(1);
+        if (data && data[0]) {
+            currentKing = data[0].username;
+            document.getElementById('king-name').innerText = currentKing;
+            if (currentKing === chatName) {
+                document.getElementById('king-banner').style.background = "linear-gradient(90deg, #f1c40f, #2d3436, #f1c40f)";
+                document.getElementById('king-name').innerHTML = "YOU ARE THE KING!";
+            }
+        }
     }
 
     function updateUI() {
@@ -251,7 +268,6 @@
         document.getElementById('stat-prestige').innerText = goldenTortas;
         document.getElementById('prestige-btn').style.display = energy >= 1000000000 ? 'block' : 'none';
 
-        // Shop
         document.getElementById('shop').innerHTML = upgrades.map(u => `
             <button class="upgrade ${energy >= u.cost ? 'can-afford' : ''}" onclick="buyUpgrade(${u.id})" ${energy < u.cost ? 'disabled' : ''}>
                 <div class="u-info">
@@ -262,56 +278,52 @@
                 <div style="font-size:1.2rem; font-weight:bold; opacity:0.6;">${u.count}</div>
             </button>`).join('');
 
-        // Trophies
         document.getElementById('achievement-list').innerHTML = achievementData.map(a => `
             <div class="trophy-card ${unlockedAchievs.includes(a.id) ? 'unlocked' : ''}">
                 <div style="font-weight:bold;">${unlockedAchievs.includes(a.id) ? '🏆' : '🔒'} ${a.name}</div>
-                <div class="trophy-hint">How to get: ${a.hint}</div>
             </div>`).join('');
-
-        // Backgrounds
-        const body = document.body; const label = document.getElementById('player-tag');
-        if (energy < 100000) body.className = 'bg-kitchen';
-        else if (energy < 10000000) body.className = 'bg-buffet';
-        else if (energy < 1000000000) body.className = 'bg-factory';
-        else body.className = 'bg-space';
     }
 
-    // Exact Admin Functions
     async function adminAction(type) {
+        if (!isAdmin) return;
         const target = document.getElementById('admin-target-user').value;
         const valText = document.getElementById('admin-value').value;
-        if (!target) return alert("Target required!");
-
-        if (type === 'mass') {
-            const amount = parseFloat(valText);
-            if (target === chatName) { energy += amount; updateUI(); cloudSave(); }
-            else { await _supabase.from('leaderboard').update({ clicks: amount }).eq('username', target); }
-            alert("Mass Sent!");
-        } else if (type === 'timeout') {
+        if (type === 'mass' && target === chatName) { energy += parseFloat(valText); updateUI(); cloudSave(); }
+        else if (type === 'ban') await _supabase.from('leaderboard').update({ is_banned: true }).eq('username', target);
+        else if (type === 'timeout') {
             const date = new Date(); date.setMinutes(date.getMinutes() + parseInt(valText));
             await _supabase.from('leaderboard').update({ timeout_until: date.toISOString() }).eq('username', target);
-            alert("Timed out!");
-        } else if (type === 'ban') {
-            await _supabase.from('leaderboard').update({ is_banned: true }).eq('username', target);
-            alert("Banned!");
-        } else if (type === 'unban') {
-            await _supabase.from('leaderboard').update({ is_banned: false }).eq('username', target);
-            alert("Unbanned!");
         }
     }
 
     async function clearChatNow() {
-        if (!isAdmin) return;
-        const { error } = await _supabase.from('global_chat').delete().gt('id', 0);
-        if (!error) {
-            await _supabase.from('global_chat').insert([{ username: "SYSTEM", message: "--- Chat Purged by Admin ---" }]);
-            fetchMessages();
-            alert("Chat Wiped.");
+        if (isAdmin) await _supabase.from('global_chat').delete().gt('id', 0);
+    }
+
+    async function sendChat() {
+        const input = document.getElementById('chat-msg-input');
+        if (!input.value) return;
+        await _supabase.from('global_chat').insert([{ username: chatName, message: input.value }]);
+        input.value = ""; fetchMessages();
+    }
+
+    async function fetchMessages() {
+        const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(15);
+        if (data) {
+            document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `
+                <div class="msg ${m.username === currentKing ? 'king-msg' : ''}">
+                    <b>${m.username === currentKing ? '👑 ' : ''}${m.username}:</b> ${m.message}
+                </div>`).join('');
+            const c = document.getElementById('chat-messages'); c.scrollTop = c.scrollHeight;
         }
     }
 
-    // System
+    async function cloudSave() {
+        localStorage.setItem('lincoln_save_king', JSON.stringify({energy, clickPower, cps, goldenTortas, totalClicks, upgrades}));
+        await _supabase.from('leaderboard').upsert({ username: chatName, clicks: Math.floor(energy), golden_tortas: goldenTortas });
+        document.getElementById('sync-status').innerText = "Saved: " + new Date().toLocaleTimeString();
+    }
+
     function changeName() {
         let n = prompt("New username:");
         if (n && n.trim().length > 1) {
@@ -321,65 +333,28 @@
         }
     }
 
-    async function cloudSave() {
-        localStorage.setItem('lincoln_save_full', JSON.stringify({energy, clickPower, cps, goldenTortas, totalClicks, upgrades}));
-        if (chatName) {
-            await _supabase.from('leaderboard').upsert({ username: chatName, clicks: Math.floor(energy), golden_tortas: goldenTortas });
-            document.getElementById('sync-status').innerText = "Last Saved: " + new Date().toLocaleTimeString();
-        }
-    }
-
-    async function checkAdminStatus() {
-        const { data } = await _supabase.from('leaderboard').select('is_admin').eq('username', chatName).maybeSingle();
-        if (data?.is_admin) isAdmin = true;
-    }
-
-    async function sendChat() {
-        const input = document.getElementById('chat-msg-input');
-        if (!input.value) return;
-        const { data } = await _supabase.from('leaderboard').select('is_banned, timeout_until').eq('username', chatName).maybeSingle();
-        if (data?.is_banned || (data?.timeout_until && new Date(data.timeout_until) > new Date())) return alert("Muted/Banned.");
-        await _supabase.from('global_chat').insert([{ username: chatName, message: input.value }]);
-        input.value = ""; fetchMessages();
-    }
-
-    async function fetchMessages() {
-        const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(20);
-        if (data) {
-            document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `
-                <div class="msg"><b>${m.username}:</b> ${m.message}</div>`).join('');
-            const c = document.getElementById('chat-messages'); c.scrollTop = c.scrollHeight;
-        }
-    }
-
-    function prestige() {
-        if (energy >= 1000000000) {
-            goldenTortas++; energy = 0; clickPower = 1; cps = 0;
-            upgrades = upgradeData.map(u => ({...u, count: 0}));
-            cloudSave(); location.reload();
-        }
-    }
-
     function openOverlay(id) { closeOverlays(); document.getElementById('view-' + id).classList.add('active'); }
     function closeOverlays() { document.querySelectorAll('.view-overlay').forEach(v => v.classList.remove('active')); }
     function setActiveNav(el) { document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
-    function toggleChat() { let b = document.getElementById('chat-box'); b.style.display = (b.style.display === 'flex') ? 'none' : 'flex'; if(b.style.display==='flex') fetchMessages(); }
+    function toggleChat() { let b = document.getElementById('chat-box'); b.style.display = (b.style.display === 'flex') ? 'none' : 'flex'; }
     function showParticle(x, y, text) { let p = document.createElement('div'); p.className = 'particle'; p.innerText = text; p.style.left = x + 'px'; p.style.top = y + 'px'; document.body.appendChild(p); setTimeout(() => p.remove(), 800); }
     function openAdmin() { if (isAdmin) document.getElementById('admin-panel').style.display = 'block'; }
-    function resetGame() { if(confirm("Hard reset everything?")) { localStorage.clear(); location.reload(); } }
+    function resetGame() { if(confirm("Reset progress?")) { localStorage.clear(); location.reload(); } }
 
-    // Init
-    const saved = localStorage.getItem('lincoln_save_full');
+    const saved = localStorage.getItem('lincoln_save_king');
     if (saved) {
         const d = JSON.parse(saved);
         energy = d.energy; clickPower = d.clickPower; cps = d.cps; goldenTortas = d.goldenTortas; totalClicks = d.totalClicks;
         if(d.upgrades) upgrades = d.upgrades;
     }
-    
+
     setInterval(() => { energy += (cps * (1 + (goldenTortas * 0.1)) / 10); updateUI(); }, 100);
     setInterval(cloudSave, 15000);
-    setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 4000);
-    updateUI(); checkAdminStatus();
+    setInterval(getKing, 10000);
+    setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 3000);
+    
+    updateUI(); getKing();
+    _supabase.from('leaderboard').select('is_admin').eq('username', chatName).maybeSingle().then(({data}) => { if(data?.is_admin) isAdmin = true; });
 </script>
 </body>
 </html>
