@@ -72,10 +72,8 @@
         #chat-box { position: fixed; bottom: 90px; right: 20px; width: 320px; height: 450px; background: var(--chat-bg); border: 2px solid var(--primary); border-radius: 12px; display: none; flex-direction: column; z-index: 1000; }
         #chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 0.85rem; background: #1a1e26; }
         .msg { margin-bottom: 8px; padding: 5px; border-radius: 4px; background: rgba(255,255,255,0.03); }
-        .king-tag { color: var(--gold) !important; font-size: 0.7rem; margin-left: 4px; }
-
-        #achievement-banner { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--gold); color: black; padding: 12px 25px; border-radius: 30px; font-weight: bold; display: none; z-index: 2000; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
         
+        #achievement-banner { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--gold); color: black; padding: 12px 25px; border-radius: 30px; font-weight: bold; display: none; z-index: 2000; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
         .particle { position: fixed; pointer-events: none; animation: flyUp 0.8s forwards; font-weight: bold; color: var(--gold); z-index: 999; }
         @keyframes flyUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-120px); opacity: 0; } }
     </style>
@@ -136,7 +134,7 @@
     let totalClicks = 0;
     let unlockedAchievements = [];
     let currentKing = "";
-    let chatName = localStorage.getItem('chat_name') || "Anonymous";
+    let chatName = localStorage.getItem('chat_name') || null;
 
     const upgrades = [
         { id: 0, name: "Extra Torta", cost: 15, power: 0.1, type: "click", count: 0 },
@@ -168,7 +166,7 @@
                     <span class="u-name">${u.name} <span class="u-gain">+${u.power} ${label}</span></span>
                     <span class="u-cost" id="cost-${u.id}">${u.cost.toLocaleString()} Mass</span>
                 </div>
-                <div class="u-count" id="count-${u.id}">0</div>
+                <div class="u-count" id="count-${u.id}">${u.count}</div>
             `;
             shop.appendChild(btn);
         });
@@ -179,7 +177,7 @@
     document.getElementById('lincoln-main').addEventListener('click', (e) => {
         let val = clickPower * getBoost();
         if (isBuffetRush) val *= 10;
-        if (currentKing !== "" && chatName !== currentKing) val *= 0.99;
+        if (currentKing && chatName && chatName !== currentKing) val *= 0.99;
         energy += val; totalClicks++;
         checkAchievements();
         showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
@@ -215,47 +213,58 @@
             }
         });
 
-        // Restored Visuals
         const img = document.getElementById('lincoln-main');
         if (energy > 1000000) img.style.filter = "drop-shadow(0 0 15px gold)";
         if (energy > 100000000) img.style.transform = `scale(${1 + Math.sin(Date.now()/500)*0.01})`;
     }
 
     async function cloudSave() {
-        document.getElementById('sync-status').innerText = "Syncing...";
-        const saveObj = { energy, clickPower, cps, goldenTortas, upgrades: upgrades.map(u => ({count: u.count, cost: u.cost})), unlockedAchievements };
+        const saveObj = { energy, clickPower, cps, goldenTortas, upgrades: upgrades.map(u => ({count: u.count, cost: u.cost})), unlockedAchievements, totalClicks };
         localStorage.setItem('lincoln_local_save', JSON.stringify(saveObj));
         
-        await _supabase.from('leaderboard').upsert({ 
-            username: chatName, clicks: Math.floor(energy), golden_tortas: goldenTortas, achievements: unlockedAchievements.join(',') 
-        }, { onConflict: 'username' });
-        document.getElementById('sync-status').innerText = "Vaulted";
+        if (chatName) {
+            document.getElementById('sync-status').innerText = "Syncing...";
+            await _supabase.from('leaderboard').upsert({ 
+                username: chatName, clicks: Math.floor(energy), golden_tortas: goldenTortas, achievements: unlockedAchievements.join(',') 
+            }, { onConflict: 'username' });
+            document.getElementById('sync-status').innerText = "Vaulted";
+        }
     }
 
     async function cloudLoad() {
         const local = localStorage.getItem('lincoln_local_save');
         if (local) {
             const d = JSON.parse(local);
-            energy = d.energy; clickPower = d.clickPower; cps = d.cps; goldenTortas = d.goldenTortas || 0;
+            energy = d.energy || 0; clickPower = d.clickPower || 1; cps = d.cps || 0; goldenTortas = d.goldenTortas || 0;
+            totalClicks = d.totalClicks || 0;
             d.upgrades?.forEach((u, i) => { if(upgrades[i]) { upgrades[i].count = u.count; upgrades[i].cost = u.cost; } });
             unlockedAchievements = d.unlockedAchievements || [];
         }
-        const { data } = await _supabase.from('leaderboard').select('*').eq('username', chatName).maybeSingle();
-        if (data && data.clicks > energy) { energy = data.clicks; goldenTortas = data.golden_tortas; }
+        if (chatName) {
+            const { data } = await _supabase.from('leaderboard').select('*').eq('username', chatName).maybeSingle();
+            if (data && data.clicks > energy) { energy = data.clicks; goldenTortas = data.golden_tortas; }
+        }
         updateUI();
-        document.getElementById('sync-status').innerText = "Vault Connected";
         fetchKing();
     }
 
-    async function prestige() {
-        if (confirm("Prestige? (Reset for Golden Tortas)")) {
-            let gained = Math.floor(Math.sqrt(energy / 1000000000));
-            goldenTortas += gained; energy = 0; clickPower = 1; cps = 0;
-            upgrades.forEach(u => { u.count = 0; u.cost = Math.ceil(u.cost / Math.pow(1.35, u.count)); });
-            localStorage.removeItem('lincoln_local_save');
-            await cloudSave();
-            location.reload();
+    function toggleChat() { 
+        const b = document.getElementById('chat-box');
+        if (b.style.display === 'flex') {
+            b.style.display = 'none';
+            return;
         }
+
+        while (!chatName || chatName.trim() === "") {
+            let input = prompt("Please enter a username to access Global Chat:");
+            if (input === null) return; 
+            chatName = input.trim();
+        }
+        
+        localStorage.setItem('chat_name', chatName);
+        b.style.display = 'flex';
+        fetchMessages();
+        cloudSave(); 
     }
 
     function checkAchievements() {
@@ -266,6 +275,7 @@
                 const b = document.getElementById('achievement-banner');
                 b.innerText = "🏆 Unlocked: " + ach.name; b.style.display = "block";
                 setTimeout(() => b.style.display = "none", 4000);
+                cloudSave();
             }
         });
     }
@@ -281,15 +291,9 @@
         if (data) { currentKing = data.username; document.getElementById('king-display').innerText = `👑 Current King: ${data.username}`; }
     }
 
-    function toggleChat() { 
-        const b = document.getElementById('chat-box'); b.style.display = b.style.display === 'flex' ? 'none' : 'flex';
-        if (!localStorage.getItem('chat_name')) { chatName = prompt("Name:") || "Lincoln"; localStorage.setItem('chat_name', chatName); cloudSave(); }
-        if(b.style.display === 'flex') fetchMessages();
-    }
-
     async function sendChat() {
         const i = document.getElementById('chat-msg-input');
-        if (!i.value) return;
+        if (!i.value || !chatName) return;
         await _supabase.from('global_chat').insert([{ username: chatName, message: i.value }]);
         i.value = ""; fetchMessages();
     }
@@ -299,12 +303,35 @@
         if (data) document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `<div class="msg"><b>${m.username}${m.username===currentKing?'👑':''}:</b> ${m.message}</div>`).join('');
     }
 
-    function resetGame() { if(confirm("Hard Reset?")) { localStorage.clear(); location.reload(); } }
+    async function resetGame() {
+        if (confirm("Reset all progress to 0? You will keep your username.")) {
+            energy = 0; clickPower = 1; cps = 0; goldenTortas = 0; totalClicks = 0; unlockedAchievements = [];
+            
+            const originalCosts = [15, 100, 500, 1200, 3000, 10000, 25000, 85000, 200000, 500000, 2000000, 8000000, 40000000, 150000000, 2500000000];
+            upgrades.forEach((u, index) => {
+                u.count = 0;
+                u.cost = originalCosts[index];
+            });
+
+            updateUI();
+            initShop();
+            
+            document.getElementById('sync-status').innerText = "Resetting Vault...";
+            if (chatName) {
+                await _supabase.from('leaderboard').upsert({ 
+                    username: chatName, clicks: 0, golden_tortas: 0, achievements: "" 
+                }, { onConflict: 'username' });
+            }
+
+            const saveObj = { energy, clickPower, cps, goldenTortas, upgrades: upgrades.map(u => ({count: u.count, cost: u.cost})), unlockedAchievements, totalClicks };
+            localStorage.setItem('lincoln_local_save', JSON.stringify(saveObj));
+            document.getElementById('sync-status').innerText = "Reset Complete";
+        }
+    }
 
     setInterval(() => { energy += (cps * getBoost() / 10); updateUI(); }, 100);
     setInterval(cloudSave, 20000);
     setInterval(fetchKing, 30000);
-    setInterval(() => { if (Math.random() < 0.05) startBuffetRush(); }, 60000);
     
     initShop(); cloudLoad();
 </script>
