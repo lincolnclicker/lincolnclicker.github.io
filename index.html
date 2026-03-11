@@ -103,7 +103,22 @@
         .admin-input { width: 100%; padding: 10px; margin-bottom: 10px; background: #1e222b; border: 1px solid #444; color: white; box-sizing: border-box; border-radius: 5px; }
         
         .particle { position: fixed; pointer-events: none; animation: flyUp 0.8s forwards; font-weight: bold; color: var(--gold); z-index: 999; }
-        @keyframes flyUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-120px); opacity: 0; } }
+        
+        @keyframes flyUp {  
+            0% { transform: translateY(0); opacity: 1; }  
+            100% { transform: translateY(-120px); opacity: 0; }  
+        } /* Fixed bracket here */
+
+        @keyframes pulse-gold {
+            0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(241, 196, 15, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); }
+        }
+
+        #prestige-btn {
+            animation: pulse-gold 2s infinite;
+            border: 2px solid white;
+        }
     </style>
 </head>
 <body class="bg-kitchen">
@@ -274,6 +289,44 @@ async function clearChatNow() {
         updateUI();
     });
 
+    async function prestige() {
+    if (energy < 1000000000) {
+        alert("You need at least 1 Billion Mass to weigh in for Golden Tortas!");
+        return;
+    }
+
+    const earnedTortas = Math.floor(energy / 1000000000);
+    
+    if (confirm(`Weighing in will reset your Mass and Upgrades, but you will earn ${earnedTortas} Golden Torta(s). Each Torta gives a permanent 10% boost! Proceed?`)) {
+        
+        // Add the new tortas to the total
+        goldenTortas += earnedTortas;
+
+        // Reset game state
+        energy = 0;
+        clickPower = 1;
+        cps = 0;
+        upgrades = initialUpgrades.map(u => ({...u, count: 0}));
+
+        // Re-initialize shop and UI
+        initShop();
+        updateUI();
+        
+        // Save to Cloud immediately
+        await cloudSave();
+        
+        // System message in chat
+        if (chatName) {
+            await _supabase.from('global_chat').insert([{ 
+                username: 'SYSTEM', 
+                message: `🎉 ${chatName} just weighed in and earned ${earnedTortas} Golden Tortas!` 
+            }]);
+        }
+        
+        alert(`Congratulations! You are now ${goldenTortas} Golden Tortas heavier!`);
+    }
+}
+    
     function buyUpgrade(id) {
         const u = upgrades[id];
         if (energy >= u.cost) {
@@ -441,7 +494,9 @@ function sendEmote(char) {
 
 // Timers and Initialization
 setInterval(() => { 
-    energy += (cps * (1 + (goldenTortas * 0.1)) / 10); 
+    // This adds 1/10th of your CPS every 100ms, boosted by Golden Tortas
+    let boostedCPS = cps * (1 + (goldenTortas * 0.1));
+    energy += (boostedCPS / 10); 
     updateUI(); 
 }, 100);
 
@@ -458,6 +513,7 @@ fetchKing();
 </script>
 </body>
 </html>
+
 
 
 
