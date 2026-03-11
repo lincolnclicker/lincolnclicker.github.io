@@ -415,28 +415,34 @@ function updateUI() {
 async function cloudLoad() {
     const local = localStorage.getItem('lincoln_local_save');
     if (local) {
-        const d = JSON.parse(local);
-        energy = d.energy || 0;
-        goldenTortas = d.goldenTortas || 0;
-        
-        if (d.upgrades) {
-            // Reset base stats before recalculating from upgrades
-            clickPower = 1;
-            cps = 0;
-            
-            d.upgrades.forEach((savedU, i) => {
-                if (upgrades[i]) {
-                    upgrades[i].count = savedU.count;
-                    upgrades[i].cost = savedU.cost;
-                    
-                    // Add up the power from every upgrade you own
-                    if (upgrades[i].type === "click") {
-                        clickPower += (upgrades[i].power * savedU.count);
-                    } else {
-                        cps += (upgrades[i].power * savedU.count);
+        try {
+            const d = JSON.parse(local);
+            energy = d.energy || 0;
+            goldenTortas = d.goldenTortas || 0;
+            totalClicks = d.totalClicks || 0;
+
+            if (d.upgrades) {
+                // IMPORTANT: Reset to base stats before recalculating
+                clickPower = 1;
+                cps = 0;
+
+                d.upgrades.forEach((savedU, i) => {
+                    if (upgrades[i]) {
+                        // Restore the count and cost for the UI
+                        upgrades[i].count = savedU.count;
+                        upgrades[i].cost = savedU.cost;
+
+                        // Recalculate the actual power based on the count
+                        if (upgrades[i].type === "click") {
+                            clickPower += (upgrades[i].power * savedU.count);
+                        } else {
+                            cps += (upgrades[i].power * savedU.count);
+                        }
                     }
-                }
-            });
+                });
+            }
+        } catch (e) {
+            console.error("Error loading save:", e);
         }
     }
     updateUI();
@@ -552,6 +558,7 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
 
