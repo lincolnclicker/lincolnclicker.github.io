@@ -412,13 +412,35 @@ function updateUI() {
     else { body.className = 'bg-space'; label.innerText = "LOCATION: OUTER SPACE"; }
 }
 
-async function cloudSave() {
-    const saveObj = { energy, clickPower, cps, goldenTortas, upgrades: upgrades.map(u => ({count: u.count, cost: u.cost})), totalClicks };
-    localStorage.setItem('lincoln_local_save', JSON.stringify(saveObj));
-    if (chatName) {
-        await _supabase.from('leaderboard').upsert({ username: chatName, clicks: Math.floor(energy), golden_tortas: goldenTortas }, { onConflict: 'username' });
-        document.getElementById('sync-status').innerText = "Vaulted";
+async function cloudLoad() {
+    const local = localStorage.getItem('lincoln_local_save');
+    if (local) {
+        const d = JSON.parse(local);
+        energy = d.energy || 0;
+        goldenTortas = d.goldenTortas || 0;
+        
+        if (d.upgrades) {
+            // Reset base stats before recalculating from upgrades
+            clickPower = 1;
+            cps = 0;
+            
+            d.upgrades.forEach((savedU, i) => {
+                if (upgrades[i]) {
+                    upgrades[i].count = savedU.count;
+                    upgrades[i].cost = savedU.cost;
+                    
+                    // Add up the power from every upgrade you own
+                    if (upgrades[i].type === "click") {
+                        clickPower += (upgrades[i].power * savedU.count);
+                    } else {
+                        cps += (upgrades[i].power * savedU.count);
+                    }
+                }
+            });
+        }
     }
+    updateUI();
+    fetchLeaderboard();
 }
 
 async function fetchLeaderboard() {
@@ -530,5 +552,6 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
