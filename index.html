@@ -11,6 +11,7 @@
             --secondary: #a29bfe;
             --bg: #1e272e;
             --gold: #f1c40f;
+            --chat-bg: #252a34;
         }
 
         @keyframes bgScroll {
@@ -111,6 +112,7 @@
         .u-name { font-weight: bold; color: #fab1a0; display: block; font-size: 1.1rem; }
         .u-cost { color: #55efc4; font-weight: bold; }
 
+        /* Particles */
         .particle {
             position: fixed;
             pointer-events: none;
@@ -120,16 +122,77 @@
             z-index: 999;
         }
 
-        #sync-status {
-            font-size: 0.75rem;
-            margin-top: 10px;
-            color: #aaa;
-        }
-
         @keyframes flyUp {
             0% { transform: translateY(0); opacity: 1; }
             100% { transform: translateY(-120px); opacity: 0; }
         }
+
+        /* Chat Styles */
+        #chat-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            z-index: 1000;
+            font-size: 30px;
+        }
+
+        #chat-box {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 300px;
+            height: 400px;
+            background: var(--chat-bg);
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        #chat-messages {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #1a1e26;
+        }
+
+        .msg { background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 5px; border-left: 3px solid var(--secondary); }
+        .msg b { color: var(--secondary); margin-right: 5px; }
+
+        #chat-input-area {
+            display: flex;
+            padding: 10px;
+            background: #1e222b;
+            gap: 5px;
+        }
+
+        #chat-input-area input {
+            flex: 1;
+            background: #333;
+            border: 1px solid #444;
+            color: white;
+            padding: 8px;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        #sync-status { font-size: 0.75rem; margin-top: 10px; color: #888; }
     </style>
 </head>
 <body>
@@ -143,38 +206,47 @@
                 Bulk per Click: <span id="stat-click">1</span><br>
                 Passive Gains: <span id="stat-cps">0</span>
             </div>
-            <div id="sync-status">Syncing with Vault...</div>
+            <div id="sync-status">Vaulting...</div>
         </div>
         
         <img src="IMG_0668.jpg" id="lincoln-main" alt="Lincoln">
         
         <br>
-        <button onclick="resetGame()" style="background:none; border:1px solid #555; color:#777; margin-top:30px; cursor:pointer; font-size: 0.7rem;">Evaporate Progress</button>
+        <button onclick="resetGame()" style="background:none; border:1px solid #444; color:#666; margin-top:30px; cursor:pointer; font-size: 0.7rem; padding: 5px 10px; border-radius: 5px;">Reset Progress</button>
     </div>
 
     <div class="shop-container" id="shop"></div>
+</div>
+
+<div id="chat-icon" onclick="toggleChat()">💬</div>
+
+<div id="chat-box">
+    <div style="background:var(--primary); padding: 10px; font-weight: bold; display: flex; justify-content: space-between;">
+        <span>Global Chat</span>
+        <span onclick="toggleChat()" style="cursor:pointer;">×</span>
+    </div>
+    <div id="chat-messages"></div>
+    <div id="chat-input-area">
+        <input type="text" id="chat-msg-input" placeholder="Type message..." onkeypress="if(event.key==='Enter') sendChat()">
+        <button onclick="sendChat()" style="background:var(--primary); border:none; color:white; border-radius:5px; padding:0 10px; cursor:pointer;">Send</button>
+    </div>
 </div>
 
 <script>
     // --- DATABASE CONFIG ---
     const DB_URL = 'https://cnstrmbiosdykiqyxcua.supabase.co';
     const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuc3RybWJpb3NkeWtpcXl4Y3VhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDEzMDEsImV4cCI6MjA4ODc3NzMwMX0.hf6kiAniU-Hw1J3xuYPK_xlUO9BLR3d5vkEq41uf8co';
-    
-    // Initializing Supabase correctly
     const _supabase = supabase.createClient(DB_URL, DB_KEY);
 
-    // Session ID logic (No usernames needed)
-    let sessionId = localStorage.getItem('lincoln_session_id');
-    if (!sessionId) {
-        sessionId = 'user_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('lincoln_session_id', sessionId);
-    }
+    let sessionId = localStorage.getItem('lincoln_session_id') || ('user_' + Math.random().toString(36).substr(2, 9));
+    localStorage.setItem('lincoln_session_id', sessionId);
 
     let energy = 0;
     let clickPower = 1;
     let cps = 0;
+    let chatUsername = localStorage.getItem('chat_name');
 
-    // All original upgrades included
+    // Hard Scaling Upgrades
     const upgrades = [
         { id: 0, name: "Extra Torta", cost: 15, power: 0.1, type: "click", count: 0 },
         { id: 1, name: "Chud Burger", cost: 100, power: 0.3, type: "cps", count: 0 },
@@ -213,7 +285,6 @@
         });
     }
 
-    // Click handler with particles
     document.getElementById('lincoln-main').addEventListener('click', (e) => {
         energy += clickPower;
         showParticle(e.clientX, e.clientY, `+${clickPower.toFixed(1)}`);
@@ -225,13 +296,10 @@
         if (energy >= u.cost) {
             energy -= u.cost;
             u.count++;
-            if (u.type === "click") clickPower += u.power;
-            else cps += u.power;
-            
-            // Hard Mode Scaling
+            if (u.type === "click") clickPower += u.power; else cps += u.power;
             u.cost = Math.ceil(u.cost * 1.35); 
             updateUI();
-            cloudSave(); // Save whenever an upgrade is bought
+            cloudSave();
         }
     }
 
@@ -239,105 +307,92 @@
         document.getElementById('score-text').innerText = Math.floor(energy).toLocaleString();
         document.getElementById('stat-click').innerText = clickPower.toFixed(1);
         document.getElementById('stat-cps').innerText = cps.toFixed(1);
-
         upgrades.forEach(u => {
-            const costEl = document.getElementById(`cost-${u.id}`);
-            const countEl = document.getElementById(`count-${u.id}`);
-            if (costEl) costEl.innerText = u.cost.toLocaleString();
-            if (countEl) countEl.innerText = u.count;
-            
             const btn = document.getElementById(`up-${u.id}`);
             if (btn) {
                 btn.disabled = energy < u.cost;
                 energy >= u.cost ? btn.classList.add('can-afford') : btn.classList.remove('can-afford');
+                document.getElementById(`cost-${u.id}`).innerText = u.cost.toLocaleString();
+                document.getElementById(`count-${u.id}`).innerText = u.count;
             }
         });
     }
 
     function showParticle(x, y, text) {
         const p = document.createElement('div');
-        p.className = 'particle';
-        p.innerText = text;
-        p.style.left = x + 'px';
-        p.style.top = y + 'px';
+        p.className = 'particle'; p.innerText = text;
+        p.style.left = x + 'px'; p.style.top = y + 'px';
         document.body.appendChild(p);
         setTimeout(() => p.remove(), 800);
     }
 
-    // --- CLOUD SAVE LOGIC ---
-    async function cloudSave() {
-        const status = document.getElementById('sync-status');
-        status.innerText = "Syncing...";
-        
-        const { error } = await _supabase
-            .from('leaderboard')
-            .upsert({ 
-                username: sessionId, 
-                clicks: Math.floor(energy) 
-            }, { onConflict: 'username' });
+    // --- CHAT & SYNC ---
+    function toggleChat() {
+        const box = document.getElementById('chat-box');
+        box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
+        if (!chatUsername) {
+            chatUsername = prompt("Name for Chat:");
+            if (!chatUsername) chatUsername = "Lincoln_" + Math.floor(Math.random()*999);
+            localStorage.setItem('chat_name', chatUsername);
+        }
+        if(box.style.display === 'flex') fetchMessages();
+    }
 
+    async function sendChat() {
+        const input = document.getElementById('chat-msg-input');
+        let text = input.value.trim();
+        if (!text) return;
+        
+        // Very basic filter
+        const bad = ["swear1", "swear2"]; 
+        bad.forEach(w => text = text.replace(new RegExp(w, "gi"), "****"));
+        
+        input.value = "";
+        await _supabase.from('global_chat').insert([{ username: chatUsername, message: text }]);
+        fetchMessages();
+    }
+
+    async function fetchMessages() {
+        const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(25);
+        if (data) {
+            document.getElementById('chat-messages').innerHTML = data.reverse().map(m => 
+                `<div class="msg"><b>${m.username}:</b> ${m.message}</div>`).join('');
+            const container = document.getElementById('chat-messages');
+            container.scrollTop = container.scrollHeight;
+        }
+    }
+
+    async function cloudSave() {
+        document.getElementById('sync-status').innerText = "Syncing...";
+        const { error } = await _supabase.from('leaderboard').upsert({ username: sessionId, clicks: Math.floor(energy) }, { onConflict: 'username' });
         if (!error) {
-            status.innerText = "Progress Vaulted";
-            // Local backup for instant loading
-            const backup = { energy, clickPower, cps, 
-                             counts: upgrades.map(u => u.count), 
-                             costs: upgrades.map(u => u.cost) };
-            localStorage.setItem('lincoln_backup', JSON.stringify(backup));
-        } else {
-            status.innerText = "Offline Mode";
+            document.getElementById('sync-status').innerText = "Vaulted";
+            localStorage.setItem('lincoln_bk', JSON.stringify({energy, clickPower, cps, counts: upgrades.map(u=>u.count), costs: upgrades.map(u=>u.cost)}));
         }
     }
 
     async function cloudLoad() {
-        // 1. Try Local backup first for speed
-        const local = localStorage.getItem('lincoln_backup');
+        const local = localStorage.getItem('lincoln_bk');
         if (local) {
             const d = JSON.parse(local);
-            energy = d.energy || 0;
-            clickPower = d.clickPower || 1;
-            cps = d.cps || 0;
+            energy = d.energy; clickPower = d.clickPower; cps = d.cps;
             d.counts?.forEach((c, i) => { if(upgrades[i]) upgrades[i].count = c; });
             d.costs?.forEach((c, i) => { if(upgrades[i]) upgrades[i].cost = c; });
             updateUI();
         }
-
-        // 2. Fetch latest mass from Supabase
-        const { data, error } = await _supabase
-            .from('leaderboard')
-            .select('*')
-            .eq('username', sessionId)
-            .maybeSingle();
-
-        if (data && !error) {
-            if (data.clicks > energy) {
-                energy = data.clicks;
-                updateUI();
-            }
-            document.getElementById('sync-status').innerText = "Connected to Vault";
-        }
+        const { data } = await _supabase.from('leaderboard').select('*').eq('username', sessionId).maybeSingle();
+        if (data && data.clicks > energy) { energy = data.clicks; updateUI(); }
+        document.getElementById('sync-status').innerText = "Vault Connected";
     }
 
-    function resetGame() {
-        if(confirm("Empty the fridge? Everything will be lost!")) { 
-            localStorage.clear(); 
-            location.reload(); 
-        }
-    }
+    function resetGame() { if(confirm("Erase all Mass?")) { localStorage.clear(); location.reload(); } }
 
-    // Main passive income loop
-    setInterval(() => {
-        if (cps > 0) {
-            energy += (cps / 10);
-            updateUI();
-        }
-    }, 100);
-
-    // Auto-save every 20 seconds
+    setInterval(() => { if (cps > 0) { energy += (cps / 10); updateUI(); } }, 100);
     setInterval(cloudSave, 20000);
+    setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 4000);
 
     initShop();
     cloudLoad();
 </script>
-
 </body>
 </html>
