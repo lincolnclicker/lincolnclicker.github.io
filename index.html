@@ -222,6 +222,37 @@ let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
 // 1. Update the openAdmin function to check the database
 
+    
+    async function prestige() {
+    if (energy < 1000000000) return alert("You need at least 1 Billion Mass to Weigh In!");
+
+    const bonus = Math.floor(Math.log10(energy / 1000000000)) + 1;
+    
+    if (confirm(`Prestige now? You will lose all your current Mass and Upgrades, but you will gain ${bonus} Golden Torta(s). Each Golden Torta gives a permanent +10% boost to ALL production!`)) {
+        
+        // 1. Add the permanent currency
+        goldenTortas += bonus;
+
+        // 2. Reset game state
+        energy = 0;
+        clickPower = 1;
+        cps = 0;
+        totalClicks = 0;
+
+        // 3. Reset upgrades to initial state
+        upgrades = initialUpgrades.map(u => ({...u, count: 0}));
+
+        // 4. Update the Shop UI to show base costs again
+        initShop();
+        
+        // 5. Save to cloud and update screen
+        await cloudSave();
+        updateUI();
+        
+        alert("You have Weighed In! Your new Golden Tortas have increased your power permanently.");
+    }
+}
+    
     async function changeName() {
     let newName = prompt("Enter your new username:", chatName || "");
     
@@ -465,4 +496,5 @@ startGame();
 </script>
 </body>
 </html>
+
 
