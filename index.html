@@ -3,187 +3,337 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lincoln Clicker</title>
+    <title>Lincoln Clicker: Heavyweight Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #a29bfe;
+            --bg: #1e272e;
+            --gold: #f1c40f;
+        }
+
+        @keyframes bgScroll {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         body {
-            background-color: #0f0f0f;
-            color: #e0e0e0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Arial Rounded MT Bold', sans-serif;
+            background: linear-gradient(-45deg, #1e272e, #2d3436, #000000);
+            background-size: 400% 400%;
+            animation: bgScroll 15s ease infinite;
+            color: white;
+            margin: 0;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
             min-height: 100vh;
-            margin: 0;
-            overflow-x: hidden;
         }
 
-        h1 { color: #ff3e3e; text-transform: uppercase; letter-spacing: 2px; }
-        
-        #game-container {
-            background: #1a1a1a;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        #game-wrapper {
+            max-width: 950px;
+            width: 100%;
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .clicker-section {
+            flex: 1;
             text-align: center;
+            position: sticky;
+            top: 20px;
+            height: fit-content;
         }
 
-        #lincoln-img {
-            width: 250px;
-            height: auto;
+        #score-panel {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px;
+            border-radius: 20px;
+            border: 3px solid var(--primary);
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        #score-text {
+            font-size: 3.2rem;
+            color: var(--gold);
+            margin: 0;
+            text-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
+        }
+
+        #lincoln-main {
+            width: 320px;
+            height: 320px;
+            border-radius: 50%;
             cursor: pointer;
-            border-radius: 10px;
+            object-fit: cover;
+            border: 8px solid var(--secondary);
             transition: transform 0.05s;
             user-select: none;
             -webkit-user-drag: none;
-            border: 4px solid #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        #lincoln-img:active { transform: scale(0.92); border-color: #ff3e3e; }
+        #lincoln-main:active { transform: scale(0.94); }
 
-        .score-display { font-size: 2rem; font-weight: bold; margin: 20px 0; color: #00ffcc; }
-
-        .upgrades-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 20px;
+        .shop-container {
+            flex: 1.2;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 20px;
+            height: 90vh;
+            overflow-y: auto;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
-        .upgrade-card {
-            background: #252525;
+        .upgrade {
+            width: 100%;
+            background: #2f3542;
+            border: 2px solid transparent;
+            border-radius: 12px;
             padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #444;
+            color: white;
             cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
             transition: 0.2s;
         }
 
-        .upgrade-card:hover:not(.disabled) { background: #333; border-color: #00ffcc; }
-        .upgrade-card.disabled { opacity: 0.4; cursor: not-allowed; }
-        
-        .cost { display: block; color: #ffbd2e; font-size: 0.9rem; margin-top: 5px; }
+        .upgrade:disabled { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; }
+        .can-afford { border-color: var(--gold) !important; background: #3e4452; }
 
-        #save-btn {
-            margin-top: 30px;
-            padding: 10px 20px;
-            background: #00ffcc;
-            color: #000;
-            border: none;
-            border-radius: 5px;
+        .u-name { font-weight: bold; color: #fab1a0; display: block; font-size: 1.1rem; }
+        .u-cost { color: #55efc4; font-weight: bold; }
+
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            animation: flyUp 0.8s forwards;
             font-weight: bold;
-            cursor: pointer;
+            color: var(--gold);
+            z-index: 999;
+        }
+
+        #sync-status {
+            font-size: 0.7rem;
+            margin-top: 10px;
+            color: #888;
+        }
+
+        @keyframes flyUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-120px); opacity: 0; }
         }
     </style>
 </head>
 <body>
 
-    <div id="game-container">
-        <h1>Lincoln Clicker</h1>
-        <p style="font-size: 0.8rem; opacity: 0.6;">(The non-presidential edition)</p>
-
-        <div class="score-display" id="score">0</div>
-        
-        <img src="IMG_0668.jpg" id="lincoln-img" alt="Lincoln">
-
-        <div class="upgrades-grid">
-            <div id="upg-1" class="upgrade-card disabled" onclick="buyUpgrade('click')">
-                <strong>Heavy Fingers</strong>
-                <span class="cost" id="cost-click">Cost: 25</span>
-                <small>+1 per click</small>
+<div id="game-wrapper">
+    <div class="clicker-section">
+        <div id="score-panel">
+            <h1 id="score-text">0</h1>
+            <p style="letter-spacing: 2px;">LINCOLN MASS</p>
+            <div style="font-size: 0.9rem; color: #ccc; margin-top: 10px;">
+                Bulk per Click: <span id="stat-click">1</span><br>
+                Passive Gains: <span id="stat-cps">0</span>
             </div>
-            <div id="upg-2" class="upgrade-card disabled" onclick="buyUpgrade('auto')">
-                <strong>Lincoln Bot</strong>
-                <span class="cost" id="cost-auto">Cost: 100</span>
-                <small>+2 per second</small>
-            </div>
+            <div id="sync-status">Connecting to Vault...</div>
         </div>
-
-        <button id="save-btn" onclick="saveToSupabase()">Submit to Leaderboard</button>
+        <img src="IMG_0668.jpg" id="lincoln-main" alt="Lincoln">
+        <br>
+        <button onclick="resetGame()" style="background:none; border:1px solid #555; color:#777; margin-top:30px; cursor:pointer; font-size: 0.7rem;">Evaporate Progress</button>
     </div>
 
-    <script>
-        // Supabase Initialization
-        const { createClient } = supabase;
-        const _supabase = createClient(
-            'https://cnstrmbiosdykiqyxcua.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuc3RybWJpb3NkeWtpcXl4Y3VhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDEzMDEsImV4cCI6MjA4ODc3NzMwMX0.hf6kiAniU-Hw1J3xuYPK_xlUO9BLR3d5vkEq41uf8co'
-        );
+    <div class="shop-container" id="shop"></div>
+</div>
 
-        let clicks = 0;
-        let clickPower = 1;
-        let autoIncome = 0;
+<script>
+    // --- DATABASE CONFIG ---
+    const DB_URL = 'https://cnstrmbiosdykiqyxcua.supabase.co';
+    const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuc3RybWJpb3NkeWtpcXl4Y3VhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDEzMDEsImV4cCI6MjA4ODc3NzMwMX0.hf6kiAniU-Hw1J3xuYPK_xlUO9BLR3d5vkEq41uf8co';
+    const supabase = lib.createClient(DB_URL, DB_KEY);
+
+    // Generate or get a unique anonymous ID for this browser session
+    let sessionId = localStorage.getItem('lincoln_session_id');
+    if (!sessionId) {
+        sessionId = 'user_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('lincoln_session_id', sessionId);
+    }
+
+    let energy = 0;
+    let clickPower = 1;
+    let cps = 0;
+
+    const upgrades = [
+        { id: 0, name: "Extra Torta", cost: 15, power: 0.1, type: "click", count: 0 },
+        { id: 1, name: "Chud Burger", cost: 100, power: 0.3, type: "cps", count: 0 },
+        { id: 2, name: "The Lard-o-Meter", cost: 500, power: 0.8, type: "cps", count: 0 },
+        { id: 3, name: "Bulk Season", cost: 1200, power: 0.6, type: "click", count: 0 },
+        { id: 4, name: "Torta Pounder 3000", cost: 3000, power: 2.5, type: "cps", count: 0 },
+        { id: 5, name: "Infinite Buffet Pass", cost: 10000, power: 7.0, type: "cps", count: 0 },
+        { id: 6, name: "Chudmosis", cost: 25000, power: 15.0, type: "cps", count: 0 },
+        { id: 7, name: "Deep Fried Top Hat", cost: 85000, power: 50.0, type: "cps", count: 0 },
+        { id: 8, name: "Torta Transfusion", cost: 200000, power: 12, type: "click", count: 0 },
+        { id: 9, name: "Gravy Shower", cost: 500000, power: 150, type: "cps", count: 0 },
+        { id: 10, name: "Mega-Chud Transformation", cost: 2000000, power: 500, type: "cps", count: 0 },
+        { id: 11, name: "The Giga-Torta", cost: 8000000, power: 1500, type: "cps", count: 0 },
+        { id: 12, name: "Sumo Lincoln", cost: 40000000, power: 1200, type: "click", count: 0 },
+        { id: 13, name: "Event Horizon Gut", cost: 150000000, power: 18000, type: "cps", count: 0 },
+        { id: 14, name: "The Final Chud-down", cost: 2500000000, power: 120000, type: "cps", count: 0 }
+    ];
+
+    function initShop() {
+        const shop = document.getElementById('shop');
+        shop.innerHTML = '';
+        upgrades.forEach(u => {
+            const btn = document.createElement('button');
+            btn.className = 'upgrade';
+            btn.id = `up-${u.id}`;
+            btn.onclick = () => buyUpgrade(u.id);
+            btn.innerHTML = `
+                <div class="upgrade-info">
+                    <span class="u-name">${u.name}</span>
+                    <span class="u-cost" id="cost-${u.id}">${u.cost.toLocaleString()}</span> Mass
+                    <small style="display:block; color:#aaa; font-style:italic;">+${u.power} per ${u.type === 'click' ? 'click' : 'sec'}</small>
+                </div>
+                <div id="count-${u.id}" style="font-size:1.4rem; font-weight:bold; color:var(--primary);">0</div>
+            `;
+            shop.appendChild(btn);
+        });
+    }
+
+    document.getElementById('lincoln-main').addEventListener('click', (e) => {
+        energy += clickPower;
+        showParticle(e.clientX, e.clientY, `+${clickPower.toFixed(1)}`);
+        updateUI();
+    });
+
+    function buyUpgrade(id) {
+        const u = upgrades[id];
+        if (energy >= u.cost) {
+            energy -= u.cost;
+            u.count++;
+            if (u.type === "click") clickPower += u.power;
+            else cps += u.power;
+            
+            u.cost = Math.ceil(u.cost * 1.35); 
+            updateUI();
+        }
+    }
+
+    function updateUI() {
+        document.getElementById('score-text').innerText = Math.floor(energy).toLocaleString();
+        document.getElementById('stat-click').innerText = clickPower.toFixed(1);
+        document.getElementById('stat-cps').innerText = cps.toFixed(1);
+
+        upgrades.forEach(u => {
+            const costEl = document.getElementById(`cost-${u.id}`);
+            const countEl = document.getElementById(`count-${u.id}`);
+            if (costEl) costEl.innerText = u.cost.toLocaleString();
+            if (countEl) countEl.innerText = u.count;
+            
+            const btn = document.getElementById(`up-${u.id}`);
+            if (btn) {
+                btn.disabled = energy < u.cost;
+                energy >= u.cost ? btn.classList.add('can-afford') : btn.classList.remove('can-afford');
+            }
+        });
+    }
+
+    function showParticle(x, y, text) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.innerText = text;
+        p.style.left = x + 'px';
+        p.style.top = y + 'px';
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 800);
+    }
+
+    // --- NEW CLOUD SAVE SYSTEM ---
+    async function cloudSave() {
+        document.getElementById('sync-status').innerText = "Syncing with Vault...";
         
-        let costs = {
-            click: 25,
-            auto: 100
+        const saveData = {
+            energy, 
+            clickPower, 
+            cps,
+            upgradeCounts: upgrades.map(u => u.count),
+            upgradeCosts: upgrades.map(u => u.cost)
         };
 
-        const scoreEl = document.getElementById('score');
-        const imgEl = document.getElementById('lincoln-img');
+        const { error } = await supabase
+            .from('leaderboard')
+            .upsert({ 
+                username: sessionId, // Using Session ID as the unique key
+                clicks: Math.floor(energy) 
+            }, { onConflict: 'username' });
 
-        // Click Logic
-        imgEl.addEventListener('click', () => {
-            clicks += clickPower;
+        if (!error) {
+            document.getElementById('sync-status').innerText = "Progress Vaulted";
+            // Also keep a local backup just in case
+            localStorage.setItem('lincoln_local_backup', JSON.stringify(saveData));
+        } else {
+            document.getElementById('sync-status').innerText = "Sync Error - Saving Locally";
+            localStorage.setItem('lincoln_local_backup', JSON.stringify(saveData));
+        }
+    }
+
+    async function cloudLoad() {
+        // First, check for local backup for instant load
+        const local = localStorage.getItem('lincoln_local_backup');
+        if (local) applyData(JSON.parse(local));
+
+        // Then, try to pull from Supabase to sync across devices/refreshes
+        const { data, error } = await supabase
+            .from('leaderboard')
+            .select('*')
+            .eq('username', sessionId)
+            .single();
+
+        if (data && !error) {
+            // Note: Since 'leaderboard' usually only stores clicks, 
+            // you'd need a separate table for full state. 
+            // For now, we restore total clicks from cloud.
+            energy = Math.max(energy, data.clicks);
             updateUI();
-        });
-
-        // Upgrade Logic
-        function buyUpgrade(type) {
-            if (clicks >= costs[type]) {
-                clicks -= costs[type];
-                
-                if (type === 'click') {
-                    clickPower += 1;
-                    costs.click = Math.ceil(costs.click * 1.85); // Hard scaling
-                } else if (type === 'auto') {
-                    autoIncome += 2;
-                    costs.auto = Math.ceil(costs.auto * 1.95); // Very hard scaling
-                }
-                
-                updateUI();
-            }
         }
+    }
 
-        // Passive Income Loop
-        setInterval(() => {
-            if (autoIncome > 0) {
-                clicks += autoIncome;
-                updateUI();
-            }
-        }, 1000);
+    function applyData(d) {
+        energy = d.energy || 0;
+        clickPower = d.clickPower || 1;
+        cps = d.cps || 0;
+        d.upgradeCounts?.forEach((c, i) => { if(upgrades[i]) upgrades[i].count = c; });
+        d.upgradeCosts?.forEach((c, i) => { if(upgrades[i]) upgrades[i].cost = c; });
+        updateUI();
+    }
 
-        function updateUI() {
-            scoreEl.innerText = Math.floor(clicks);
-            
-            // Update Buttons Appearance
-            const upg1 = document.getElementById('upg-1');
-            const upg2 = document.getElementById('upg-2');
-            
-            upg1.className = clicks >= costs.click ? 'upgrade-card' : 'upgrade-card disabled';
-            upg2.className = clicks >= costs.auto ? 'upgrade-card' : 'upgrade-card disabled';
-            
-            document.getElementById('cost-click').innerText = `Cost: ${costs.click}`;
-            document.getElementById('cost-auto').innerText = `Cost: ${costs.auto}`;
+    function resetGame() {
+        if(confirm("Empty the fridge? Everything will be lost!")) { 
+            localStorage.clear(); 
+            location.reload(); 
         }
+    }
 
-        // Database Function
-        async function saveToSupabase() {
-            const username = prompt("Enter your name for the leaderboard:");
-            if (!username) return;
-
-            const { data, error } = await _supabase
-                .from('leaderboard')
-                .insert([{ username: username, clicks: Math.floor(clicks) }]);
-
-            if (error) {
-                console.error(error);
-                alert("Error saving: " + error.message);
-            } else {
-                alert("Score Recorded!");
-            }
+    // Loops
+    setInterval(() => {
+        if (cps > 0) {
+            energy += (cps / 10);
+            updateUI();
         }
-    </script>
+    }, 100);
+
+    // Save every 30 seconds
+    setInterval(cloudSave, 30000);
+
+    initShop();
+    cloudLoad();
+</script>
+
 </body>
 </html>
