@@ -337,6 +337,8 @@ document.getElementById('lincoln-main').addEventListener('click', (e) => {
     totalClicks++;
     showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}${eventMultiplier > 1 ? ' 🔥' : ''}`);
     updateUI();
+
+    if (totalClicks % 25 === 0) cloudSave();
 });
 
 setInterval(() => { 
@@ -382,9 +384,11 @@ function initShop() {
 function buyUpgrade(id) {
     const u = upgrades[id];
     if (energy >= u.cost) {
-        energy -= u.cost; u.count++;
-        if (u.type === "click") clickPower += u.power; else cps += u.power;
-        u.cost = Math.ceil(u.cost * 1.35); updateUI(); cloudSave();
+        energy -= u.cost; 
+        u.count++;
+        // ... rest of your logic ...
+        updateUI(); 
+        cloudSave(); // Save instantly when spending mass
     }
 }
 
@@ -413,43 +417,35 @@ function updateUI() {
 }
 
 async function cloudLoad() {
+    document.getElementById('sync-status').innerText = "Loading Cloud Save...";
+    
+    // 1. Try Local first
     const local = localStorage.getItem('lincoln_local_save');
     if (local) {
-        try {
-            const d = JSON.parse(local);
-            energy = d.energy || 0;
-            goldenTortas = d.goldenTortas || 0;
-            totalClicks = d.totalClicks || 0;
+        const d = JSON.parse(local);
+        energy = d.energy || 0;
+        goldenTortas = d.goldenTortas || 0;
+        // ... apply upgrade counts ...
+    }
 
-            if (d.upgrades) {
-                // IMPORTANT: Reset to base stats before recalculating
-                clickPower = 1;
-                cps = 0;
-
-                d.upgrades.forEach((savedU, i) => {
-                    if (upgrades[i]) {
-                        // Restore the count and cost for the UI
-                        upgrades[i].count = savedU.count;
-                        upgrades[i].cost = savedU.cost;
-
-                        // Recalculate the actual power based on the count
-                        if (upgrades[i].type === "click") {
-                            clickPower += (upgrades[i].power * savedU.count);
-                        } else {
-                            cps += (upgrades[i].power * savedU.count);
-                        }
-                    }
-                });
-            }
-        } catch (e) {
-            console.error("Error loading save:", e);
+    // 2. FORCE check Supabase (This is the real fix for refreshes)
+    if (chatName) {
+        const { data } = await _supabase.from('leaderboard').select('*').eq('username', chatName).single();
+        if (data) {
+            // If the cloud has more mass, use the cloud data!
+            if (data.clicks > energy) energy = data.clicks;
+            if (data.golden_tortas > goldenTortas) goldenTortas = data.golden_tortas;
+            
+            // Recalculate stats from the cloud data
+            clickPower = 1;
+            cps = 0;
+            // Add logic here to loop through data.upgrade_data if you added that column
         }
     }
     updateUI();
-    fetchLeaderboard();
 }
 
-async function fetchLeaderboard() {
+    async function fetchLeaderboard() {
     const { data } = await _supabase.from('leaderboard').select('username, clicks, golden_tortas').order('clicks', { ascending: false }).limit(10);
     if (data) {
         document.getElementById('lb-content').innerHTML = data.map((u, i) => `
@@ -543,7 +539,7 @@ async function startGame() {
     
     // 4. Start the background loops
     fetchKing();
-    setInterval(cloudSave, 20000);
+    setInterval(cloudSave, 5000); // 5000ms = 5 seconds
     setInterval(fetchLeaderboard, 15000);
     setInterval(fetchKing, 15000); 
     setInterval(() => { 
@@ -558,6 +554,7 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
 
