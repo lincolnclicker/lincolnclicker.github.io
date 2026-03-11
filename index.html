@@ -80,6 +80,7 @@
 
         .msg { margin-bottom: 8px; padding: 6px; border-radius: 6px; background: rgba(255,255,255,0.05); }
         .king-msg { border-left: 3px solid var(--gold); background: rgba(241, 196, 15, 0.1); }
+        .system-msg { border-left: 3px solid #ff4757; background: rgba(255, 71, 87, 0.1); font-style: italic; color: #ff4757; }
 
         #admin-panel {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -89,7 +90,6 @@
         .admin-input { width: 100%; padding: 10px; margin-bottom: 10px; background: #1e222b; border: 1px solid #444; color: white; box-sizing: border-box; border-radius: 5px; }
         .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
         
-        #achievement-banner { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--gold); color: black; padding: 12px 25px; border-radius: 30px; font-weight: bold; display: none; z-index: 2000; }
         .particle { position: fixed; pointer-events: none; animation: flyUp 0.8s forwards; font-weight: bold; color: var(--gold); z-index: 999; }
         @keyframes flyUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-120px); opacity: 0; } }
     </style>
@@ -108,11 +108,9 @@
         <button onclick="adminAction('ban')" style="background:#e74c3c; padding:10px; border:none; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Ban</button>
         <button onclick="adminAction('unban')" style="background:#2ecc71; padding:10px; border:none; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Unban</button>
     </div>
-    <button onclick="clearChatNow()" style="width:100%; background:#34495e; padding:8px; border:none; color:white; margin-top:10px; cursor:pointer; border-radius:5px; font-size:0.7rem;">Force Clear Chat DB</button>
+    <button onclick="clearChatNow()" style="width:100%; background:#ff4757; padding:10px; border:none; color:white; margin-top:10px; cursor:pointer; border-radius:5px; font-weight:bold;">FORCE CLEAR CHAT</button>
     <button onclick="document.getElementById('admin-panel').style.display='none'" style="width:100%; background:none; border:none; color:#aaa; cursor:pointer; margin-top:15px; font-size:0.8rem;">Close</button>
 </div>
-
-<div id="achievement-banner">Achievement Unlocked!</div>
 
 <div id="game-wrapper">
     <div class="clicker-section">
@@ -138,7 +136,7 @@
         <span>Global Chat</span>
         <span onclick="toggleChat()" style="cursor:pointer;">×</span>
     </div>
-    <div style="background: #000; padding: 5px; font-size: 0.7rem; color: var(--gold); text-align: center;" id="king-display">👑 Loading King...</div>
+    <div style="background: #000; padding: 5px; font-size: 0.7rem; color: var(--gold); text-align: center;" id="king-display">👑 King: Lincoln</div>
     <div id="chat-messages"></div>
     <div class="emote-bar">
         <button class="emote-btn" onclick="sendEmote('🍔')">🍔</button>
@@ -156,7 +154,7 @@
     const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuc3RybWJpb3NkeWtpcXl4Y3VhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDEzMDEsImV4cCI6MjA4ODc3NzMwMX0.hf6kiAniU-Hw1J3xuYPK_xlUO9BLR3d5vkEq41uf8co';
     const _supabase = supabase.createClient(DB_URL, DB_KEY);
 
-    let energy = 0, clickPower = 1, cps = 0, goldenTortas = 0, totalClicks = 0, unlockedAchievements = [];
+    let energy = 0, clickPower = 1, cps = 0, goldenTortas = 0, totalClicks = 0;
     let currentKing = "", chatName = localStorage.getItem('chat_name') || null;
     let isAdmin = false;
 
@@ -257,9 +255,7 @@
         if (data?.is_admin) isAdmin = true;
     }
 
-    async function openAdmin() {
-        if (isAdmin) document.getElementById('admin-panel').style.display = 'block';
-    }
+    function openAdmin() { if (isAdmin) document.getElementById('admin-panel').style.display = 'block'; }
 
     async function adminAction(type) {
         const target = document.getElementById('admin-target-user').value;
@@ -284,13 +280,17 @@
         }
     }
 
-    // AUTO-CLEAR CHAT EVERY 10 MINUTES (Admin Only triggers)
+    // UPDATED FORCE CLEAR: Bypasses "safe update" mode
     async function clearChatNow() {
         if (!isAdmin) return;
-        const { error } = await _supabase.from('global_chat').delete().neq('id', 0); // Deletes everything
+        const { error } = await _supabase.from('global_chat').delete().gt('id', 0);
         if (!error) {
             await _supabase.from('global_chat').insert([{ username: "SYSTEM", message: "--- Chat Auto-Cleared by Admin ---" }]);
             fetchMessages();
+            alert("Chat database purged.");
+        } else {
+            console.error(error);
+            alert("Clear failed. Check Supabase RLS.");
         }
     }
 
@@ -311,10 +311,10 @@
     function sendEmote(e) { sendChat(e); }
 
     async function fetchMessages() {
-        const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(25);
+        const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(30);
         if (data) {
             document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `
-                <div class="msg ${m.username === currentKing ? 'king-msg' : ''}">
+                <div class="msg ${m.username === 'SYSTEM' ? 'system-msg' : (m.username === currentKing ? 'king-msg' : '')}">
                     <b style="color:${m.username === 'SYSTEM' ? '#ff4757' : (m.username === currentKing ? 'var(--gold)' : 'var(--secondary)')}">${m.username}:</b> ${m.message}
                 </div>`).join('');
             const c = document.getElementById('chat-messages'); c.scrollTop = c.scrollHeight;
@@ -346,7 +346,7 @@
     }
 
     function resetGame() { 
-        if (confirm("Reset everything?")) { 
+        if (confirm("Hard reset? All Mass and Upgrade costs will be wiped!")) { 
             energy = 0; clickPower = 1; cps = 0; goldenTortas = 0; totalClicks = 0;
             upgrades = initialUpgrades.map(u => ({...u, count: 0}));
             initShop(); updateUI(); cloudSave(); 
@@ -358,7 +358,7 @@
     setInterval(fetchKing, 15000);
     setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
     
-    // Auto clear interval for Admin (Every 10 mins = 600000ms)
+    // Auto clear for Admin every 10 mins
     setInterval(() => { if(isAdmin) clearChatNow(); }, 600000);
 
     initShop(); cloudLoad();
