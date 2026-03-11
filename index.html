@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lincoln Clicker: Supabase Hardcore</title>
+    <title>Lincoln Clicker: Auto-Save Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -25,47 +25,6 @@
             user-select: none;
         }
 
-        /* Login Overlay */
-        #auth-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.95);
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-        }
-
-        .auth-box {
-            background: var(--gray);
-            padding: 40px;
-            border-radius: 12px;
-            text-align: center;
-            border: 2px solid var(--primary);
-            box-shadow: 0 0 20px rgba(183, 28, 28, 0.4);
-        }
-
-        input {
-            padding: 12px;
-            margin: 10px 0;
-            width: 250px;
-            background: #000;
-            border: 1px solid #444;
-            color: white;
-            border-radius: 4px;
-        }
-
-        button.auth-btn {
-            padding: 10px 20px;
-            margin: 5px;
-            cursor: pointer;
-            border: none;
-            border-radius: 4px;
-            font-weight: bold;
-        }
-
-        /* Game Layout */
         .game-section {
             flex: 1;
             display: flex;
@@ -117,24 +76,12 @@
         .up-cost { font-weight: bold; color: var(--gold); font-family: monospace; font-size: 1.1rem; }
         .up-name { font-size: 1rem; color: #fff; text-transform: uppercase; }
         
-        #user-tag { position: absolute; top: 15px; left: 15px; color: #666; font-size: 0.8rem; }
+        #save-status { position: absolute; bottom: 10px; left: 10px; color: #444; font-size: 0.7rem; }
     </style>
 </head>
 <body>
 
-    <div id="auth-overlay">
-        <div class="auth-box">
-            <h2 style="color:var(--primary)">LINCOLN CLICKER</h2>
-            <p>Cloud Save Required</p>
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="password" placeholder="Password">
-            <br>
-            <button class="auth-btn" onclick="handleAuth('signup')" style="background: #444; color: white;">SIGN UP</button>
-            <button class="auth-btn" onclick="handleAuth('login')" style="background: var(--primary); color: white;">LOGIN</button>
-        </div>
-    </div>
-
-    <div id="user-tag">OFFLINE</div>
+    <div id="save-status">Connecting to Cloud...</div>
 
     <div class="game-section">
         <div class="stats-container">
@@ -153,7 +100,6 @@
     </div>
 
     <script>
-        // --- YOUR ACTUAL CREDENTIALS ---
         const SB_URL = 'https://rvnufxaqvjcrvyzdvnxz.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ2bnVmeGFxdmpjcnZ5emR2bnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNTg4MTAsImV4cCI6MjA4ODgzNDgxMH0.WCLcP9mbxBF0dcDVXHG1xA0zGATjhsjv_UGFrtOyL8E';
         const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
@@ -161,9 +107,8 @@
         let mass = 0;
         let cps = 0;
         let cpc = 1;
-        let currentUser = null;
+        let userId = null;
 
-        // 15 TOTAL UPGRADES - NERFED & HARDCORE
         const upgradeData = [
             { name: "Fast Eat", cost: 20, power: 0.5, type: "click" },
             { name: "Small Torta", cost: 100, power: 0.2, type: "cps" },
@@ -182,19 +127,15 @@
             { name: "Ultimate Mass", cost: 200000000, power: 5000, type: "cps" }
         ];
 
-        async function handleAuth(type) {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            
-            const { data, error } = (type === 'signup') 
-                ? await supabaseClient.auth.signUp({ email, password })
-                : await supabaseClient.auth.signInWithPassword({ email, password });
-
-            if (error) alert(error.message);
-            else {
-                currentUser = data.user;
-                document.getElementById('auth-overlay').style.display = 'none';
-                document.getElementById('user-tag').innerText = `GRINDING AS: ${email}`;
+        // Anonymous Login logic
+        async function startSession() {
+            const { data, error } = await supabaseClient.auth.signInAnonymously();
+            if (error) {
+                document.getElementById('save-status').innerText = "Cloud Error: Local Play Only";
+                console.error(error);
+            } else {
+                userId = data.user.id;
+                document.getElementById('save-status').innerText = "Cloud Synced";
                 loadFromSupabase();
             }
         }
@@ -207,10 +148,7 @@
                 card.className = 'upgrade-card disabled';
                 card.id = `up-${i}`;
                 card.onclick = () => buyUpgrade(i);
-                card.innerHTML = `
-                    <div><span class="up-name">${up.name}</span></div>
-                    <div class="up-cost" id="cost-${i}">${up.cost}</div>
-                `;
+                card.innerHTML = `<div><span class="up-name">${up.name}</span></div><div class="up-cost" id="cost-${i}">${up.cost}</div>`;
                 list.appendChild(card);
             });
         }
@@ -226,7 +164,7 @@
                 mass -= up.cost;
                 if (up.type === "click") cpc += up.power;
                 else cps += up.power;
-                up.cost = Math.floor(up.cost * 1.95); // Extremely hard scaling
+                up.cost = Math.floor(up.cost * 1.95);
                 updateUI();
                 saveToSupabase();
             }
@@ -246,18 +184,19 @@
         }
 
         async function saveToSupabase() {
-            if (!currentUser) return;
-            await supabaseClient.from('profiles').upsert({
-                id: currentUser.id,
+            if (!userId) return;
+            const { error } = await supabaseClient.from('profiles').upsert({
+                id: userId,
                 mass: Math.floor(mass),
                 cps: cps,
                 cpc: cpc,
                 costs: upgradeData.map(u => u.cost)
             });
+            if (!error) document.getElementById('save-status').innerText = "Progress Saved: " + new Date().toLocaleTimeString();
         }
 
         async function loadFromSupabase() {
-            let { data } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
+            let { data } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
             if (data) {
                 mass = data.mass || 0;
                 cps = data.cps || 0;
@@ -268,9 +207,10 @@
         }
 
         setInterval(() => { if(cps > 0) { mass += (cps / 10); updateUI(); } }, 100);
-        setInterval(saveToSupabase, 10000); // Autosave every 10s
+        setInterval(saveToSupabase, 20000); // Autosave every 20s
 
         initShop();
+        startSession();
     </script>
 </body>
 </html>
