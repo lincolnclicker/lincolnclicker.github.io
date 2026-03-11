@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lincoln Clicker: Hardcore Mass</title>
+    <title>Lincoln Clicker: Supabase Hardcore</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary: #b71c1c;
@@ -24,6 +25,47 @@
             user-select: none;
         }
 
+        /* Login Overlay */
+        #auth-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .auth-box {
+            background: var(--gray);
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 20px rgba(183, 28, 28, 0.4);
+        }
+
+        input {
+            padding: 12px;
+            margin: 10px 0;
+            width: 250px;
+            background: #000;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 4px;
+        }
+
+        button.auth-btn {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        /* Game Layout */
         .game-section {
             flex: 1;
             display: flex;
@@ -33,146 +75,144 @@
             background: radial-gradient(circle, #222 0%, #000 100%);
         }
 
-        .stats-container {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        h1 { font-size: 4rem; margin: 0; color: var(--primary); text-shadow: 2px 2px 5px #000; }
-        .sub-stat { font-size: 1.1rem; color: #888; text-transform: uppercase; }
-
+        .stats-container { text-align: center; margin-bottom: 30px; }
+        h1 { font-size: 4.5rem; margin: 0; color: var(--primary); text-shadow: 2px 2px 10px #000; }
+        
         #lincoln-image {
             width: 320px;
             height: 320px;
             border-radius: 50%;
             object-fit: cover;
             cursor: pointer;
-            border: 6px solid var(--primary);
-            box-shadow: 0 0 40px rgba(183, 28, 28, 0.2);
+            border: 8px solid var(--primary);
+            box-shadow: 0 0 30px rgba(183, 28, 28, 0.3);
             transition: transform 0.05s;
         }
 
-        #lincoln-image:active { transform: scale(0.94); }
+        #lincoln-image:active { transform: scale(0.92); }
 
         .upgrade-section {
-            width: 380px;
+            width: 400px;
             background-color: var(--gray);
             overflow-y: auto;
             padding: 20px;
-            border-left: 2px solid #333;
+            border-left: 3px solid #333;
         }
 
         .upgrade-card {
             background: #252525;
-            border-radius: 4px;
-            padding: 12px;
-            margin-bottom: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
-            border-left: 4px solid transparent;
+            border-radius: 6px;
+            border-left: 5px solid transparent;
+            transition: 0.2s;
         }
 
-        .upgrade-card:hover { background: #2d2d2d; border-left-color: var(--primary); }
-        .upgrade-card.disabled { opacity: 0.3; cursor: not-allowed; }
-
-        .up-name { font-weight: bold; font-size: 1rem; color: #fff; display: block; }
-        .up-desc { font-size: 0.75rem; color: #777; }
-        .up-cost { font-weight: bold; color: var(--gold); font-family: monospace; }
-
-        #reset-btn {
-            margin-top: 20px;
-            background: transparent;
-            color: #444;
-            border: 1px solid #333;
-            padding: 8px;
-            cursor: pointer;
-            width: 100%;
-            font-size: 0.7rem;
-        }
+        .upgrade-card:hover:not(.disabled) { background: #333; border-left-color: var(--primary); }
+        .upgrade-card.disabled { opacity: 0.2; cursor: not-allowed; filter: grayscale(1); }
+        .up-cost { font-weight: bold; color: var(--gold); font-family: monospace; font-size: 1.1rem; }
+        .up-name { font-size: 1rem; color: #fff; text-transform: uppercase; }
+        
+        #user-tag { position: absolute; top: 15px; left: 15px; color: #666; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
+    <div id="auth-overlay">
+        <div class="auth-box">
+            <h2 style="color:var(--primary)">LINCOLN CLICKER</h2>
+            <p>Cloud Save Required</p>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password">
+            <br>
+            <button class="auth-btn" onclick="handleAuth('signup')" style="background: #444; color: white;">SIGN UP</button>
+            <button class="auth-btn" onclick="handleAuth('login')" style="background: var(--primary); color: white;">LOGIN</button>
+        </div>
+    </div>
+
+    <div id="user-tag">OFFLINE</div>
+
     <div class="game-section">
         <div class="stats-container">
             <h1 id="mass-display">0</h1>
-            <div class="sub-stat">Current Mass</div>
-            <div class="sub-stat" style="font-size: 0.9rem; margin-top:10px;">
-                CPS: <span id="cps-display">0</span> | Per Click: <span id="cpc-display">1</span>
+            <div style="color: #888; letter-spacing: 2px;">MASS</div>
+            <div style="margin-top:15px; font-weight: bold; color: #666;">
+                SEC: <span id="cps-display">0</span> | CLICK: <span id="cpc-display">1</span>
             </div>
         </div>
         <img src="IMG_0668.jpg" id="lincoln-image" alt="Lincoln" onclick="doClick()">
     </div>
 
     <div class="upgrade-section">
-        <h3 style="text-align:center; color: var(--primary); margin-top:0;">HARDCORE SHOP</h3>
+        <h3 style="text-align:center; color: var(--primary); margin-top:0; letter-spacing: 3px;">THE GRIND</h3>
         <div id="upgrade-list"></div>
-        <button id="reset-btn" onclick="resetGame()">WIPE DATA</button>
     </div>
 
     <script>
+        // --- YOUR ACTUAL CREDENTIALS ---
+        const SB_URL = 'https://rvnufxaqvjcrvyzdvnxz.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ2bnVmeGFxdmpjcnZ5emR2bnh6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNTg4MTAsImV4cCI6MjA4ODgzNDgxMH0.WCLcP9mbxBF0dcDVXHG1xA0zGATjhsjv_UGFrtOyL8E';
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+
         let mass = 0;
         let cps = 0;
         let cpc = 1;
+        let currentUser = null;
 
-        // NERFED VALUES: Upgrades give way less power, costs scale faster
+        // 15 TOTAL UPGRADES - NERFED & HARDCORE
         const upgradeData = [
-            { name: "Slow Eat", desc: "+0.5 per click", cost: 25, power: 0.5, type: "click" },
-            { name: "Cold Torta", desc: "+0.2 mass/sec", cost: 150, power: 0.2, type: "cps" },
-            { name: "Chud Glance", desc: "+2 per click", cost: 800, power: 2, type: "click" },
-            { name: "Bulking", desc: "+1.5 mass/sec", cost: 2500, power: 1.5, type: "cps" },
-            { name: "Chew More", desc: "+5 per click", cost: 10000, power: 5, type: "click" },
-            { name: "Torta Cart", desc: "+8 mass/sec", cost: 35000, power: 8, type: "cps" },
-            { name: "Hard Chud", desc: "+15 per click", cost: 120000, power: 15, type: "click" },
-            { name: "Obese Walk", desc: "+30 mass/sec", cost: 450000, power: 30, type: "cps" },
-            { name: "Grease Gulp", desc: "+50 per click", cost: 1500000, power: 50, type: "click" },
-            { name: "Torta Kitchen", desc: "+120 mass/sec", cost: 6000000, power: 120, type: "cps" },
-            { name: "Chud Legend", desc: "+200 per click", cost: 25000000, power: 200, type: "click" },
-            { name: "Massive Obese", desc: "+500 mass/sec", cost: 100000000, power: 500, type: "cps" },
-            { name: "God Torta", desc: "+1,000 per click", cost: 500000000, power: 1000, type: "click" },
-            { name: "Chud Aura", desc: "+2,500 mass/sec", cost: 2000000000, power: 2500, type: "cps" },
-            { name: "True Mass", desc: "+8,000 mass/sec", cost: 10000000000, power: 8000, type: "cps" }
+            { name: "Fast Eat", cost: 20, power: 0.5, type: "click" },
+            { name: "Small Torta", cost: 100, power: 0.2, type: "cps" },
+            { name: "Chud Glance", cost: 500, power: 1.5, type: "click" },
+            { name: "Obese Gains", cost: 1500, power: 1, type: "cps" },
+            { name: "Big Eat", cost: 5000, power: 4, type: "click" },
+            { name: "Torta Stand", cost: 12000, power: 5, type: "cps" },
+            { name: "Chud Focus", cost: 35000, power: 12, type: "click" },
+            { name: "Heavy Weight", cost: 85000, power: 20, type: "cps" },
+            { name: "Infinite Eat", cost: 200000, power: 40, type: "click" },
+            { name: "Torta Factory", cost: 500000, power: 75, type: "cps" },
+            { name: "Chud Legend", cost: 1200000, power: 150, type: "click" },
+            { name: "Massive Obese", cost: 4000000, power: 300, type: "cps" },
+            { name: "God Torta", cost: 15000000, power: 800, type: "click" },
+            { name: "Chud Aura", cost: 50000000, power: 2000, type: "cps" },
+            { name: "Ultimate Mass", cost: 200000000, power: 5000, type: "cps" }
         ];
 
-        function loadGame() {
-            const saved = localStorage.getItem('lincolnHardSave');
-            if (saved) {
-                const data = JSON.parse(saved);
-                mass = data.mass;
-                cps = data.cps;
-                cpc = data.cpc;
-                data.costs.forEach((c, i) => upgradeData[i].cost = c);
+        async function handleAuth(type) {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            const { data, error } = (type === 'signup') 
+                ? await supabaseClient.auth.signUp({ email, password })
+                : await supabaseClient.auth.signInWithPassword({ email, password });
+
+            if (error) alert(error.message);
+            else {
+                currentUser = data.user;
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('user-tag').innerText = `GRINDING AS: ${email}`;
+                loadFromSupabase();
             }
         }
 
-        function saveGame() {
-            const data = {
-                mass: mass,
-                cps: cps,
-                cpc: cpc,
-                costs: upgradeData.map(u => u.cost)
-            };
-            localStorage.setItem('lincolnHardSave', JSON.stringify(data));
-        }
-
-        function init() {
-            loadGame();
+        function initShop() {
             const list = document.getElementById('upgrade-list');
             list.innerHTML = '';
             upgradeData.forEach((up, i) => {
                 const card = document.createElement('div');
-                card.className = 'upgrade-card';
+                card.className = 'upgrade-card disabled';
                 card.id = `up-${i}`;
                 card.onclick = () => buyUpgrade(i);
                 card.innerHTML = `
-                    <div><span class="up-name">${up.name}</span><span class="up-desc">${up.desc}</span></div>
-                    <div class="up-cost" id="cost-${i}">${Math.floor(up.cost)}</div>
+                    <div><span class="up-name">${up.name}</span></div>
+                    <div class="up-cost" id="cost-${i}">${up.cost}</div>
                 `;
                 list.appendChild(card);
             });
-            updateUI();
         }
 
         function doClick() {
@@ -186,10 +226,9 @@
                 mass -= up.cost;
                 if (up.type === "click") cpc += up.power;
                 else cps += up.power;
-                // EXTREME SCALING: 1.9x cost jump
-                up.cost = Math.floor(up.cost * 1.9);
+                up.cost = Math.floor(up.cost * 1.95); // Extremely hard scaling
                 updateUI();
-                saveGame();
+                saveToSupabase();
             }
         }
 
@@ -199,21 +238,39 @@
             document.getElementById('cpc-display').innerText = cpc.toFixed(1);
             upgradeData.forEach((up, i) => {
                 const btn = document.getElementById(`up-${i}`);
-                document.getElementById(`cost-${i}`).innerText = Math.floor(up.cost).toLocaleString();
-                mass >= up.cost ? btn.classList.remove('disabled') : btn.classList.add('disabled');
+                if (btn) {
+                    document.getElementById(`cost-${i}`).innerText = Math.floor(up.cost).toLocaleString();
+                    mass >= up.cost ? btn.classList.remove('disabled') : btn.classList.add('disabled');
+                }
             });
         }
 
-        function resetGame() {
-            if(confirm("Confirm hard reset?")) {
-                localStorage.removeItem('lincolnHardSave');
-                location.reload();
-            }
+        async function saveToSupabase() {
+            if (!currentUser) return;
+            await supabaseClient.from('profiles').upsert({
+                id: currentUser.id,
+                mass: Math.floor(mass),
+                cps: cps,
+                cpc: cpc,
+                costs: upgradeData.map(u => u.cost)
+            });
         }
 
-        setInterval(() => { mass += (cps / 10); updateUI(); }, 100);
-        setInterval(saveGame, 10000); // Save every 10s
-        init();
+        async function loadFromSupabase() {
+            let { data } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
+            if (data) {
+                mass = data.mass || 0;
+                cps = data.cps || 0;
+                cpc = data.cpc || 1;
+                if (data.costs) data.costs.forEach((c, i) => { if(upgradeData[i]) upgradeData[i].cost = c; });
+            }
+            updateUI();
+        }
+
+        setInterval(() => { if(cps > 0) { mass += (cps / 10); updateUI(); } }, 100);
+        setInterval(saveToSupabase, 10000); // Autosave every 10s
+
+        initShop();
     </script>
 </body>
 </html>
