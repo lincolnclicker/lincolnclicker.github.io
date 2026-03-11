@@ -310,34 +310,42 @@ function updatePlayerCount(count) {
     async function changeName() {
     let newName = prompt("Enter your new username:", chatName || "");
     
-    // 1. Validation
     if (!newName) return;
     newName = newName.trim();
+    
+    // Don't do anything if they didn't actually change it
     if (newName === chatName) return;
-    if (newName.length < 2 || newName.length > 15) return alert("Name must be 2-15 characters.");
+    
+    // Basic validation
+    if (newName.length < 2 || newName.length > 15) {
+        return alert("Name must be 2-15 characters.");
+    }
 
     try {
-        // 2. Update the Database (Leaderboard)
-        // This moves your score and admin status to the new name
+        // We UPDATE the current row where the username equals the old name
         const { error } = await _supabase
             .from('leaderboard')
-            .update({ username: newName })
+            .update({ username: newName }) 
             .eq('username', chatName);
 
         if (error) {
-            console.error("DB Error:", error);
-            return alert("That name might be taken or the database is busy.");
+            // Error code 23505 is the Supabase/Postgres code for "Unique Violation"
+            if (error.code === '23505') {
+                return alert("Sorry, that username is already taken! Try something else.");
+            }
+            console.error("Update Error:", error);
+            return alert("Could not update name. Please try again.");
         }
 
-        // 3. Update Local Storage
+        // Success! Update local memory
+        const oldName = chatName;
         chatName = newName;
         localStorage.setItem('chat_name', chatName);
         
-        // 4. Force a Save and Reload
-        // We reload so the game recognizes the new name for Admin checks
-        await cloudSave(); 
-        alert("Name updated! Refreshing to sync...");
-        location.reload();
+        alert(`Account updated! You are now ${newName}.`);
+        
+        // Refresh the leaderboard to show your new name instantly
+        fetchLeaderboard();
 
     } catch (err) {
         console.error("Change Name Failed:", err);
@@ -581,6 +589,7 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
 
