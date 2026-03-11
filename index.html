@@ -3,130 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liam's Projects</title>
+    <title>Lincoln Clicker</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #0a0a0a; color: #fff; margin: 0; display: flex; flex-direction: column; align-items: center; }
-        header { padding: 40px 20px; text-align: center; }
-        h1 { font-size: 3rem; color: #00ffcc; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0; }
-        .subtitle { color: #888; margin-top: 5px; }
-        
-        .project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; width: 90%; max-width: 1200px; padding: 20px; }
-        
-        .project-card { 
-            background: #1a1a1a; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            transition: 0.3s; 
-            cursor: pointer; 
-            border: 1px solid #333; 
-            text-decoration: none; 
-            color: inherit; 
-            position: relative;
-        }
-
-        .project-card:hover:not(.locked) { 
-            transform: translateY(-8px); 
-            box-shadow: 0 10px 30px rgba(0, 255, 204, 0.2); 
-            border-color: #00ffcc; 
-        }
-
-        /* Locked State Styles */
-        .project-card.locked {
-            cursor: not-allowed;
-            filter: grayscale(0.8);
-            opacity: 0.7;
-        }
-
-        .lock-overlay {
-            display: none;
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+        body {
+            background-color: #0f0f0f;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            z-index: 5;
-            color: #ff4757;
-            font-weight: bold;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
         }
 
-        .locked .lock-overlay { display: flex; }
+        h1 { color: #ff3e3e; text-transform: uppercase; letter-spacing: 2px; }
+        
+        #game-container {
+            background: #1a1a1a;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            text-align: center;
+        }
 
-        .preview-box { height: 150px; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; }
-        .project-info { padding: 15px; text-align: center; }
-        .project-info h2 { margin: 0; font-size: 1.2rem; color: #00ffcc; }
-        .project-info p { color: #888; font-size: 0.8rem; margin-top: 8px; }
+        #lincoln-img {
+            width: 250px;
+            height: auto;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: transform 0.05s;
+            user-select: none;
+            -webkit-user-drag: none;
+            border: 4px solid #333;
+        }
+
+        #lincoln-img:active { transform: scale(0.92); border-color: #ff3e3e; }
+
+        .score-display { font-size: 2rem; font-weight: bold; margin: 20px 0; color: #00ffcc; }
+
+        .upgrades-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .upgrade-card {
+            background: #252525;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .upgrade-card:hover:not(.disabled) { background: #333; border-color: #00ffcc; }
+        .upgrade-card.disabled { opacity: 0.4; cursor: not-allowed; }
+        
+        .cost { display: block; color: #ffbd2e; font-size: 0.9rem; margin-top: 5px; }
+
+        #save-btn {
+            margin-top: 30px;
+            padding: 10px 20px;
+            background: #00ffcc;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Liam's Projects</h1>
-        <p class="subtitle">Interactive Portfolio & Game Lab</p>
-    </header>
+    <div id="game-container">
+        <h1>Lincoln Clicker</h1>
+        <p style="font-size: 0.8rem; opacity: 0.6;">(The non-presidential edition)</p>
 
-    <main class="project-grid">
-        <a href="flappy.html" class="project-card">
-            <div class="preview-box" style="background: #70c5ce;">🐦</div>
-            <div class="project-info"><h2>Flappy Master</h2><p>Arcade bird survival.</p></div>
-        </a>
+        <div class="score-display" id="score">0</div>
+        
+        <img src="IMG_0668.jpg" id="lincoln-img" alt="Lincoln">
 
-        <a href="neon-jump.html" class="project-card">
-            <div class="preview-box" style="background: #111; color: #ff00ff;">⚡</div>
-            <div class="project-info"><h2>Neon Jump</h2><p>Endless neon runner.</p></div>
-        </a>
-
-        <a href="emerald.html" class="project-card pc-only" id="game-emerald">
-            <div class="lock-overlay">
-                <span>🔒 PC ONLY</span>
-                <span style="font-size: 0.7rem;">Keyboard Required</span>
+        <div class="upgrades-grid">
+            <div id="upg-1" class="upgrade-card disabled" onclick="buyUpgrade('click')">
+                <strong>Heavy Fingers</strong>
+                <span class="cost" id="cost-click">Cost: 25</span>
+                <small>+1 per click</small>
             </div>
-            <div class="preview-box" style="background: #5d9948;">🏰</div>
-            <div class="project-info"><h2>Emerald Chronicles</h2><p>Retro RPG adventure.</p></div>
-        </a>
-
-        <a href="gravity-flip.html" class="project-card pc-only" id="game-gravity">
-            <div class="lock-overlay">
-                <span>🔒 PC ONLY</span>
-                <span style="font-size: 0.7rem;">Keyboard Required</span>
+            <div id="upg-2" class="upgrade-card disabled" onclick="buyUpgrade('auto')">
+                <strong>Lincoln Bot</strong>
+                <span class="cost" id="cost-auto">Cost: 100</span>
+                <small>+2 per second</small>
             </div>
-            <div class="preview-box" style="background: #0f0f13; border-bottom: 2px solid #4af;">🚀</div>
-            <div class="project-info"><h2>Gravity Flip</h2><p>High-speed physics flipping.</p></div>
-        </a>
+        </div>
 
-        <a href="benjamin-clicker.html" class="project-card">
-            <div class="preview-box" style="background: #2a2a2a; border-bottom: 2px solid #ff4500;">🖱️</div>
-            <div class="project-info"><h2>Benjamin Clicker</h2><p>Click to build an empire.</p></div>
-        </a>
-    </main>
-
-    <footer style="margin: 40px; color: #444; font-size: 0.8rem;">
-        Made by Liam
-    </footer>
+        <button id="save-btn" onclick="saveToSupabase()">Submit to Leaderboard</button>
+    </div>
 
     <script>
-        // Simple Device Detection
-        function checkDevice() {
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 0);
-            
-            if (isMobile) {
-                // Find all games marked as pc-only
-                const pcGames = document.querySelectorAll('.pc-only');
+        // Supabase Initialization
+        const { createClient } = supabase;
+        const _supabase = createClient(
+            'https://cnstrmbiosdykiqyxcua.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuc3RybWJpb3NkeWtpcXl4Y3VhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDEzMDEsImV4cCI6MjA4ODc3NzMwMX0.hf6kiAniU-Hw1J3xuYPK_xlUO9BLR3d5vkEq41uf8co'
+        );
+
+        let clicks = 0;
+        let clickPower = 1;
+        let autoIncome = 0;
+        
+        let costs = {
+            click: 25,
+            auto: 100
+        };
+
+        const scoreEl = document.getElementById('score');
+        const imgEl = document.getElementById('lincoln-img');
+
+        // Click Logic
+        imgEl.addEventListener('click', () => {
+            clicks += clickPower;
+            updateUI();
+        });
+
+        // Upgrade Logic
+        function buyUpgrade(type) {
+            if (clicks >= costs[type]) {
+                clicks -= costs[type];
                 
-                pcGames.forEach(game => {
-                    game.classList.add('locked');
-                    // Disable the link so they can't click it
-                    game.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        alert("This game requires a keyboard and is only available on Computer.");
-                    });
-                });
+                if (type === 'click') {
+                    clickPower += 1;
+                    costs.click = Math.ceil(costs.click * 1.85); // Hard scaling
+                } else if (type === 'auto') {
+                    autoIncome += 2;
+                    costs.auto = Math.ceil(costs.auto * 1.95); // Very hard scaling
+                }
+                
+                updateUI();
             }
         }
 
-        // Run the check when the page loads
-        window.onload = checkDevice;
-    </script>
+        // Passive Income Loop
+        setInterval(() => {
+            if (autoIncome > 0) {
+                clicks += autoIncome;
+                updateUI();
+            }
+        }, 1000);
 
+        function updateUI() {
+            scoreEl.innerText = Math.floor(clicks);
+            
+            // Update Buttons Appearance
+            const upg1 = document.getElementById('upg-1');
+            const upg2 = document.getElementById('upg-2');
+            
+            upg1.className = clicks >= costs.click ? 'upgrade-card' : 'upgrade-card disabled';
+            upg2.className = clicks >= costs.auto ? 'upgrade-card' : 'upgrade-card disabled';
+            
+            document.getElementById('cost-click').innerText = `Cost: ${costs.click}`;
+            document.getElementById('cost-auto').innerText = `Cost: ${costs.auto}`;
+        }
+
+        // Database Function
+        async function saveToSupabase() {
+            const username = prompt("Enter your name for the leaderboard:");
+            if (!username) return;
+
+            const { data, error } = await _supabase
+                .from('leaderboard')
+                .insert([{ username: username, clicks: Math.floor(clicks) }]);
+
+            if (error) {
+                console.error(error);
+                alert("Error saving: " + error.message);
+            } else {
+                alert("Score Recorded!");
+            }
+        }
+    </script>
 </body>
 </html>
