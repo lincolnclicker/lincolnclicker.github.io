@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lincoln Clicker: 20-Trophy Edition</title>
+    <title>Lincoln Clicker: Admin Fixed Edition</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -77,12 +77,14 @@
 
 <div id="admin-panel">
     <h3 style="margin-top:0; color:var(--gold); text-align:center;">ADMIN OVERRIDE</h3>
-    <input type="text" id="admin-target" class="admin-input" placeholder="Username">
-    <input type="number" id="admin-amount" class="admin-input" placeholder="Amount (Mass/Min)">
-    <button class="admin-btn" style="background:var(--success);" onclick="doAdminAction('mass')">Give Mass</button>
+    <input type="text" id="admin-target" class="admin-input" placeholder="Target Username">
+    <input type="number" id="admin-amount" class="admin-input" placeholder="Amount (Mass or Mins)">
+    
+    <button class="admin-btn" style="background:var(--success); color:#111;" onclick="doAdminAction('mass')">Inject Mass</button>
     <button class="admin-btn" style="background:#ffa502;" onclick="doAdminAction('timeout')">Timeout (Mins)</button>
-    <button class="admin-btn" style="background:var(--danger); color:white;" onclick="doAdminAction('ban')">Ban</button>
-    <button class="admin-btn" style="background:#2ed573; color:white;" onclick="doAdminAction('unban')">Unban</button>
+    <button class="admin-btn" style="background:var(--danger); color:white;" onclick="doAdminAction('ban')">Permaban</button>
+    <button class="admin-btn" style="background:#2ed573; color:white;" onclick="doAdminAction('unban')">Unban/Clear</button>
+    
     <button class="admin-btn" style="background:#57606f; color:white; margin-top:10px;" onclick="document.getElementById('admin-panel').style.display='none'">Close</button>
 </div>
 
@@ -99,9 +101,8 @@
 
         <div id="view-trophies" class="view-overlay">
             <h2 style="color:var(--gold)">🏆 Trophy Room</h2>
-            <p style="font-size:0.8rem; color:#888;">Every trophy adds +2% to your total power!</p>
             <div id="achievement-list"></div>
-            <button onclick="closeOverlays(); setActiveNav(document.getElementById('nav-game'))" style="padding:10px; width:100%; cursor:pointer;">Back to Game</button>
+            <button onclick="closeOverlays(); setActiveNav(document.getElementById('nav-game'))" style="padding:15px; width:100%; cursor:pointer; margin-top:20px;">Back</button>
         </div>
     </div>
 
@@ -116,8 +117,8 @@
     <div style="background:var(--primary); padding:12px; font-weight:bold;">Global Chat</div>
     <div id="chat-msgs"></div>
     <div style="padding:10px; display:flex; gap:5px; background:#111;">
-        <input type="text" id="chat-input" placeholder="Message..." onkeypress="if(event.key==='Enter') sendChat()" style="flex:1; background:#333; color:white; border:none; padding:5px;">
-        <button onclick="sendChat()" style="background:var(--primary); border:none; color:white; padding:0 10px;">Send</button>
+        <input type="text" id="chat-input" placeholder="Message..." onkeypress="if(event.key==='Enter') sendChat()" style="flex:1; background:#333; color:white; border:none; padding:8px;">
+        <button onclick="sendChat()" style="background:var(--primary); border:none; color:white; padding:0 15px;">Send</button>
     </div>
 </div>
 
@@ -136,7 +137,6 @@
     let energy = 0, clickPower = 1, cps = 0, totalClicks = 0, isAdmin = false;
     let chatName = localStorage.getItem('chat_name') || null;
 
-    // ALL 15 UPGRADES
     const upgrades = [
         { id: 0, name: "Extra Torta", cost: 15, power: 0.1, type: "click", count: 0 },
         { id: 1, name: "Chud Burger", cost: 100, power: 0.3, type: "cps", count: 0 },
@@ -155,7 +155,6 @@
         { id: 14, name: "The Final Chud-down", cost: 2500000000, power: 120000, type: "cps", count: 0 }
     ];
 
-    // 20 TROPHIES
     const achievements = [
         { id: 1, name: "Kitchen Hand", req: 10, type: 'click' },
         { id: 2, name: "Torta Taster", req: 50, type: 'click' },
@@ -180,24 +179,31 @@
     ];
     let unlockedAchievs = JSON.parse(localStorage.getItem('lincoln_achievs')) || [];
 
-    // System Logic
-    function openOverlay(id) { closeOverlays(); document.getElementById('view-' + id).classList.add('active'); }
-    function closeOverlays() { document.querySelectorAll('.view-overlay').forEach(v => v.classList.remove('active')); }
-    function setActiveNav(el) { document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
-
-    // Admin Panel
+    // FIXED ADMIN LOGIC
     async function doAdminAction(type) {
-        const target = document.getElementById('admin-target').value;
+        const target = document.getElementById('admin-target').value.trim();
         const amount = parseFloat(document.getElementById('admin-amount').value) || 0;
-        if(!target) return alert("Missing Username");
-        if(type==='mass') {
-            const { data } = await _supabase.from('leaderboard').select('clicks').eq('username', target).maybeSingle();
-            await _supabase.from('leaderboard').update({ clicks: (data?.clicks || 0) + amount }).eq('username', target);
-        } else if(type==='timeout') {
-            await _supabase.from('leaderboard').update({ timeout_until: new Date(Date.now() + amount*60000).toISOString() }).eq('username', target);
-        } else if(type==='ban') await _supabase.from('leaderboard').update({ is_banned: true }).eq('username', target);
-        else if(type==='unban') await _supabase.from('leaderboard').update({ is_banned: false, timeout_until: null }).eq('username', target);
-        alert("Action Executed.");
+
+        if (!target) return alert("Target Username required.");
+
+        try {
+            if (type === 'mass') {
+                const { data } = await _supabase.from('leaderboard').select('clicks').eq('username', target).maybeSingle();
+                const newMass = (data?.clicks || 0) + amount;
+                await _supabase.from('leaderboard').update({ clicks: newMass }).eq('username', target);
+                alert(`SUCCESS: Added ${amount} to ${target}`);
+            } else if (type === 'timeout') {
+                const until = new Date(Date.now() + amount * 60000).toISOString();
+                await _supabase.from('leaderboard').update({ timeout_until: until }).eq('username', target);
+                alert(`SUCCESS: ${target} timed out for ${amount}m`);
+            } else if (type === 'ban') {
+                await _supabase.from('leaderboard').update({ is_banned: true }).eq('username', target);
+                alert(`SUCCESS: ${target} banned.`);
+            } else if (type === 'unban') {
+                await _supabase.from('leaderboard').update({ is_banned: false, timeout_until: null }).eq('username', target);
+                alert(`SUCCESS: ${target} cleared.`);
+            }
+        } catch (e) { alert("Error connecting to DB."); }
     }
 
     async function checkAdmin() {
@@ -205,6 +211,7 @@
         const { data } = await _supabase.from('leaderboard').select('is_admin').eq('username', chatName).maybeSingle();
         if (data?.is_admin) isAdmin = true;
     }
+
     function openAdmin() { if(isAdmin) document.getElementById('admin-panel').style.display='block'; }
 
     // Core Gameplay
@@ -261,14 +268,15 @@
         document.getElementById('achievement-list').innerHTML = achievements.map(a => `
             <div class="trophy-card ${unlockedAchievs.includes(a.id) ? 'unlocked' : ''}">
                 <strong>${unlockedAchievs.includes(a.id) ? '🏆' : '🔒'} ${a.name}</strong><br>
-                <small>${unlockedAchievs.includes(a.id) ? 'Power Multiplier Active' : '???'}</small>
+                <small>${unlockedAchievs.includes(a.id) ? 'Multiplier Unlocked' : 'Locked'}</small>
             </div>`).join('');
     }
 
+    // Name System
     async function changeName() {
         const old = chatName;
         const n = prompt("New Name?");
-        if(!n || n === old) return;
+        if(!n || n.trim() === old) return;
         if(old) await _supabase.from('leaderboard').delete().eq('username', old);
         chatName = n.trim();
         localStorage.setItem('chat_name', chatName);
@@ -279,9 +287,10 @@
         if (!chatName) return;
         const save = { energy, clickPower, cps, totalClicks, upgrades: upgrades.map(u => ({id:u.id, count:u.count, cost:u.cost})) };
         localStorage.setItem('lincoln_local_save', JSON.stringify(save));
-        await _supabase.from('leaderboard').upsert({ username: chatName, clicks: Math.floor(energy) });
+        await _supabase.from('leaderboard').upsert({ username: chatName, clicks: Math.floor(energy) }, { onConflict: 'username' });
     }
 
+    // Chat logic
     function toggleChat() {
         const c = document.getElementById('chat-box');
         c.style.display = (c.style.display === 'flex') ? 'none' : 'flex';
@@ -291,7 +300,7 @@
     async function sendChat() {
         if (!chatName) { chatName = prompt("Name?"); localStorage.setItem('chat_name', chatName); }
         const { data: user } = await _supabase.from('leaderboard').select('is_banned, timeout_until').eq('username', chatName).maybeSingle();
-        if (user?.is_banned || (user?.timeout_until && new Date(user.timeout_until) > new Date())) return alert("Access Denied.");
+        if (user?.is_banned || (user?.timeout_until && new Date(user.timeout_until) > new Date())) return alert("Moderation Action Active.");
         const input = document.getElementById('chat-input');
         if (!input.value) return;
         await _supabase.from('global_chat').insert([{ username: chatName, message: input.value }]);
@@ -318,11 +327,14 @@
         updateUI(); checkAdmin();
     }
 
-    function resetGame() { if(confirm("Reset?")) { localStorage.clear(); location.reload(); } }
+    function resetGame() { if(confirm("Reset Everything?")) { localStorage.clear(); location.reload(); } }
 
     setInterval(() => { let mult = 1 + (unlockedAchievs.length * 0.02); energy += (cps * mult / 10); updateUI(); }, 100);
     setInterval(cloudSave, 20000);
     loadGame();
+    function openOverlay(id) { closeOverlays(); document.getElementById('view-' + id).classList.add('active'); }
+    function closeOverlays() { document.querySelectorAll('.view-overlay').forEach(v => v.classList.remove('active')); }
+    function setActiveNav(el) { document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
 </script>
 </body>
 </html>
