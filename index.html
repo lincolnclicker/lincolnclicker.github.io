@@ -265,7 +265,7 @@ function handleNewEvent(event) {
     const oldNotice = document.getElementById('event-notice');
     if (oldNotice) oldNotice.remove();
 
-    const expiry = new Date(event.expires_at + (event.expires_at.endsWith('Z') ? '' : 'Z')).getTime();
+    const expiry = new Date(event.expires_at.replace(' ', 'T')).getTime();
     
     // Create the notice element
     const notice = document.createElement('div');
@@ -530,4 +530,5 @@ startGame();
 </script>
 </body>
 </html>
+
 
