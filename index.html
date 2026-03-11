@@ -467,9 +467,36 @@ function updateUI() {
 
 async function cloudSave() {
     if (!chatName) return;
-    const saveObj = { energy, clickPower, cps, goldenTortas, totalClicks, upgrades: upgrades.map(u => ({id: u.id, count: u.count, cost: u.cost})) };
+
+    // 1. Save to the browser (Local Storage)
+    const saveObj = { 
+        energy, 
+        clickPower, 
+        cps, 
+        goldenTortas, 
+        totalClicks, 
+        upgrades: upgrades.map(u => ({id: u.id, count: u.count, cost: u.cost})) 
+    };
     localStorage.setItem('lincoln_local_save', JSON.stringify(saveObj));
-    await _supabase.from('leaderboard').upsert({ username: chatName, clicks: energy, golden_tortas: goldenTortas }, { onConflict: 'username' });
+
+    // 2. Save to the Database (Supabase)
+    // We use .update() and .eq() to make sure we only touch YOUR row
+    const { error } = await _supabase
+        .from('leaderboard')
+        .update({ 
+            clicks: energy, 
+            golden_tortas: goldenTortas 
+        })
+        .eq('username', chatName);
+
+    if (error) {
+        console.error("Cloud Save Error:", error);
+        document.getElementById('sync-status').innerText = "Sync Error!";
+        document.getElementById('sync-status').style.color = "#ff4757";
+    } else {
+        document.getElementById('sync-status').innerText = "Sync Active";
+        document.getElementById('sync-status').style.color = "#777";
+    }
 }
 
 const GAME_VERSION = "2.0"; // Change this whenever you want to reset everyone
@@ -478,23 +505,34 @@ const GAME_VERSION = "2.0"; // Change this whenever you want to reset everyone
     const local = localStorage.getItem('lincoln_local_save');
     const savedVersion = localStorage.getItem('game_version');
 
-    // If the versions don't match, ignore the old save and force a name pick
-    if (!local || savedVersion !== GAME_VERSION) {
-        localStorage.clear(); // Wipes old mass and old name
-        localStorage.setItem('game_version', GAME_VERSION);
+    // If version is old or missing, wipe everything and stop loading
+    if (savedVersion !== GAME_VERSION) {
+        localStorage.clear(); 
         energy = 0;
         goldenTortas = 0;
-        chatName = null; // This forces the prompt to appear
+        chatName = null;
         updateUI();
-        return;
+        return; 
     }
 
-    const d = JSON.parse(local);
-    energy = d.energy || 0;
-    clickPower = d.clickPower || 1;
-    cps = d.cps || 0;
-    goldenTortas = d.goldenTortas || 0;
-    totalClicks = d.totalClicks || 0;
+    if (local) {
+        const d = JSON.parse(local);
+        energy = d.energy || 0;
+        clickPower = d.clickPower || 1;
+        cps = d.cps || 0;
+        goldenTortas = d.goldenTortas || 0;
+        totalClicks = d.totalClicks || 0;
+        // Load upgrades if they exist
+        if (d.upgrades) {
+            d.upgrades.forEach(savedU => {
+                const u = upgrades.find(up => up.id === savedU.id);
+                if (u) {
+                    u.count = savedU.count;
+                    u.cost = savedU.cost;
+                }
+            });
+        }
+    }
     updateUI();
 }
 
@@ -590,10 +628,8 @@ function resetGame() { if (confirm("Reset everything?")) { localStorage.clear();
 
     async function startGame() {
     initShop();
-    await cloudLoad(); // This wipes local storage if version is old
+    await cloudLoad(); 
 
-    // --- REGISTRATION LOOP ---
-    // If the user has no name (due to a reset or being new), force them to pick one
     if (!chatName) {
         let nameAccepted = false;
         while (!nameAccepted) {
@@ -606,38 +642,31 @@ function resetGame() { if (confirm("Reset everything?")) { localStorage.clear();
 
             let chosenName = input.trim();
 
-            // Try to "Reserve" the name in the database
             const { error } = await _supabase
                 .from('leaderboard')
                 .insert([{ username: chosenName, clicks: 0, golden_tortas: 0 }]);
 
             if (error) {
                 if (error.code === '23505') {
-                    alert("That name is already taken by someone else! Pick another.");
+                    alert("That name is already taken! Pick another.");
                 } else {
-                    alert("Database error. Please try again.");
+                    alert("Error: " + error.message);
                 }
             } else {
-                // Success! Save it locally
+                // SUCCESS: Save everything to local storage
                 chatName = chosenName;
                 localStorage.setItem('chat_name', chatName);
+                localStorage.setItem('game_version', GAME_VERSION); // MARK AS UPDATED
                 nameAccepted = true;
             }
         }
     }
-    // --- END REGISTRATION ---
 
-    // Connect real-time listeners
+    // Connect real-time and start intervals
     _supabase.channel('game-events').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, (p) => handleNewEvent(p.new)).subscribe();
     
-    const { data } = await _supabase.from('game_events').select('*').gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false }).limit(1);
-    if (data && data[0]) handleNewEvent(data[0]);
-
-    // Timers
     setInterval(cloudSave, 20000); 
     setInterval(fetchLeaderboard, 15000);
-    setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
-    
     fetchLeaderboard();
 }
 
@@ -645,6 +674,7 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
 
