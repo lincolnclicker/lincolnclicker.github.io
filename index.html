@@ -35,6 +35,12 @@
         .left-column { flex: 1; display: flex; flex-direction: column; gap: 20px; }
         .clicker-section { text-align: center; display: flex; flex-direction: column; align-items: center; }
 
+        #player-count-badge:hover {
+    transform: scale(1.05);
+    background: var(--primary) !important;
+    color: white;
+}
+        
         #score-panel {
             background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 20px;
             border: 3px solid var(--primary); width: 100%;
@@ -122,7 +128,19 @@
 </head>
 <body class="bg-kitchen">
 
-<div id="admin-trigger" onclick="openAdmin()" style="position:fixed; top:0; right:0; width:60px; height:60px; cursor:pointer; opacity:0.01; z-index:9999;"></div>
+<div id="player-count-badge" onclick="showPlayerStats()" style="position: fixed; top: 15px; left: 15px; background: rgba(0,0,0,0.8); padding: 8px 15px; border-radius: 10px; border: 2px solid var(--primary); cursor: pointer; z-index: 10001; font-size: 0.9rem; transition: 0.2s;">
+    👥 Players Online: <span id="online-count" style="color: var(--success);">1</span>
+</div>
+
+<div id="stats-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index: 10002; backdrop-filter: blur(10px);">
+    <div style="max-width: 600px; margin: 50px auto; background: #2f3542; border-radius: 20px; border: 3px solid var(--primary); padding: 25px; position: relative; max-height: 80vh; overflow-y: auto;">
+        <span onclick="document.getElementById('stats-modal').style.display='none'" style="position:absolute; top:15px; right:20px; font-size:2rem; cursor:pointer;">×</span>
+        <h2 style="color:var(--gold); margin-top:0;">Global Population</h2>
+        <div id="full-stats-list"></div>
+    </div>
+</div>
+    
+    <div id="admin-trigger" onclick="openAdmin()" style="position:fixed; top:0; right:0; width:60px; height:60px; cursor:pointer; opacity:0.01; z-index:9999;"></div>
 
 <div id="admin-panel">
     <h3 style="margin-top:0; color:var(--gold); text-align:center;">ADMIN CONTROL</h3>
@@ -221,7 +239,42 @@ let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
 // --- FUNCTIONS ---
 
-// 1. Update the openAdmin function to check the database
+// Function to show the popup and fetch fresh data
+async function showPlayerStats() {
+    const modal = document.getElementById('stats-modal');
+    const list = document.getElementById('full-stats-list');
+    modal.style.display = 'block';
+    list.innerHTML = "Gathering data...";
+
+    // Fetch everyone from the leaderboard
+    const { data, error } = await _supabase
+        .from('leaderboard')
+        .select('username, clicks, golden_tortas, admin')
+        .order('clicks', { ascending: false });
+
+    if (data) {
+        list.innerHTML = data.map(p => `
+            <div style="display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid rgba(255,255,255,0.1); align-items:center;">
+                <div>
+                    <span style="font-weight:bold; color:${p.admin ? 'var(--gold)' : 'white'}">
+                        ${p.admin ? '👑 ' : ''}${p.username}
+                    </span>
+                </div>
+                <div style="text-align:right; font-size:0.85rem;">
+                    <div>Mass: ${Math.floor(p.clicks).toLocaleString()}</div>
+                    <div style="color:var(--gold)">Tortas: ${p.golden_tortas}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+}
+
+// Update the player count badge (Call this inside fetchLeaderboard)
+function updatePlayerCount(count) {
+    document.getElementById('online-count').innerText = count;
+}
+    
+    // 1. Update the openAdmin function to check the database
 
     
     async function prestige() {
@@ -488,12 +541,22 @@ async function sendChat(emoteMsg = null) {
 function sendEmote(char) { sendChat(char); }
 
 async function fetchLeaderboard() {
-    const { data } = await _supabase.from('leaderboard').select('username, clicks, golden_tortas').order('clicks', { ascending: false }).limit(10);
-    if (data) {
-        document.getElementById('lb-content').innerHTML = data.map((u, i) => `
+    // Fetch top 10 for the UI
+    const { data: topData } = await _supabase.from('leaderboard').select('username, clicks, golden_tortas').order('clicks', { ascending: false }).limit(10);
+    
+    // Fetch total count for the badge
+    const { count } = await _supabase.from('leaderboard').select('*', { count: 'exact', head: true });
+
+    if (topData) {
+        document.getElementById('lb-content').innerHTML = topData.map((u, i) => `
             <div class="lb-row"><span><span class="lb-rank">#${i+1}</span> ${u.username}</span><span>${Math.floor(u.clicks).toLocaleString()} <small>(${u.golden_tortas} GT)</small></span></div>`).join('');
-        if (data[0]) { currentKing = data[0].username; document.getElementById('king-display').innerText = `👑 King: ${currentKing}`; }
+        
+        if (topData[0]) { 
+            currentKing = topData[0].username; 
+            document.getElementById('king-display').innerText = `👑 King: ${currentKing}`; 
+        }
     }
+    if (count !== null) updatePlayerCount(count);
 }
 
 function showParticle(x, y, text) {
@@ -518,6 +581,7 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
 
