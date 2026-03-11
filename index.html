@@ -231,9 +231,22 @@ async function adminAction(type) {
 }
 
 async function clearChatNow() {
-    if(!confirm("Delete all chat messages?")) return;
-    const { error } = await _supabase.from('global_chat').delete().neq('username', 'KEEP_ALIVE');
-    if(!error) alert("Chat cleared!");
+    if (!confirm("⚠️ WARNING: This will delete ALL chat history for everyone. Proceed?")) return;
+
+    // We use .gt('created_at', '2000-01-01') as a "hack" to delete everything 
+    // because Supabase requires a filter for deletes.
+    const { error } = await _supabase
+        .from('global_chat')
+        .delete()
+        .gt('created_at', '2000-01-01'); 
+
+    if (error) {
+        console.error("Delete error:", error);
+        alert("Failed to clear chat: " + error.message);
+    } else {
+        alert("Chat cleared successfully!");
+        fetchMessages(); // Refresh the chat immediately
+    }
 }
     
     function initShop() {
@@ -445,5 +458,6 @@ fetchKing();
 </script>
 </body>
 </html>
+
 
 
