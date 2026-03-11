@@ -12,84 +12,78 @@
             --bg: #1e272e;
             --gold: #f1c40f;
             --chat-bg: #252a34;
+            --card-bg: rgba(0, 0, 0, 0.7);
         }
 
         body {
-            font-family: 'Arial Rounded MT Bold', sans-serif;
+            font-family: 'Arial Rounded MT Bold', 'Segoe UI', sans-serif;
             background: #1e272e;
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            color: white; margin: 0; display: flex; justify-content: center; min-height: 100vh; overflow: hidden;
+            color: white; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden;
             transition: background 1s ease-in-out;
         }
 
-        .bg-kitchen { background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=1200'); }
-        .bg-buffet { background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200'); }
-        .bg-factory { background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1200'); }
-        .bg-space { background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200'); }
+        /* Background Classes */
+        .bg-kitchen { background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=1200'); background-size: cover; }
+        .bg-buffet { background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200'); background-size: cover; }
+        .bg-factory { background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1200'); background-size: cover; }
+        .bg-space { background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200'); background-size: cover; }
 
-        #game-wrapper { max-width: 1200px; width: 100%; display: flex; gap: 20px; padding: 20px; box-sizing: border-box; z-index: 1; }
-        .clicker-section { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; }
-
-        #score-panel {
-            background: rgba(0, 0, 0, 0.8); padding: 20px; border-radius: 20px;
-            border: 3px solid var(--primary); margin-bottom: 20px; width: 100%;
-            box-sizing: border-box; backdrop-filter: blur(15px);
-        }
-
-        #score-text { font-size: 3.5rem; color: var(--gold); margin: 0; line-height: 1; }
-
-        #lincoln-main {
-            width: 300px; height: 300px; border-radius: 50%; cursor: pointer;
-            object-fit: cover; border: 8px solid var(--secondary);
-            transition: transform 0.05s, filter 0.3s; user-select: none;
-        }
-
-        #lincoln-main:active { transform: scale(0.94); }
-
-        .shop-container {
-            flex: 1.2; background: rgba(0, 0, 0, 0.5); padding: 15px;
-            border-radius: 20px; height: 90vh; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-        }
-
-        .upgrade {
-            width: 100%; background: #2f3542; border: 2px solid #444;
-            border-radius: 12px; padding: 12px 18px; color: white; cursor: pointer;
-            display: flex; justify-content: space-between; align-items: center; 
-            margin-bottom: 10px; box-sizing: border-box; transition: 0.2s;
-        }
-
-        .upgrade:disabled { opacity: 0.3; filter: grayscale(1); }
-        .can-afford { border-color: var(--gold) !important; background: #3e4452; }
-
-        .u-info { text-align: left; }
-        .u-name { font-weight: bold; color: #fab1a0; display: block; font-size: 1rem; }
-        .u-cost { color: #55efc4; font-size: 0.9rem; }
-        .u-count { font-size: 1.5rem; font-weight: bold; opacity: 0.6; }
-
-        .prestige-btn { background: var(--gold); color: black; font-weight: bold; width: 100%; padding: 15px; border-radius: 12px; border: none; cursor: pointer; margin-top: 10px; }
-
-        #chat-icon { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 30px; z-index: 1000; }
-        #chat-box { position: fixed; bottom: 90px; right: 20px; width: 340px; height: 500px; background: var(--chat-bg); border: 2px solid var(--primary); border-radius: 12px; display: none; flex-direction: column; z-index: 1000; overflow: hidden; }
-        #chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 0.85rem; background: #1a1e26; }
+        #main-container { display: flex; flex: 1; padding: 20px; gap: 20px; height: calc(100vh - 70px); box-sizing: border-box; }
         
-        .emote-bar { display: flex; gap: 5px; padding: 8px; background: #2f3542; border-top: 1px solid #444; }
-        .emote-btn { background: #3e4452; border: none; border-radius: 4px; padding: 5px 8px; cursor: pointer; font-size: 1.2rem; }
+        .view { display: none; flex: 1; flex-direction: column; animation: fadeIn 0.3s ease; }
+        .view.active { display: flex; }
 
-        .msg { margin-bottom: 8px; padding: 6px; border-radius: 6px; background: rgba(255,255,255,0.05); }
-        .king-msg { border-left: 3px solid var(--gold); background: rgba(241, 196, 15, 0.1); }
-        .system-msg { border-left: 3px solid #ff4757; background: rgba(255, 71, 87, 0.1); font-style: italic; color: #ff4757; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+        /* Clicker Section */
+        .clicker-section { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        
+        #lincoln-main {
+            width: 280px; height: 280px; border-radius: 50%; cursor: pointer;
+            object-fit: cover; border: 8px solid var(--secondary);
+            transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            user-select: none; box-shadow: 0 0 30px rgba(108, 92, 231, 0.5);
+        }
+        #lincoln-main:active { transform: scale(0.92); }
+
+        /* Navigation Bar */
+        #nav-bar {
+            height: 70px; background: #2d3436; display: flex; 
+            justify-content: space-around; align-items: center;
+            border-top: 2px solid var(--primary); z-index: 100;
+        }
+        .nav-item { cursor: pointer; opacity: 0.6; transition: 0.3s; text-align: center; font-size: 0.8rem; font-weight: bold; }
+        .nav-item.active { opacity: 1; color: var(--primary); }
+
+        /* Shop & Lists */
+        .scroll-area { flex: 1; overflow-y: auto; padding-right: 10px; }
+        .upgrade {
+            width: 100%; background: var(--card-bg); border: 2px solid #444; border-radius: 12px;
+            padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between;
+            align-items: center; transition: 0.2s; cursor: pointer; color: white;
+        }
+        .upgrade.can-afford { border-color: var(--gold); }
+        .upgrade:disabled { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; }
+
+        /* Achievement Tiles */
+        .achievement-card {
+            background: var(--card-bg); padding: 15px; border-radius: 10px;
+            margin-bottom: 10px; border-left: 5px solid #555; display: flex; align-items: center; gap: 15px;
+        }
+        .achievement-card.unlocked { border-left-color: var(--gold); }
+
+        /* Admin & Chat */
         #admin-panel {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: #2f3542; border: 3px solid var(--gold); padding: 20px; border-radius: 15px;
-            z-index: 10001; box-shadow: 0 0 50px #000; width: 300px;
+            z-index: 10001; width: 300px; box-shadow: 0 0 50px #000;
         }
-        .admin-input { width: 100%; padding: 10px; margin-bottom: 10px; background: #1e222b; border: 1px solid #444; color: white; box-sizing: border-box; border-radius: 5px; }
-        .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-        
+        #chat-window { width: 350px; background: var(--chat-bg); display: flex; flex-direction: column; border-left: 1px solid #444; }
+        #chat-msgs { flex: 1; overflow-y: auto; padding: 10px; font-size: 0.85rem; }
+        .msg { background: rgba(255,255,255,0.05); padding: 6px; border-radius: 6px; margin-bottom: 5px; }
+        .king-msg { border-left: 3px solid var(--gold); background: rgba(241, 196, 15, 0.1); }
+        .system-msg { border-left: 3px solid #ff4757; color: #ff4757; }
+
         .particle { position: fixed; pointer-events: none; animation: flyUp 0.8s forwards; font-weight: bold; color: var(--gold); z-index: 999; }
         @keyframes flyUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-120px); opacity: 0; } }
     </style>
@@ -100,53 +94,66 @@
 
 <div id="admin-panel">
     <h3 style="margin-top:0; color:var(--gold); text-align:center;">ADMIN CONTROL</h3>
-    <input type="text" id="admin-target-user" class="admin-input" placeholder="Target Username">
-    <input type="text" id="admin-value" class="admin-input" placeholder="Value (Mass/Mins)">
-    <button onclick="adminAction('mass')" style="width:100%; background:var(--gold); padding:10px; border:none; margin-bottom:10px; font-weight:bold; cursor:pointer; border-radius:5px;">Give Mass</button>
-    <button onclick="adminAction('timeout')" style="width:100%; background:#e67e22; padding:10px; border:none; margin-bottom:10px; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Set Timeout</button>
-    <div class="admin-grid">
-        <button onclick="adminAction('ban')" style="background:#e74c3c; padding:10px; border:none; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Ban</button>
-        <button onclick="adminAction('unban')" style="background:#2ecc71; padding:10px; border:none; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Unban</button>
-    </div>
-    <button onclick="clearChatNow()" style="width:100%; background:#ff4757; padding:10px; border:none; color:white; margin-top:10px; cursor:pointer; border-radius:5px; font-weight:bold;">FORCE CLEAR CHAT</button>
-    <button onclick="document.getElementById('admin-panel').style.display='none'" style="width:100%; background:none; border:none; color:#aaa; cursor:pointer; margin-top:15px; font-size:0.8rem;">Close</button>
+    <input type="text" id="admin-target-user" style="width:100%; margin-bottom:10px;" placeholder="Username">
+    <input type="text" id="admin-value" style="width:100%; margin-bottom:10px;" placeholder="Value">
+    <button onclick="adminAction('mass')" style="width:100%; background:var(--gold); margin-bottom:5px;">Give Mass</button>
+    <button onclick="clearChatNow()" style="width:100%; background:#ff4757; color:white; font-weight:bold;">FORCE CLEAR CHAT</button>
+    <button onclick="document.getElementById('admin-panel').style.display='none'" style="width:100%; margin-top:10px; background:none; border:none; color:white;">Close</button>
 </div>
 
-<div id="game-wrapper">
-    <div class="clicker-section">
-        <div id="score-panel">
-            <h1 id="score-text">0</h1>
-            <p id="env-label" style="margin: 5px 0; letter-spacing: 2px; font-size: 0.7rem; color: #aaa;">LOCATION: THE KITCHEN</p>
-            <div style="font-size: 0.8rem; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; margin-top: 10px;">
-                Per Click: <span id="stat-click">1</span> | Sec: <span id="stat-cps">0</span><br>
-                Golden Tortas: <span id="stat-prestige" style="color:var(--gold)">0</span>
+<div id="main-container">
+    <div id="view-game" class="view active">
+        <div id="score-panel" style="text-align: center; background: var(--card-bg); padding: 20px; border-radius: 20px;">
+            <h1 id="score-text" style="font-size: 3.5rem; margin: 0; color: var(--gold);">0</h1>
+            <p id="env-label" style="font-size: 0.7rem; color: #aaa; margin: 5px 0;">LOCATION: THE KITCHEN</p>
+            <div style="font-size: 0.85rem; color: #55efc4;">
+                Per Click: <span id="stat-click">1</span> | Per Sec: <span id="stat-cps">0</span>
             </div>
-            <div id="sync-status" style="font-size: 0.65rem; color: #777; margin-top: 8px;">Connecting...</div>
+            <div id="sync-status" style="font-size: 0.6rem; color: #666; margin-top: 5px;">Syncing...</div>
         </div>
-        <img src="IMG_0668.jpg" id="lincoln-main" alt="Lincoln">
-        <button class="prestige-btn" id="prestige-btn" style="display:none;" onclick="prestige()">WEIGH IN</button>
-        <button onclick="resetGame()" style="background:none; border:none; color:#555; margin-top:20px; cursor:pointer; font-size: 0.7rem; text-decoration: underline;">Hard Reset</button>
+        
+        <div class="clicker-section">
+            <img src="IMG_0668.jpg" id="lincoln-main">
+            <button id="prestige-btn" style="display:none; margin-top:20px; background:var(--gold); padding:10px 20px; border-radius:10px; border:none; color:black; font-weight:bold; cursor:pointer;" onclick="prestige()">WEIGH IN (PRESTIGE)</button>
+        </div>
     </div>
-    <div class="shop-container" id="shop"></div>
+
+    <div id="view-shop" class="view">
+        <h2 style="color:var(--primary)">Catering Store</h2>
+        <div class="scroll-area" id="shop-list"></div>
+    </div>
+
+    <div id="view-achievements" class="view">
+        <h2 style="color:var(--gold)">Trophies</h2>
+        <div class="scroll-area" id="achievement-list"></div>
+    </div>
+
+    <div id="view-settings" class="view">
+        <h2 style="color:#aaa">Settings</h2>
+        <div class="scroll-area">
+            <button onclick="changeName()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:10px; margin-bottom:10px; cursor:pointer;">Change Chat Name</button>
+            <button onclick="resetGame()" style="width:100%; padding:15px; background:#d63031; color:white; border:none; border-radius:10px; cursor:pointer;">HARD RESET ALL PROGRESS</button>
+        </div>
+    </div>
+
+    <div id="chat-window">
+        <div style="padding: 15px; background: var(--primary); font-weight: bold; display: flex; justify-content: space-between;">
+            <span>Global Chat</span>
+            <span id="king-display" style="color:var(--gold); font-size: 0.8rem;">👑 Loading...</span>
+        </div>
+        <div id="chat-msgs"></div>
+        <div style="padding: 10px; display: flex; gap: 5px; background: #1a1e26;">
+            <input type="text" id="chat-input" placeholder="Message..." onkeypress="if(event.key==='Enter') sendChat()" style="flex:1; padding:8px; border-radius:5px; border:none; background:#333; color:white;">
+            <button onclick="sendChat()" style="background:var(--primary); border:none; color:white; border-radius:5px; padding:0 10px; cursor:pointer;">Send</button>
+        </div>
+    </div>
 </div>
 
-<div id="chat-icon" onclick="toggleChat()">💬</div>
-<div id="chat-box">
-    <div style="background:var(--primary); padding: 12px; font-weight: bold; display: flex; justify-content: space-between;">
-        <span>Global Chat</span>
-        <span onclick="toggleChat()" style="cursor:pointer;">×</span>
-    </div>
-    <div style="background: #000; padding: 5px; font-size: 0.7rem; color: var(--gold); text-align: center;" id="king-display">👑 King: Lincoln</div>
-    <div id="chat-messages"></div>
-    <div class="emote-bar">
-        <button class="emote-btn" onclick="sendEmote('🍔')">🍔</button>
-        <button class="emote-btn" onclick="sendEmote('🌮')">🌮</button>
-        <button class="emote-btn" onclick="sendEmote('👑')">👑</button>
-        <button class="emote-btn" onclick="sendEmote('🔥')">🔥</button>
-    </div>
-    <div style="display:flex; padding:10px; background:#1e222b;">
-        <input type="text" id="chat-msg-input" style="flex:1; background:#333; color:white; border:none; padding:8px; border-radius:5px;" placeholder="Message..." onkeypress="if(event.key==='Enter') sendChat()">
-    </div>
+<div id="nav-bar">
+    <div class="nav-item active" onclick="switchTab('game', this)">Game</div>
+    <div class="nav-item" onclick="switchTab('shop', this)">Shop</div>
+    <div class="nav-item" onclick="switchTab('achievements', this)">Trophies</div>
+    <div class="nav-item" onclick="switchTab('settings', this)">Settings</div>
 </div>
 
 <script>
@@ -158,6 +165,7 @@
     let currentKing = "", chatName = localStorage.getItem('chat_name') || null;
     let isAdmin = false;
 
+    // FULL RESTORED UPGRADE LIST
     const initialUpgrades = [
         { id: 0, name: "Extra Torta", cost: 15, power: 0.1, type: "click" },
         { id: 1, name: "Chud Burger", cost: 100, power: 0.3, type: "cps" },
@@ -175,18 +183,21 @@
         { id: 13, name: "Event Horizon Gut", cost: 150000000, power: 18000, type: "cps" },
         { id: 14, name: "The Final Chud-down", cost: 2500000000, power: 120000, type: "cps" }
     ];
-
     let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
-    function initShop() {
-        const shop = document.getElementById('shop'); shop.innerHTML = '';
-        upgrades.forEach(u => {
-            const btn = document.createElement('button');
-            btn.className = 'upgrade'; btn.id = `up-${u.id}`;
-            btn.onclick = () => buyUpgrade(u.id);
-            btn.innerHTML = `<div class="u-info"><span class="u-name">${u.name}</span><span class="u-cost" id="cost-${u.id}">${u.cost.toLocaleString()} Mass</span></div><div class="u-count" id="count-${u.id}">${u.count}</div>`;
-            shop.appendChild(btn);
-        });
+    const achievementDefs = [
+        { id: 'c100', name: "Fast Fingers", desc: "Click 100 times", goal: 100, type: 'clicks' },
+        { id: 'm10k', name: "Weight Gainer", desc: "10,000 Mass", goal: 10000, type: 'mass' },
+        { id: 'm1m', name: "Torta Titan", desc: "1 Million Mass", goal: 1000000, type: 'mass' },
+        { id: 'm1b', name: "Ascended Chud", desc: "Reach 1 Billion Mass", goal: 1000000000, type: 'mass' }
+    ];
+    let unlockedAchievs = JSON.parse(localStorage.getItem('lincoln_achievs')) || [];
+
+    function switchTab(tabId, el) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById('view-' + tabId).classList.add('active');
+        el.classList.add('active');
     }
 
     document.getElementById('lincoln-main').addEventListener('click', (e) => {
@@ -195,58 +206,86 @@
         energy += val; totalClicks++;
         showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
         updateUI();
+        checkAchievements();
     });
 
     function buyUpgrade(id) {
-        const u = upgrades[id];
+        const u = upgrades.find(up => up.id === id);
         if (energy >= u.cost) {
             energy -= u.cost; u.count++;
             if (u.type === "click") clickPower += u.power; else cps += u.power;
-            u.cost = Math.ceil(u.cost * 1.35); updateUI(); cloudSave();
+            u.cost = Math.ceil(u.cost * 1.35);
+            updateUI(); cloudSave();
         }
     }
 
     function updateUI() {
         document.getElementById('score-text').innerText = Math.floor(energy).toLocaleString();
-        document.getElementById('stat-click').innerText = (clickPower * (1 + (goldenTortas * 0.1))).toFixed(1);
-        document.getElementById('stat-cps').innerText = (cps * (1 + (goldenTortas * 0.1))).toFixed(1);
-        document.getElementById('stat-prestige').innerText = goldenTortas;
+        const bonus = (1 + (goldenTortas * 0.1));
+        document.getElementById('stat-click').innerText = (clickPower * bonus).toFixed(1);
+        document.getElementById('stat-cps').innerText = (cps * bonus).toFixed(1);
         document.getElementById('prestige-btn').style.display = energy >= 1000000000 ? 'block' : 'none';
         
-        upgrades.forEach(u => {
-            const btn = document.getElementById(`up-${u.id}`);
-            if (btn) {
-                btn.disabled = energy < u.cost;
-                energy >= u.cost ? btn.classList.add('can-afford') : btn.classList.remove('can-afford');
-                document.getElementById(`cost-${u.id}`).innerText = u.cost.toLocaleString() + " Mass";
-                document.getElementById(`count-${u.id}`).innerText = u.count;
+        // Render Shop
+        document.getElementById('shop-list').innerHTML = upgrades.map(u => `
+            <button class="upgrade ${energy >= u.cost ? 'can-afford' : ''}" onclick="buyUpgrade(${u.id})" ${energy < u.cost ? 'disabled' : ''}>
+                <div style="text-align:left">
+                    <strong>${u.name}</strong><br>
+                    <small style="color: #55efc4;">${u.cost.toLocaleString()} Mass</small>
+                </div>
+                <div style="font-size:1.2rem; font-weight:bold; opacity:0.7;">${u.count}</div>
+            </button>
+        `).join('');
+
+        // Render Achievs
+        document.getElementById('achievement-list').innerHTML = achievementDefs.map(a => `
+            <div class="achievement-card ${unlockedAchievs.includes(a.id) ? 'unlocked' : ''}">
+                <div>
+                    <strong>${unlockedAchievs.includes(a.id) ? '🏆' : '🔒'} ${a.name}</strong><br>
+                    <small>${a.desc}</small>
+                </div>
+            </div>
+        `).join('');
+
+        // Environment Backgrounds
+        const body = document.body;
+        if (energy < 100000) body.className = 'bg-kitchen';
+        else if (energy < 10000000) body.className = 'bg-buffet';
+        else if (energy < 1000000000) body.className = 'bg-factory';
+        else body.className = 'bg-space';
+    }
+
+    function checkAchievements() {
+        achievementDefs.forEach(a => {
+            if (!unlockedAchievs.includes(a.id)) {
+                if ((a.type === 'clicks' && totalClicks >= a.goal) || (a.type === 'mass' && energy >= a.goal)) {
+                    unlockedAchievs.push(a.id);
+                    localStorage.setItem('lincoln_achievs', JSON.stringify(unlockedAchievs));
+                }
             }
         });
-
-        const body = document.body; const label = document.getElementById('env-label');
-        if (energy < 100000) { body.className = 'bg-kitchen'; label.innerText = "LOCATION: THE KITCHEN"; }
-        else if (energy < 10000000) { body.className = 'bg-buffet'; label.innerText = "LOCATION: INFINITE BUFFET"; }
-        else if (energy < 1000000000) { body.className = 'bg-factory'; label.innerText = "LOCATION: TORTA FACTORY"; }
-        else { body.className = 'bg-space'; label.innerText = "LOCATION: OUTER SPACE"; }
     }
 
     async function cloudSave() {
-        const saveObj = { energy, clickPower, cps, goldenTortas, upgrades: upgrades.map(u => ({count: u.count, cost: u.cost})), totalClicks };
-        localStorage.setItem('lincoln_local_save', JSON.stringify(saveObj));
+        const save = { energy, clickPower, cps, goldenTortas, totalClicks, upgrades: upgrades.map(u => ({id:u.id, count:u.count, cost:u.cost})) };
+        localStorage.setItem('lincoln_local_save', JSON.stringify(save));
         if (chatName) {
             await _supabase.from('leaderboard').upsert({ username: chatName, clicks: Math.floor(energy), golden_tortas: goldenTortas }, { onConflict: 'username' });
-            document.getElementById('sync-status').innerText = "Vaulted";
+            document.getElementById('sync-status').innerText = "Vault Synchronized";
         }
     }
 
-    async function cloudLoad() {
-        const local = localStorage.getItem('lincoln_local_save');
-        if (local) {
-            const d = JSON.parse(local);
-            energy = d.energy || 0; clickPower = d.clickPower || 1; cps = d.cps || 0; goldenTortas = d.goldenTortas || 0;
-            d.upgrades?.forEach((u, i) => { if(upgrades[i]) { upgrades[i].count = u.count; upgrades[i].cost = u.cost; } });
+    function loadGame() {
+        const d = JSON.parse(localStorage.getItem('lincoln_local_save'));
+        if (d) {
+            energy = d.energy || 0; clickPower = d.clickPower || 1; cps = d.cps || 0; 
+            goldenTortas = d.goldenTortas || 0; totalClicks = d.totalClicks || 0;
+            d.upgrades?.forEach(savedU => {
+                let u = upgrades.find(up => up.id === savedU.id);
+                if (u) { u.count = savedU.count; u.cost = savedU.cost; }
+            });
         }
-        updateUI(); fetchKing(); checkAdminStatus();
+        updateUI(); checkAdminStatus();
     }
 
     async function checkAdminStatus() {
@@ -255,83 +294,50 @@
         if (data?.is_admin) isAdmin = true;
     }
 
-    function openAdmin() { if (isAdmin) document.getElementById('admin-panel').style.display = 'block'; }
+    function openAdmin() { if(isAdmin) document.getElementById('admin-panel').style.display='block'; }
 
     async function adminAction(type) {
         const target = document.getElementById('admin-target-user').value;
         const valText = document.getElementById('admin-value').value;
-        if (!target) return alert("Enter Target!");
-
         if (type === 'mass') {
             const amount = parseFloat(valText);
             if (target === chatName) { energy += amount; updateUI(); cloudSave(); }
             else { await _supabase.from('leaderboard').update({ clicks: amount }).eq('username', target); }
-            alert("Mass Updated!");
-        } else if (type === 'timeout') {
-            const date = new Date(); date.setMinutes(date.getMinutes() + parseInt(valText));
-            await _supabase.from('leaderboard').update({ timeout_until: date.toISOString() }).eq('username', target);
-            alert("Timed out!");
-        } else if (type === 'ban') {
-            await _supabase.from('leaderboard').update({ is_banned: true }).eq('username', target);
-            alert("Banned!");
-        } else if (type === 'unban') {
-            await _supabase.from('leaderboard').update({ is_banned: false }).eq('username', target);
-            alert("Unbanned!");
+            alert("Mass Injected.");
         }
     }
 
-    // UPDATED FORCE CLEAR: Bypasses "safe update" mode
     async function clearChatNow() {
         if (!isAdmin) return;
         const { error } = await _supabase.from('global_chat').delete().gt('id', 0);
         if (!error) {
-            await _supabase.from('global_chat').insert([{ username: "SYSTEM", message: "--- Chat Auto-Cleared by Admin ---" }]);
+            await _supabase.from('global_chat').insert([{ username: "SYSTEM", message: "--- Database Purge Successful ---" }]);
             fetchMessages();
-            alert("Chat database purged.");
-        } else {
-            console.error(error);
-            alert("Clear failed. Check Supabase RLS.");
         }
     }
 
-    async function sendChat(emoteMsg = null) {
-        if (!chatName) return;
-        const input = document.getElementById('chat-msg-input');
-        const message = emoteMsg || input.value;
-        if (!message) return;
-
-        const { data } = await _supabase.from('leaderboard').select('is_banned, timeout_until').eq('username', chatName).maybeSingle();
-        if (data?.is_banned) return alert("Banned.");
-        if (data?.timeout_until && new Date(data.timeout_until) > new Date()) return alert("Timed out.");
-
-        await _supabase.from('global_chat').insert([{ username: chatName, message: message }]);
-        input.value = ""; fetchMessages();
-    }
-
-    function sendEmote(e) { sendChat(e); }
-
-    async function fetchMessages() {
-        const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(30);
-        if (data) {
-            document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `
-                <div class="msg ${m.username === 'SYSTEM' ? 'system-msg' : (m.username === currentKing ? 'king-msg' : '')}">
-                    <b style="color:${m.username === 'SYSTEM' ? '#ff4757' : (m.username === currentKing ? 'var(--gold)' : 'var(--secondary)')}">${m.username}:</b> ${m.message}
-                </div>`).join('');
-            const c = document.getElementById('chat-messages'); c.scrollTop = c.scrollHeight;
-        }
-    }
-
-    function toggleChat() {
-        const b = document.getElementById('chat-box');
-        if (b.style.display === 'flex') { b.style.display = 'none'; return; }
+    async function sendChat() {
         if (!chatName) {
-            let input = prompt("Enter Username:");
-            if (!input) return;
-            chatName = input.trim();
+            chatName = prompt("Enter Chat Name:");
+            if (!chatName) return;
             localStorage.setItem('chat_name', chatName);
             checkAdminStatus();
         }
-        b.style.display = 'flex'; fetchMessages();
+        const input = document.getElementById('chat-input');
+        if (!input.value) return;
+        await _supabase.from('global_chat').insert([{ username: chatName, message: input.value }]);
+        input.value = ""; fetchMessages();
+    }
+
+    async function fetchMessages() {
+        const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(25);
+        if (data) {
+            document.getElementById('chat-msgs').innerHTML = data.reverse().map(m => `
+                <div class="msg ${m.username === 'SYSTEM' ? 'system-msg' : (m.username === currentKing ? 'king-msg' : '')}">
+                    <b>${m.username}:</b> ${m.message}
+                </div>`).join('');
+            const c = document.getElementById('chat-msgs'); c.scrollTop = c.scrollHeight;
+        }
     }
 
     async function fetchKing() {
@@ -345,23 +351,17 @@
         document.body.appendChild(p); setTimeout(() => p.remove(), 800);
     }
 
-    function resetGame() { 
-        if (confirm("Hard reset? All Mass and Upgrade costs will be wiped!")) { 
-            energy = 0; clickPower = 1; cps = 0; goldenTortas = 0; totalClicks = 0;
-            upgrades = initialUpgrades.map(u => ({...u, count: 0}));
-            initShop(); updateUI(); cloudSave(); 
-        } 
-    }
+    function resetGame() { if(confirm("Hard Reset everything?")) { localStorage.clear(); location.reload(); } }
+    function changeName() { const n = prompt("New name?"); if(n) { chatName = n; localStorage.setItem('chat_name', n); checkAdminStatus(); updateUI(); } }
 
     setInterval(() => { energy += (cps * (1 + (goldenTortas * 0.1)) / 10); updateUI(); }, 100);
-    setInterval(cloudSave, 20000);
-    setInterval(fetchKing, 15000);
-    setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
-    
-    // Auto clear for Admin every 10 mins
-    setInterval(() => { if(isAdmin) clearChatNow(); }, 600000);
+    setInterval(cloudSave, 15000);
+    setInterval(fetchMessages, 4000);
+    setInterval(fetchKing, 10000);
 
-    initShop(); cloudLoad();
+    loadGame();
+    fetchMessages();
+    fetchKing();
 </script>
 </body>
 </html>
