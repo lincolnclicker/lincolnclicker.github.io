@@ -133,8 +133,6 @@
     <button onclick="triggerEvent('storm')" style="width:100%; background:#00d2ff; color:black; padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">⚡ STORM (5X CLICK)</button>
     <button onclick="triggerEvent('low_carb')" style="width:100%; background:#ff4757; color:white; padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">🥗 LOW CARB (0.5X TOTAL)</button>
 
-    <button onclick="sendAnnouncement()" style="width:100%; background:#ff9f43; color:black; padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">📢 SEND ANNOUNCEMENT</button>
-
     <button onclick="adminAction('mass')" style="width:100%; background:var(--gold); padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">Give Mass</button>
     <button onclick="adminAction('timeout')" style="width:100%; background:#e67e22; padding:10px; border:none; margin-top:10px; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Set Timeout</button>
     <button onclick="clearChatNow()" style="width:100%; background:#ff4757; padding:10px; border:none; color:white; margin-top:10px; cursor:pointer; border-radius:5px; font-weight:bold;">FORCE CLEAR CHAT</button>
@@ -224,29 +222,6 @@ let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
 // 1. Update the openAdmin function to check the database
 
-    async function sendAnnouncement() {
-    // 1. Verify Admin Status
-    const { data } = await _supabase.from('leaderboard').select('admin').eq('username', chatName).single();
-    if (!data || !data.admin) return alert("Unauthorized.");
-
-    // 2. Get the Message
-    const msg = prompt("Enter Global Announcement (will pop up for everyone):");
-    if (!msg) return;
-
-    // 3. Insert into game_events table
-    // We use the event_type 'announcement' and set the message in a new column (or repurpose one)
-    // Note: Ensure your 'game_events' table has a 'message' column. 
-    // If it doesn't, we can pass it as the 'event_type' formatted like "announcement:YOUR_MESSAGE"
-    const expiresAt = new Date(Date.now() + 10000).toISOString(); // 10 seconds from now
-    
-    await _supabase.from('game_events').insert([{ 
-        event_type: 'announcement', 
-        message: msg, // Ensure your table has this column
-        expires_at: expiresAt 
-    }]);
-
-    document.getElementById('admin-panel').style.display = 'none';
-}    
     async function changeName() {
     let newName = prompt("Enter your new username:", chatName || "");
     
@@ -319,63 +294,63 @@ function handleNewEvent(event) {
     if (oldNotice) oldNotice.remove();
 
     const expiry = new Date(event.expires_at.replace(' ', 'T')).getTime();
-    
-    // Create the notice element
     const notice = document.createElement('div');
     notice.id = "event-notice";
-    -- Add the message column to the game_events table
-ALTER TABLE game_events 
-ADD COLUMN message TEXT;
-
--- Optional: Add a comment to the column for clarity
-COMMENT ON COLUMN game_events.message IS 'Stores the custom text for admin announcements';
+    notice.style = "position:fixed; top:10%; left:50%; transform:translateX(-50%); color:black; padding:15px 30px; border-radius:50px; font-weight:bold; z-index:10000; box-shadow:0 0 20px black; animation: pulse-gold 1s infinite; text-align:center;";
     document.body.appendChild(notice);
 
     eventTimer = setInterval(() => {
         const now = new Date().getTime();
         const timeLeft = expiry - now;
-
         if (timeLeft <= 0) {
-            eventMultiplier = 1;
-            currentEvent = null;
-            document.body.style.boxShadow = "none";
-            notice.remove();
-            clearInterval(eventTimer);
-            return;
+            eventMultiplier = 1; currentEvent = null;
+            document.body.style.boxShadow = "none"; notice.remove();
+            clearInterval(eventTimer); return;
         }
-
         const seconds = Math.ceil(timeLeft / 1000);
         currentEvent = event.event_type;
-
-        switch(event.event_type) {
-            case 'announcement':
-                notice.style.background = "#6c5ce7"; // Purple background
-                notice.innerHTML = `📢 <b>ADMIN ALERT:</b><br>${event.message}`;
-                break;
-            case 'feast':
-                eventMultiplier = 2;
-                notice.style.background = "var(--gold)";
-                notice.style.color = "black";
-                notice.innerText = `🔥 THE BUFFET IS OPEN! 2X MASS (${seconds}s) 🔥`;
-                document.body.style.boxShadow = "inset 0 0 100px rgba(241, 196, 15, 0.7)";
-                break;
-            case 'storm':
-                eventMultiplier = 5; 
-                notice.style.background = "#00d2ff";
-                notice.style.color = "black";
-                notice.innerText = `⚡ TORTA STORM! 5X CLICK (${seconds}s) ⚡`;
-                document.body.style.boxShadow = "inset 0 0 100px rgba(0, 210, 255, 0.7)";
-                break;
-            case 'low_carb':
-                eventMultiplier = 0.5;
-                notice.style.background = "#ff4757";
-                notice.style.color = "white";
-                notice.innerText = `🥗 LOW CARB DAY... 0.5X MASS (${seconds}s) 🥗`;
-                document.body.style.boxShadow = "inset 0 0 100px rgba(255, 71, 87, 0.7)";
-                break;
-        }
+        if (currentEvent === 'feast') { eventMultiplier = 2; notice.style.background = "var(--gold)"; notice.innerText = `🔥 FEAST! 2X MASS (${seconds}s)`; }
+        else if (currentEvent === 'storm') { eventMultiplier = 5; notice.style.background = "#00d2ff"; notice.innerText = `⚡ STORM! 5X CLICK (${seconds}s)`; }
+        else if (currentEvent === 'low_carb') { eventMultiplier = 0.5; notice.style.background = "#ff4757"; notice.innerText = `🥗 LOW CARB! 0.5X MASS (${seconds}s)`; }
     }, 1000);
 }
+
+document.getElementById('lincoln-main').addEventListener('click', (e) => {
+    let val = (clickPower * (1 + (goldenTortas * 0.1))) * eventMultiplier;
+    energy += val; totalClicks++;
+    showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
+    updateUI();
+});
+
+setInterval(() => { 
+    let boostedCPS = (cps * (1 + (goldenTortas * 0.1))) * (currentEvent === 'storm' ? 1 : eventMultiplier);
+    energy += (boostedCPS / 10); updateUI(); 
+}, 100);
+
+function updateUI() {
+    document.getElementById('score-text').innerText = Math.floor(energy).toLocaleString();
+    document.getElementById('stat-click').innerText = ((clickPower * (1 + (goldenTortas * 0.1))) * eventMultiplier).toFixed(1);
+    document.getElementById('stat-cps').innerText = ((cps * (1 + (goldenTortas * 0.1))) * (currentEvent === 'storm' ? 1 : eventMultiplier)).toFixed(1);
+    document.getElementById('stat-prestige').innerText = goldenTortas;
+    document.getElementById('prestige-btn').style.display = energy >= 1000000000 ? 'block' : 'none';
+    
+    upgrades.forEach(u => {
+        const btn = document.getElementById(`up-${u.id}`);
+        if (btn) {
+            btn.disabled = energy < u.cost;
+            energy >= u.cost ? btn.classList.add('can-afford') : btn.classList.remove('can-afford');
+            document.getElementById(`cost-${u.id}`).innerText = u.cost.toLocaleString() + " Mass";
+            document.getElementById(`count-${u.id}`).innerText = u.count;
+        }
+    });
+
+    const body = document.body; const label = document.getElementById('env-label');
+    if (energy < 100000) { body.className = 'bg-kitchen'; label.innerText = "LOCATION: THE KITCHEN"; }
+    else if (energy < 10000000) { body.className = 'bg-buffet'; label.innerText = "LOCATION: INFINITE BUFFET"; }
+    else if (energy < 1000000000) { body.className = 'bg-factory'; label.innerText = "LOCATION: TORTA FACTORY"; }
+    else { body.className = 'bg-space'; label.innerText = "LOCATION: OUTER SPACE"; }
+}
+
 async function cloudSave() {
     if (!chatName) return;
     const saveObj = { energy, clickPower, cps, goldenTortas, totalClicks, upgrades: upgrades.map(u => ({id: u.id, count: u.count, cost: u.cost})) };
@@ -490,7 +465,4 @@ startGame();
 </script>
 </body>
 </html>
-
-
-
 
