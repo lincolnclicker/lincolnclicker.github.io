@@ -12,6 +12,7 @@
             --bg: #1e272e;
             --gold: #f1c40f;
             --chat-bg: #252a34;
+            --buffet-color: #ff4757;
         }
 
         @keyframes bgScroll {
@@ -20,220 +21,120 @@
             100% { background-position: 0% 50%; }
         }
 
+        @keyframes pulse-gold {
+            0% { box-shadow: 0 0 0 0px var(--buffet-color); }
+            100% { box-shadow: 0 0 20px 20px rgba(255, 71, 87, 0); }
+        }
+
         body {
             font-family: 'Arial Rounded MT Bold', sans-serif;
             background: linear-gradient(-45deg, #1e272e, #2d3436, #000000);
             background-size: 400% 400%;
             animation: bgScroll 15s ease infinite;
-            color: white;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
+            color: white; margin: 0; display: flex; justify-content: center; min-height: 100vh; overflow: hidden;
         }
 
-        #game-wrapper {
-            max-width: 950px;
-            width: 100%;
-            display: flex;
-            gap: 20px;
-            padding: 20px;
-        }
+        #game-wrapper { max-width: 1100px; width: 100%; display: flex; gap: 20px; padding: 20px; }
 
-        .clicker-section {
-            flex: 1;
-            text-align: center;
-            position: sticky;
-            top: 20px;
-            height: fit-content;
-        }
+        .clicker-section { flex: 1; text-align: center; position: sticky; top: 20px; height: fit-content; }
 
         #score-panel {
-            background: rgba(0, 0, 0, 0.6);
-            padding: 20px;
-            border-radius: 20px;
-            border: 3px solid var(--primary);
-            margin-bottom: 20px;
-            backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 20px;
+            border: 3px solid var(--primary); margin-bottom: 20px; backdrop-filter: blur(10px);
         }
 
-        #score-text {
-            font-size: 3.2rem;
-            color: var(--gold);
-            margin: 0;
-            text-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
-        }
+        #score-text { font-size: 3rem; color: var(--gold); margin: 0; }
 
+        .lincoln-container { position: relative; display: inline-block; }
+        
         #lincoln-main {
-            width: 320px;
-            height: 320px;
-            border-radius: 50%;
-            cursor: pointer;
-            object-fit: cover;
-            border: 8px solid var(--secondary);
-            transition: transform 0.05s;
-            user-select: none;
-            -webkit-user-drag: none;
+            width: 320px; height: 320px; border-radius: 50%; cursor: pointer;
+            object-fit: cover; border: 8px solid var(--secondary);
+            transition: transform 0.05s, filter 0.3s; user-select: none;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         #lincoln-main:active { transform: scale(0.94); }
+        .buffet-active { animation: pulse-gold 1s infinite !important; border-color: var(--buffet-color) !important; }
 
         .shop-container {
-            flex: 1.2;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 20px;
-            border-radius: 20px;
-            height: 90vh;
-            overflow-y: auto;
-            border: 1px solid rgba(255,255,255,0.1);
+            flex: 1.2; background: rgba(255, 255, 255, 0.05); padding: 20px;
+            border-radius: 20px; height: 90vh; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1);
         }
 
         .upgrade {
-            width: 100%;
-            background: #2f3542;
-            border: 2px solid transparent;
-            border-radius: 12px;
-            padding: 15px;
-            color: white;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-            transition: 0.2s;
-            text-align: left;
+            width: 100%; background: #2f3542; border: 2px solid transparent;
+            border-radius: 12px; padding: 15px; color: white; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
         }
 
-        .upgrade:disabled { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; }
+        .upgrade:disabled { opacity: 0.3; cursor: not-allowed; }
         .can-afford { border-color: var(--gold) !important; background: #3e4452; }
 
-        .u-name { font-weight: bold; color: #fab1a0; display: block; font-size: 1.1rem; }
-        .u-cost { color: #55efc4; font-weight: bold; }
-
-        /* Particles */
-        .particle {
-            position: fixed;
-            pointer-events: none;
-            animation: flyUp 0.8s forwards;
-            font-weight: bold;
-            color: var(--gold);
-            z-index: 999;
+        .prestige-btn {
+            background: var(--gold); color: black; font-weight: bold; width: 100%;
+            padding: 15px; border-radius: 12px; border: none; cursor: pointer; margin-top: 10px;
         }
 
-        @keyframes flyUp {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-120px); opacity: 0; }
-        }
+        /* Achievements & Chat UI */
+        #chat-icon { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; font-size: 30px; }
+        #chat-box { position: fixed; bottom: 90px; right: 20px; width: 300px; height: 400px; background: var(--chat-bg); border: 2px solid var(--primary); border-radius: 10px; display: none; flex-direction: column; z-index: 1000; }
+        #chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 0.8rem; background: #1a1e26; }
+        .msg { margin-bottom: 5px; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.03); }
+        .msg.tax-alert { color: var(--gold); font-style: italic; }
 
-        /* Chat Styles */
-        #chat-icon {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            background: var(--primary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            z-index: 1000;
-            font-size: 30px;
-        }
-
-        #chat-box {
-            position: fixed;
-            bottom: 90px;
-            right: 20px;
-            width: 300px;
-            height: 400px;
-            background: var(--chat-bg);
-            border: 2px solid var(--primary);
-            border-radius: 10px;
-            display: none;
-            flex-direction: column;
-            z-index: 1000;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-        }
-
-        #chat-messages {
-            flex: 1;
-            padding: 10px;
-            overflow-y: auto;
-            font-size: 0.85rem;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            background: #1a1e26;
-        }
-
-        .msg { background: rgba(255,255,255,0.05); padding: 6px 10px; border-radius: 5px; border-left: 3px solid var(--secondary); }
-        .msg b { color: var(--secondary); margin-right: 5px; }
-
-        #chat-input-area {
-            display: flex;
-            padding: 10px;
-            background: #1e222b;
-            gap: 5px;
-        }
-
-        #chat-input-area input {
-            flex: 1;
-            background: #333;
-            border: 1px solid #444;
-            color: white;
-            padding: 8px;
-            border-radius: 5px;
-            outline: none;
-        }
-
-        #sync-status { font-size: 0.75rem; margin-top: 10px; color: #888; }
+        .particle { position: fixed; pointer-events: none; animation: flyUp 0.8s forwards; font-weight: bold; color: var(--gold); z-index: 999; }
+        @keyframes flyUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-120px); opacity: 0; } }
+        
+        #event-timer { color: var(--buffet-color); font-weight: bold; display: none; }
+        .achievement-popup { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--gold); color: black; padding: 10px 20px; border-radius: 20px; font-weight: bold; z-index: 2000; display: none; }
     </style>
 </head>
 <body>
+
+<div id="achievement-banner" class="achievement-popup">Achievement Unlocked!</div>
 
 <div id="game-wrapper">
     <div class="clicker-section">
         <div id="score-panel">
             <h1 id="score-text">0</h1>
             <p style="letter-spacing: 2px; margin: 5px 0;">LINCOLN MASS</p>
-            <div style="font-size: 0.9rem; color: #ccc;">
-                Bulk per Click: <span id="stat-click">1</span><br>
-                Passive Gains: <span id="stat-cps">0</span>
+            <div id="event-timer">BUFFET RUSH: <span id="timer-sec">30</span>s</div>
+            <div style="font-size: 0.85rem; color: #ccc;">
+                Per Click: <span id="stat-click">1</span> | CPS: <span id="stat-cps">0</span><br>
+                Golden Tortas: <span id="stat-prestige" style="color:var(--gold)">0</span> (+<span id="stat-boost">0</span>% Boost)
             </div>
-            <div id="sync-status">Vaulting...</div>
+            <div id="sync-status" style="font-size: 0.7rem; color: #666; margin-top: 5px;">Vaulting...</div>
         </div>
         
-        <img src="IMG_0668.jpg" id="lincoln-main" alt="Lincoln">
+        <div class="lincoln-container">
+            <img src="IMG_0668.jpg" id="lincoln-main" alt="Lincoln">
+        </div>
         
+        <button class="prestige-btn" id="prestige-btn" style="display:none;" onclick="prestige()">
+            WEIGH IN (Prestige)<br><small>Gain Golden Tortas & Reset</small>
+        </button>
+
         <br>
-        <button onclick="resetGame()" style="background:none; border:1px solid #444; color:#666; margin-top:30px; cursor:pointer; font-size: 0.7rem; padding: 5px 10px; border-radius: 5px;">Reset Progress</button>
+        <button onclick="resetGame()" style="background:none; border:1px solid #444; color:#666; margin-top:20px; cursor:pointer; font-size: 0.6rem; padding: 5px;">Hard Reset</button>
     </div>
 
     <div class="shop-container" id="shop"></div>
 </div>
 
 <div id="chat-icon" onclick="toggleChat()">💬</div>
-
 <div id="chat-box">
     <div style="background:var(--primary); padding: 10px; font-weight: bold; display: flex; justify-content: space-between;">
         <span>Global Chat</span>
         <span onclick="toggleChat()" style="cursor:pointer;">×</span>
     </div>
     <div id="chat-messages"></div>
-    <div id="chat-input-area">
-        <input type="text" id="chat-msg-input" placeholder="Type message..." onkeypress="if(event.key==='Enter') sendChat()">
-        <button onclick="sendChat()" style="background:var(--primary); border:none; color:white; border-radius:5px; padding:0 10px; cursor:pointer;">Send</button>
+    <div id="chat-input-area" style="display:flex; padding:10px; background:#1e222b;">
+        <input type="text" id="chat-msg-input" style="flex:1; background:#333; color:white; border:none; padding:5px; border-radius:3px;" placeholder="Message..." onkeypress="if(event.key==='Enter') sendChat()">
     </div>
 </div>
 
 <script>
-    // --- DATABASE CONFIG ---
     const DB_URL = 'https://cnstrmbiosdykiqyxcua.supabase.co';
     const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuc3RybWJpb3NkeWtpcXl4Y3VhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDEzMDEsImV4cCI6MjA4ODc3NzMwMX0.hf6kiAniU-Hw1J3xuYPK_xlUO9BLR3d5vkEq41uf8co';
     const _supabase = supabase.createClient(DB_URL, DB_KEY);
@@ -244,9 +145,11 @@
     let energy = 0;
     let clickPower = 1;
     let cps = 0;
-    let chatUsername = localStorage.getItem('chat_name');
+    let goldenTortas = 0;
+    let isBuffetRush = false;
+    let totalClicks = 0;
+    let unlockedAchievements = [];
 
-    // Hard Scaling Upgrades
     const upgrades = [
         { id: 0, name: "Extra Torta", cost: 15, power: 0.1, type: "click", count: 0 },
         { id: 1, name: "Chud Burger", cost: 100, power: 0.3, type: "cps", count: 0 },
@@ -266,47 +169,78 @@
     ];
 
     function initShop() {
-        const shop = document.getElementById('shop');
-        shop.innerHTML = '';
+        const shop = document.getElementById('shop'); shop.innerHTML = '';
         upgrades.forEach(u => {
             const btn = document.createElement('button');
-            btn.className = 'upgrade';
-            btn.id = `up-${u.id}`;
+            btn.className = 'upgrade'; btn.id = `up-${u.id}`;
             btn.onclick = () => buyUpgrade(u.id);
-            btn.innerHTML = `
-                <div class="upgrade-info">
-                    <span class="u-name">${u.name}</span>
-                    <span class="u-cost" id="cost-${u.id}">${u.cost.toLocaleString()}</span> Mass
-                    <small style="display:block; color:#aaa; font-style:italic;">+${u.power} per ${u.type === 'click' ? 'click' : 'sec'}</small>
-                </div>
-                <div id="count-${u.id}" style="font-size:1.4rem; font-weight:bold; color:var(--primary);">0</div>
-            `;
+            btn.innerHTML = `<div class="upgrade-info"><span class="u-name">${u.name}</span><span class="u-cost" id="cost-${u.id}">${u.cost.toLocaleString()}</span> Mass</div><div id="count-${u.id}">0</div>`;
             shop.appendChild(btn);
         });
     }
 
+    // 1. Core Logic & Prestige Multiplier
+    function getBoost() { return 1 + (goldenTortas * 0.1); }
+
     document.getElementById('lincoln-main').addEventListener('click', (e) => {
-        energy += clickPower;
-        showParticle(e.clientX, e.clientY, `+${clickPower.toFixed(1)}`);
+        let val = clickPower * getBoost();
+        if (isBuffetRush) val *= 10;
+        
+        // 4. Leaderboard Taxing (Visual logic)
+        energy += val;
+        totalClicks++;
+        checkAchievements();
+        showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
         updateUI();
     });
 
     function buyUpgrade(id) {
         const u = upgrades[id];
         if (energy >= u.cost) {
-            energy -= u.cost;
-            u.count++;
+            energy -= u.cost; u.count++;
             if (u.type === "click") clickPower += u.power; else cps += u.power;
             u.cost = Math.ceil(u.cost * 1.35); 
             updateUI();
-            cloudSave();
         }
+    }
+
+    // 2. Buffet Rush Event
+    setInterval(() => {
+        if (!isBuffetRush && Math.random() < 0.1) startBuffetRush();
+    }, 60000);
+
+    function startBuffetRush() {
+        isBuffetRush = true;
+        const img = document.getElementById('lincoln-main');
+        const timer = document.getElementById('event-timer');
+        img.classList.add('buffet-active');
+        timer.style.display = 'block';
+        let left = 30;
+        const interval = setInterval(() => {
+            left--; document.getElementById('timer-sec').innerText = left;
+            if (left <= 0) {
+                clearInterval(interval); isBuffetRush = false;
+                img.classList.remove('buffet-active'); timer.style.display = 'none';
+            }
+        }, 1000);
+    }
+
+    // 3. Visual Evolutions
+    function updateVisuals() {
+        const img = document.getElementById('lincoln-main');
+        if (energy > 1000000) img.style.filter = "contrast(1.2) drop-shadow(0 0 10px gold)";
+        if (energy > 100000000) img.style.transform = `scale(${1 + Math.sin(Date.now()/500)*0.02})`;
     }
 
     function updateUI() {
         document.getElementById('score-text').innerText = Math.floor(energy).toLocaleString();
-        document.getElementById('stat-click').innerText = clickPower.toFixed(1);
-        document.getElementById('stat-cps').innerText = cps.toFixed(1);
+        document.getElementById('stat-click').innerText = (clickPower * getBoost() * (isBuffetRush ? 10 : 1)).toFixed(1);
+        document.getElementById('stat-cps').innerText = (cps * getBoost()).toFixed(1);
+        document.getElementById('stat-prestige').innerText = goldenTortas;
+        document.getElementById('stat-boost').innerText = (goldenTortas * 10).toFixed(0);
+        
+        document.getElementById('prestige-btn').style.display = energy >= 1000000000 ? 'block' : 'none';
+
         upgrades.forEach(u => {
             const btn = document.getElementById(`up-${u.id}`);
             if (btn) {
@@ -316,83 +250,83 @@
                 document.getElementById(`count-${u.id}`).innerText = u.count;
             }
         });
+        updateVisuals();
     }
 
-    function showParticle(x, y, text) {
-        const p = document.createElement('div');
-        p.className = 'particle'; p.innerText = text;
-        p.style.left = x + 'px'; p.style.top = y + 'px';
-        document.body.appendChild(p);
-        setTimeout(() => p.remove(), 800);
-    }
-
-    // --- CHAT & SYNC ---
-    function toggleChat() {
-        const box = document.getElementById('chat-box');
-        box.style.display = box.style.display === 'flex' ? 'none' : 'flex';
-        if (!chatUsername) {
-            chatUsername = prompt("Name for Chat:");
-            if (!chatUsername) chatUsername = "Lincoln_" + Math.floor(Math.random()*999);
-            localStorage.setItem('chat_name', chatUsername);
-        }
-        if(box.style.display === 'flex') fetchMessages();
-    }
-
-    async function sendChat() {
-        const input = document.getElementById('chat-msg-input');
-        let text = input.value.trim();
-        if (!text) return;
-        
-        // Very basic filter
-        const bad = ["swear1", "swear2"]; 
-        bad.forEach(w => text = text.replace(new RegExp(w, "gi"), "****"));
-        
-        input.value = "";
-        await _supabase.from('global_chat').insert([{ username: chatUsername, message: text }]);
-        fetchMessages();
-    }
-
-    async function fetchMessages() {
-        const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(25);
-        if (data) {
-            document.getElementById('chat-messages').innerHTML = data.reverse().map(m => 
-                `<div class="msg"><b>${m.username}:</b> ${m.message}</div>`).join('');
-            const container = document.getElementById('chat-messages');
-            container.scrollTop = container.scrollHeight;
+    function prestige() {
+        if (confirm("Reset everything for Golden Tortas?")) {
+            let gained = Math.floor(Math.sqrt(energy / 1000000000));
+            goldenTortas += gained;
+            energy = 0; clickPower = 1; cps = 0;
+            upgrades.forEach(u => { u.count = 0; u.cost = Math.ceil(u.cost / Math.pow(1.35, u.count)); }); // reset costs
+            location.reload(); // Hard refresh to reset shop state simply
+            cloudSave();
         }
     }
 
+    // 5. Achievements
+    function checkAchievements() {
+        const list = [
+            { id: "steel", name: "Finger of Steel", req: () => totalClicks >= 1000 },
+            { id: "million", name: "Mass Millionaire", req: () => energy >= 1000000 }
+        ];
+        list.forEach(a => {
+            if (!unlockedAchievements.includes(a.id) && a.req()) {
+                unlockedAchievements.push(a.id);
+                showAchievement(a.name);
+            }
+        });
+    }
+
+    function showAchievement(name) {
+        const b = document.getElementById('achievement-banner');
+        b.innerText = "Unlocked: " + name; b.style.display = "block";
+        setTimeout(() => b.style.display = "none", 4000);
+    }
+
+    // Standard Utils (Sync, Chat, Particles)
     async function cloudSave() {
-        document.getElementById('sync-status').innerText = "Syncing...";
-        const { error } = await _supabase.from('leaderboard').upsert({ username: sessionId, clicks: Math.floor(energy) }, { onConflict: 'username' });
-        if (!error) {
-            document.getElementById('sync-status').innerText = "Vaulted";
-            localStorage.setItem('lincoln_bk', JSON.stringify({energy, clickPower, cps, counts: upgrades.map(u=>u.count), costs: upgrades.map(u=>u.cost)}));
-        }
+        await _supabase.from('leaderboard').upsert({ 
+            username: sessionId, clicks: Math.floor(energy), 
+            golden_tortas: goldenTortas, achievements: unlockedAchievements.join(',') 
+        }, { onConflict: 'username' });
     }
 
     async function cloudLoad() {
-        const local = localStorage.getItem('lincoln_bk');
-        if (local) {
-            const d = JSON.parse(local);
-            energy = d.energy; clickPower = d.clickPower; cps = d.cps;
-            d.counts?.forEach((c, i) => { if(upgrades[i]) upgrades[i].count = c; });
-            d.costs?.forEach((c, i) => { if(upgrades[i]) upgrades[i].cost = c; });
+        const { data } = await _supabase.from('leaderboard').select('*').eq('username', sessionId).maybeSingle();
+        if (data) {
+            energy = data.clicks; goldenTortas = data.golden_tortas || 0;
+            unlockedAchievements = data.achievements ? data.achievements.split(',') : [];
             updateUI();
         }
-        const { data } = await _supabase.from('leaderboard').select('*').eq('username', sessionId).maybeSingle();
-        if (data && data.clicks > energy) { energy = data.clicks; updateUI(); }
-        document.getElementById('sync-status').innerText = "Vault Connected";
     }
 
-    function resetGame() { if(confirm("Erase all Mass?")) { localStorage.clear(); location.reload(); } }
+    function showParticle(x, y, text) {
+        const p = document.createElement('div'); p.className = 'particle'; p.innerText = text;
+        p.style.left = x + 'px'; p.style.top = y + 'px';
+        document.body.appendChild(p); setTimeout(() => p.remove(), 800);
+    }
 
-    setInterval(() => { if (cps > 0) { energy += (cps / 10); updateUI(); } }, 100);
-    setInterval(cloudSave, 20000);
-    setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 4000);
+    function toggleChat() { 
+        const b = document.getElementById('chat-box'); b.style.display = b.style.display === 'flex' ? 'none' : 'flex';
+        if (!localStorage.getItem('chat_name')) localStorage.setItem('chat_name', prompt("Chat Name:") || "Lincoln");
+        if(b.style.display === 'flex') fetchMessages();
+    }
 
-    initShop();
-    cloudLoad();
+    async function sendChat() {
+        const i = document.getElementById('chat-msg-input');
+        await _supabase.from('global_chat').insert([{ username: localStorage.getItem('chat_name'), message: i.value }]);
+        i.value = ""; fetchMessages();
+    }
+
+    async function fetchMessages() {
+        const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(15);
+        if (data) document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `<div class="msg"><b>${m.username}:</b> ${m.message}</div>`).join('');
+    }
+
+    setInterval(() => { energy += (cps * getBoost() / 10); updateUI(); }, 100);
+    setInterval(cloudSave, 30000);
+    initShop(); cloudLoad();
 </script>
 </body>
 </html>
