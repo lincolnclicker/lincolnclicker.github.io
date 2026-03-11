@@ -85,9 +85,10 @@
         #admin-panel {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: #2f3542; border: 3px solid var(--gold); padding: 20px; border-radius: 15px;
-            z-index: 10001; box-shadow: 0 0 50px #000; width: 280px;
+            z-index: 10001; box-shadow: 0 0 50px #000; width: 300px;
         }
-        .admin-input { width: 100%; padding: 8px; margin-bottom: 10px; background: #1e222b; border: 1px solid #444; color: white; }
+        .admin-input { width: 100%; padding: 10px; margin-bottom: 10px; background: #1e222b; border: 1px solid #444; color: white; box-sizing: border-box; border-radius: 5px; }
+        .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
         
         #achievement-banner { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--gold); color: black; padding: 12px 25px; border-radius: 30px; font-weight: bold; display: none; z-index: 2000; }
         .particle { position: fixed; pointer-events: none; animation: flyUp 0.8s forwards; font-weight: bold; color: var(--gold); z-index: 999; }
@@ -96,18 +97,24 @@
 </head>
 <body class="bg-kitchen">
 
-<div id="admin-trigger" onclick="openAdmin()" style="position:fixed; top:0; right:0; width:30px; height:30px; cursor:pointer; opacity:0.01; z-index:9999;">⚙️</div>
+<div id="admin-trigger" onclick="openAdmin()" style="position:fixed; top:0; right:0; width:40px; height:40px; cursor:pointer; opacity:0.01; z-index:9999;"></div>
 
 <div id="admin-panel">
-    <h3 style="margin-top:0; color:var(--gold);">GOD MODE</h3>
-    <label style="font-size:0.7rem;">Target Username</label>
-    <input type="text" id="admin-target-user" class="admin-input" placeholder="Username">
+    <h3 style="margin-top:0; color:var(--gold); text-align:center;">ADMIN CONTROL</h3>
     
-    <button onclick="adminAction('mass')" style="width:100%; background:var(--gold); padding:8px; border:none; margin-bottom:5px; font-weight:bold; cursor:pointer;">Give 1B Mass</button>
-    <button onclick="adminAction('timeout')" style="width:100%; background:#e67e22; padding:8px; border:none; margin-bottom:5px; color:white; cursor:pointer;">Timeout (10 min)</button>
-    <button onclick="adminAction('ban')" style="width:100%; background:#e74c3c; padding:8px; border:none; margin-bottom:10px; color:white; cursor:pointer;">PERMA BAN</button>
+    <input type="text" id="admin-target-user" class="admin-input" placeholder="Target Username">
+    <input type="text" id="admin-value" class="admin-input" placeholder="Amount (Mass or Minutes)">
     
-    <button onclick="document.getElementById('admin-panel').style.display='none'" style="width:100%; background:none; border:none; color:#aaa; cursor:pointer;">Close</button>
+    <button onclick="adminAction('mass')" style="width:100%; background:var(--gold); padding:10px; border:none; margin-bottom:10px; font-weight:bold; cursor:pointer; border-radius:5px;">Give Mass</button>
+    
+    <button onclick="adminAction('timeout')" style="width:100%; background:#e67e22; padding:10px; border:none; margin-bottom:10px; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Set Timeout (Minutes)</button>
+    
+    <div class="admin-grid">
+        <button onclick="adminAction('ban')" style="background:#e74c3c; padding:10px; border:none; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Ban</button>
+        <button onclick="adminAction('unban')" style="background:#2ecc71; padding:10px; border:none; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Unban</button>
+    </div>
+    
+    <button onclick="document.getElementById('admin-panel').style.display='none'" style="width:100%; background:none; border:none; color:#aaa; cursor:pointer; margin-top:15px; font-size:0.8rem;">Close Panel</button>
 </div>
 
 <div id="achievement-banner">Achievement Unlocked!</div>
@@ -240,7 +247,7 @@
         const local = localStorage.getItem('lincoln_local_save');
         if (local) {
             const d = JSON.parse(local);
-            energy = d.energy; clickPower = d.clickPower; cps = d.cps; goldenTortas = d.goldenTortas;
+            energy = d.energy || 0; clickPower = d.clickPower || 1; cps = d.cps || 0; goldenTortas = d.goldenTortas || 0;
             d.upgrades?.forEach((u, i) => { if(upgrades[i]) { upgrades[i].count = u.count; upgrades[i].cost = u.cost; } });
         }
         updateUI(); fetchKing();
@@ -254,19 +261,31 @@
 
     async function adminAction(type) {
         const target = document.getElementById('admin-target-user').value;
-        if (!target) return alert("Enter a target username!");
+        const valText = document.getElementById('admin-value').value;
+        if (!target) return alert("Enter target username!");
 
         if (type === 'mass') {
-            if (target === chatName) { energy += 1000000000; updateUI(); cloudSave(); }
-            else { await _supabase.from('leaderboard').update({ clicks: 1000000000 }).eq('username', target); }
-            alert("Injected 1B Mass!");
+            const amount = parseFloat(valText);
+            if (isNaN(amount)) return alert("Enter valid number for mass!");
+            if (target === chatName) { energy += amount; updateUI(); cloudSave(); }
+            else { 
+                const { data } = await _supabase.from('leaderboard').select('clicks').eq('username', target).maybeSingle();
+                const newMass = (data?.clicks || 0) + amount;
+                await _supabase.from('leaderboard').update({ clicks: newMass }).eq('username', target);
+            }
+            alert(`Added ${amount.toLocaleString()} Mass to ${target}`);
         } else if (type === 'timeout') {
-            const date = new Date(); date.setMinutes(date.getMinutes() + 10);
+            const mins = parseInt(valText);
+            if (isNaN(mins)) return alert("Enter valid minutes!");
+            const date = new Date(); date.setMinutes(date.getMinutes() + mins);
             await _supabase.from('leaderboard').update({ timeout_until: date.toISOString() }).eq('username', target);
-            alert("Timed out " + target);
+            alert(`Timed out ${target} for ${mins} mins`);
         } else if (type === 'ban') {
             await _supabase.from('leaderboard').update({ is_banned: true }).eq('username', target);
             alert("Banned " + target);
+        } else if (type === 'unban') {
+            await _supabase.from('leaderboard').update({ is_banned: false }).eq('username', target);
+            alert("Unbanned " + target);
         }
     }
 
@@ -278,7 +297,10 @@
 
         const { data } = await _supabase.from('leaderboard').select('is_banned, timeout_until').eq('username', chatName).maybeSingle();
         if (data?.is_banned) return alert("You are permanently banned.");
-        if (data?.timeout_until && new Date(data.timeout_until) > new Date()) return alert("You are timed out.");
+        if (data?.timeout_until && new Date(data.timeout_until) > new Date()) {
+            const remain = Math.ceil((new Date(data.timeout_until) - new Date()) / 60000);
+            return alert(`You are timed out for ${remain} more minutes.`);
+        }
 
         await _supabase.from('global_chat').insert([{ username: chatName, message: message }]);
         input.value = ""; fetchMessages();
