@@ -250,6 +250,80 @@ function updateUI() {
     
     // 1. Update the openAdmin function to check the database
 
+    
+    // Function for the Admin to send the message
+async function sendAnnouncement() {
+    const { data: adminCheck } = await _supabase.from('leaderboard').select('admin').eq('username', chatName).single();
+    if (!adminCheck || !adminCheck.admin) return alert("Unauthorized.");
+
+    const msg = prompt("Enter Global Announcement:");
+    if (!msg) return;
+
+    const expiresAt = new Date(Date.now() + 10000).toISOString(); // 10 seconds
+    
+    await _supabase.from('game_events').insert([{ 
+        event_type: 'announcement', 
+        message: msg, 
+        expires_at: expiresAt 
+    }]);
+
+    document.getElementById('admin-panel').style.display = 'none';
+}
+
+// Function that displays the message for EVERYONE
+function handleNewEvent(event) {
+    if (eventTimer) clearInterval(eventTimer);
+    const oldNotice = document.getElementById('event-notice');
+    if (oldNotice) oldNotice.remove();
+
+    const expiry = new Date(event.expires_at.replace(' ', 'T')).getTime();
+    
+    const notice = document.createElement('div');
+    notice.id = "event-notice";
+    // CRITICAL: pointer-events: none; added at the end so you can still click the Torta!
+    notice.style = "position:fixed; top:15%; left:50%; transform:translateX(-50%); color:white; padding:20px 40px; border-radius:15px; font-weight:bold; z-index:10000; box-shadow:0 0 30px rgba(0,0,0,0.8); text-align:center; font-size:1.5rem; border: 3px solid var(--gold); background: #2f3542; min-width: 300px; pointer-events: none;";
+    document.body.appendChild(notice);
+
+    eventTimer = setInterval(() => {
+        const now = new Date().getTime();
+        const timeLeft = expiry - now;
+
+        if (timeLeft <= 0) {
+            eventMultiplier = 1;
+            document.body.style.boxShadow = "none";
+            notice.remove();
+            clearInterval(eventTimer);
+            return;
+        }
+
+        const seconds = Math.ceil(timeLeft / 1000);
+
+        switch(event.event_type) {
+            case 'announcement':
+                notice.style.background = "#6c5ce7"; 
+                notice.innerHTML = `📢 <b>ADMIN ALERT:</b><br>${event.message}`;
+                break;
+            case 'feast':
+                eventMultiplier = 2;
+                notice.style.background = "var(--gold)";
+                notice.style.color = "black";
+                notice.innerText = `🔥 THE BUFFET IS OPEN! 2X MASS (${seconds}s) 🔥`;
+                break;
+            case 'storm':
+                eventMultiplier = 5; 
+                notice.style.background = "#00d2ff";
+                notice.style.color = "black";
+                notice.innerText = `⚡ TORTA STORM! 5X CLICK (${seconds}s) ⚡`;
+                break;
+            case 'low_carb':
+                eventMultiplier = 0.5;
+                notice.style.background = "#ff4757";
+                notice.innerText = `🥗 LOW CARB DAY... 0.5X MASS (${seconds}s) 🥗`;
+                break;
+        }
+    }, 1000);
+}
+    
     async function changeName() {
     let newName = prompt("Enter your new username:", chatName || "");
     
@@ -531,5 +605,6 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
