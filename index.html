@@ -221,7 +221,33 @@ let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
 // --- 2. MULTI-EVENT SYSTEM ---
 
-async function triggerEvent(type) {
+async function prestige() {
+    const gain = Math.floor(Math.pow(energy / 1000000000, 0.5));
+    if (confirm(`Weighing in will reset your Mass and Upgrades, but you'll gain ${gain} Golden Tortas. Proceed?`)) {
+        
+        // --- Global Announcement ---
+        if (chatName) {
+            await _supabase.from('global_chat').insert([{ 
+                username: 'SYSTEM', 
+                message: `🎊 ${chatName} has WEIGHED IN and gained ${gain} Golden Tortas! 🎊` 
+            }]);
+        }
+
+        goldenTortas += gain;
+        energy = 0;
+        clickPower = 1;
+        cps = 0;
+        upgrades = initialUpgrades.map(u => ({...u, count: 0}));
+        
+        await cloudSave();
+        initShop(); 
+        updateUI();
+        
+        alert("You've evolved! The grind for mass begins anew, but much faster.");
+    }
+}
+    
+    async function triggerEvent(type) {
     const expiresAt = new Date(Date.now() + 5 * 60000).toISOString();
     await _supabase.from('game_events').insert([{ event_type: type, expires_at: expiresAt }]);
     document.getElementById('admin-panel').style.display = 'none';
@@ -235,53 +261,57 @@ function initRealtimeEvents() {
 }
 
 function handleNewEvent(event) {
-    // Clear any existing global event state
-    if (eventTimer) clearTimeout(eventTimer);
+    if (eventTimer) clearInterval(eventTimer); // Clear previous interval if any
     const oldNotice = document.getElementById('event-notice');
     if (oldNotice) oldNotice.remove();
 
-    const now = new Date().getTime();
-    const expiry = new Date(event.expires_at).getTime();
-    const timeLeft = expiry - now;
-
-    if (timeLeft <= 0) return; // Already expired
-
-    currentEvent = event.event_type;
+    const expiry = new Date(event.expires_at + (event.expires_at.endsWith('Z') ? '' : 'Z')).getTime();
+    
+    // Create the notice element
     const notice = document.createElement('div');
     notice.id = "event-notice";
-    notice.style = "position:fixed; top:10%; left:50%; transform:translateX(-50%); color:black; padding:15px 30px; border-radius:50px; font-weight:bold; z-index:10000; box-shadow:0 0 20px black; animation: pulse-gold 1s infinite;";
-    
-    switch(event.event_type) {
-        case 'feast':
-            eventMultiplier = 2;
-            notice.style.background = "var(--gold)";
-            notice.innerText = "🔥 THE BUFFET IS OPEN! 2X MASS ACTIVE! 🔥";
-            document.body.style.boxShadow = "inset 0 0 100px rgba(241, 196, 15, 0.7)";
-            break;
-        case 'storm':
-            eventMultiplier = 5; 
-            notice.style.background = "#00d2ff";
-            notice.innerText = "⚡ TORTA STORM! 5X CLICK POWER! ⚡";
-            document.body.style.boxShadow = "inset 0 0 100px rgba(0, 210, 255, 0.7)";
-            break;
-        case 'low_carb':
-            eventMultiplier = 0.5;
-            notice.style.background = "#ff4757";
-            notice.style.color = "white";
-            notice.innerText = "🥗 LOW CARB DAY... 0.5X MASS 🥗";
-            document.body.style.boxShadow = "inset 0 0 100px rgba(255, 71, 87, 0.7)";
-            break;
-    }
-
+    notice.style = "position:fixed; top:10%; left:50%; transform:translateX(-50%); color:black; padding:15px 30px; border-radius:50px; font-weight:bold; z-index:10000; box-shadow:0 0 20px black; animation: pulse-gold 1s infinite; text-align:center;";
     document.body.appendChild(notice);
 
-    eventTimer = setTimeout(() => {
-        eventMultiplier = 1;
-        currentEvent = null;
-        document.body.style.boxShadow = "none";
-        const n = document.getElementById('event-notice');
-        if (n) n.remove();
-    }, timeLeft);
+    // This interval updates the countdown every second
+    eventTimer = setInterval(() => {
+        const now = new Date().getTime();
+        const timeLeft = expiry - now;
+
+        if (timeLeft <= 0) {
+            eventMultiplier = 1;
+            currentEvent = null;
+            document.body.style.boxShadow = "none";
+            notice.remove();
+            clearInterval(eventTimer);
+            return;
+        }
+
+        const seconds = Math.ceil(timeLeft / 1000);
+        currentEvent = event.event_type;
+
+        switch(event.event_type) {
+            case 'feast':
+                eventMultiplier = 2;
+                notice.style.background = "var(--gold)";
+                notice.innerText = `🔥 THE BUFFET IS OPEN! 2X MASS (${seconds}s) 🔥`;
+                document.body.style.boxShadow = "inset 0 0 100px rgba(241, 196, 15, 0.7)";
+                break;
+            case 'storm':
+                eventMultiplier = 5; 
+                notice.style.background = "#00d2ff";
+                notice.innerText = `⚡ TORTA STORM! 5X CLICK (${seconds}s) ⚡`;
+                document.body.style.boxShadow = "inset 0 0 100px rgba(0, 210, 255, 0.7)";
+                break;
+            case 'low_carb':
+                eventMultiplier = 0.5;
+                notice.style.background = "#ff4757";
+                notice.style.color = "white";
+                notice.innerText = `🥗 LOW CARB DAY... 0.5X MASS (${seconds}s) 🥗`;
+                document.body.style.boxShadow = "inset 0 0 100px rgba(255, 71, 87, 0.7)";
+                break;
+        }
+    }, 1000);
 }
 
 async function checkActiveEvents() {
@@ -472,16 +502,32 @@ function resetGame() {
 }
 
 // --- 5. INITIALIZATION ---
-setInterval(cloudSave, 20000);
-setInterval(fetchLeaderboard, 15000);
-setInterval(fetchKing, 15000); 
-setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
+async function startGame() {
+    // 1. Load basic stats
+    initShop(); 
+    cloudLoad();
+    
+    // 2. Connect to Realtime (for live button clicks)
+    initRealtimeEvents();
+    
+    // 3. Check for existing events (for refreshes)
+    await checkActiveEvents(); 
+    
+    // 4. Start the background loops
+    fetchKing();
+    setInterval(cloudSave, 20000);
+    setInterval(fetchLeaderboard, 15000);
+    setInterval(fetchKing, 15000); 
+    setInterval(() => { 
+        if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); 
+    }, 5000);
+    
+    console.log("Game fully initialized and synced.");
+}
 
-initShop(); 
-cloudLoad();
-fetchKing();
-initRealtimeEvents();
-checkActiveEvents(); // <--- This restores the event if you refresh
+// Launch the game
+startGame();
 </script>
 </body>
 </html>
+
