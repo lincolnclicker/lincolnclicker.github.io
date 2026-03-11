@@ -15,108 +15,103 @@
             --buffet-color: #ff4757;
         }
 
-        @keyframes bgScroll {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        @keyframes pulse-gold {
-            0% { box-shadow: 0 0 0 0px var(--buffet-color); }
-            100% { box-shadow: 0 0 20px 20px rgba(255, 71, 87, 0); }
-        }
-
         body {
             font-family: 'Arial Rounded MT Bold', sans-serif;
-            background: linear-gradient(-45deg, #1e272e, #2d3436, #000000);
-            background-size: 400% 400%;
-            animation: bgScroll 15s ease infinite;
+            background: #1e272e;
             color: white; margin: 0; display: flex; justify-content: center; min-height: 100vh; overflow: hidden;
         }
 
-        #game-wrapper { max-width: 1100px; width: 100%; display: flex; gap: 20px; padding: 20px; }
+        #game-wrapper { 
+            max-width: 1200px; width: 100%; display: flex; gap: 20px; padding: 20px; 
+            box-sizing: border-box;
+        }
 
-        .clicker-section { flex: 1; text-align: center; position: sticky; top: 20px; height: fit-content; }
+        /* Fixed Left Section */
+        .clicker-section { 
+            flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center;
+        }
 
         #score-panel {
             background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 20px;
-            border: 3px solid var(--primary); margin-bottom: 20px; backdrop-filter: blur(10px);
+            border: 3px solid var(--primary); margin-bottom: 20px; width: 100%;
+            box-sizing: border-box; backdrop-filter: blur(10px);
         }
 
-        #score-text { font-size: 3rem; color: var(--gold); margin: 0; }
+        #score-text { font-size: 3.5rem; color: var(--gold); margin: 0; line-height: 1; }
 
-        .lincoln-container { position: relative; display: inline-block; }
-        
         #lincoln-main {
-            width: 320px; height: 320px; border-radius: 50%; cursor: pointer;
+            width: 300px; height: 300px; border-radius: 50%; cursor: pointer;
             object-fit: cover; border: 8px solid var(--secondary);
-            transition: transform 0.05s, filter 0.3s; user-select: none;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: transform 0.05s; user-select: none;
         }
 
         #lincoln-main:active { transform: scale(0.94); }
-        .buffet-active { animation: pulse-gold 1s infinite !important; border-color: var(--buffet-color) !important; }
+        .buffet-active { border-color: var(--buffet-color) !important; box-shadow: 0 0 20px var(--buffet-color); }
 
+        /* Fixed Shop Layout */
         .shop-container {
-            flex: 1.2; background: rgba(255, 255, 255, 0.05); padding: 20px;
+            flex: 1.2; background: rgba(255, 255, 255, 0.05); padding: 15px;
             border-radius: 20px; height: 90vh; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1);
         }
 
         .upgrade {
-            width: 100%; background: #2f3542; border: 2px solid transparent;
-            border-radius: 12px; padding: 15px; color: white; cursor: pointer;
-            display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+            width: 100%; background: #2f3542; border: 2px solid #444;
+            border-radius: 12px; padding: 12px 18px; color: white; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 10px; box-sizing: border-box; transition: 0.2s;
         }
 
-        .upgrade:disabled { opacity: 0.3; cursor: not-allowed; }
+        .upgrade:disabled { opacity: 0.3; filter: grayscale(1); }
         .can-afford { border-color: var(--gold) !important; background: #3e4452; }
+
+        .u-info { text-align: left; }
+        .u-name { font-weight: bold; color: #fab1a0; display: block; font-size: 1rem; }
+        .u-cost { color: #55efc4; font-size: 0.9rem; }
+        .u-count { font-size: 1.5rem; font-weight: bold; opacity: 0.6; }
 
         .prestige-btn {
             background: var(--gold); color: black; font-weight: bold; width: 100%;
             padding: 15px; border-radius: 12px; border: none; cursor: pointer; margin-top: 10px;
         }
 
-        /* Achievements & Chat UI */
-        #chat-icon { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 1000; font-size: 30px; }
-        #chat-box { position: fixed; bottom: 90px; right: 20px; width: 300px; height: 400px; background: var(--chat-bg); border: 2px solid var(--primary); border-radius: 10px; display: none; flex-direction: column; z-index: 1000; }
-        #chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 0.8rem; background: #1a1e26; }
-        .msg { margin-bottom: 5px; padding: 4px; border-radius: 4px; background: rgba(255,255,255,0.03); }
-        .msg.tax-alert { color: var(--gold); font-style: italic; }
+        /* UI Overlays */
+        #chat-icon { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        #chat-box { position: fixed; bottom: 90px; right: 20px; width: 320px; height: 450px; background: var(--chat-bg); border: 2px solid var(--primary); border-radius: 12px; display: none; flex-direction: column; z-index: 100; }
+        #chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 0.85rem; background: #1a1e26; }
+        .msg { margin-bottom: 8px; line-height: 1.4; padding: 5px; border-radius: 4px; background: rgba(255,255,255,0.03); }
+        .msg b { color: var(--secondary); }
 
         .particle { position: fixed; pointer-events: none; animation: flyUp 0.8s forwards; font-weight: bold; color: var(--gold); z-index: 999; }
         @keyframes flyUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-120px); opacity: 0; } }
-        
-        #event-timer { color: var(--buffet-color); font-weight: bold; display: none; }
-        .achievement-popup { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--gold); color: black; padding: 10px 20px; border-radius: 20px; font-weight: bold; z-index: 2000; display: none; }
+
+        #achievement-banner { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--gold); color: black; padding: 12px 25px; border-radius: 30px; font-weight: bold; display: none; z-index: 1000; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
 
-<div id="achievement-banner" class="achievement-popup">Achievement Unlocked!</div>
+<div id="achievement-banner">Achievement Unlocked!</div>
 
 <div id="game-wrapper">
     <div class="clicker-section">
         <div id="score-panel">
             <h1 id="score-text">0</h1>
-            <p style="letter-spacing: 2px; margin: 5px 0;">LINCOLN MASS</p>
-            <div id="event-timer">BUFFET RUSH: <span id="timer-sec">30</span>s</div>
-            <div style="font-size: 0.85rem; color: #ccc;">
-                Per Click: <span id="stat-click">1</span> | CPS: <span id="stat-cps">0</span><br>
-                Golden Tortas: <span id="stat-prestige" style="color:var(--gold)">0</span> (+<span id="stat-boost">0</span>% Boost)
+            <p style="margin: 5px 0; letter-spacing: 2px; font-size: 0.8rem;">LINCOLN MASS</p>
+            <div id="event-timer" style="color:var(--buffet-color); font-weight:bold; display:none; margin: 5px 0;">BUFFET RUSH: <span id="timer-sec">30</span>s</div>
+            
+            <div style="font-size: 0.8rem; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; margin-top: 10px;">
+                Per Click: <span id="stat-click">1</span> | Sec: <span id="stat-cps">0</span><br>
+                Golden Tortas: <span id="stat-prestige" style="color:var(--gold)">0</span> (+<span id="stat-boost">0</span>%)
             </div>
-            <div id="sync-status" style="font-size: 0.7rem; color: #666; margin-top: 5px;">Vaulting...</div>
+            <div id="sync-status" style="font-size: 0.65rem; color: #777; margin-top: 8px;">Connecting...</div>
         </div>
         
-        <div class="lincoln-container">
-            <img src="IMG_0668.jpg" id="lincoln-main" alt="Lincoln">
-        </div>
+        <img src="IMG_0668.jpg" id="lincoln-main" alt="Lincoln">
         
         <button class="prestige-btn" id="prestige-btn" style="display:none;" onclick="prestige()">
             WEIGH IN (Prestige)<br><small>Gain Golden Tortas & Reset</small>
         </button>
 
-        <br>
-        <button onclick="resetGame()" style="background:none; border:1px solid #444; color:#666; margin-top:20px; cursor:pointer; font-size: 0.6rem; padding: 5px;">Hard Reset</button>
+        <button onclick="resetGame()" style="background:none; border:none; color:#555; margin-top:20px; cursor:pointer; font-size: 0.7rem; text-decoration: underline;">Hard Reset</button>
     </div>
 
     <div class="shop-container" id="shop"></div>
@@ -124,13 +119,14 @@
 
 <div id="chat-icon" onclick="toggleChat()">💬</div>
 <div id="chat-box">
-    <div style="background:var(--primary); padding: 10px; font-weight: bold; display: flex; justify-content: space-between;">
-        <span>Global Chat</span>
+    <div style="background:var(--primary); padding: 12px; font-weight: bold; display: flex; justify-content: space-between;">
+        <span>Global Chat & King</span>
         <span onclick="toggleChat()" style="cursor:pointer;">×</span>
     </div>
+    <div style="background: #000; padding: 5px; font-size: 0.7rem; color: var(--gold); text-align: center;" id="king-display">👑 Loading King...</div>
     <div id="chat-messages"></div>
-    <div id="chat-input-area" style="display:flex; padding:10px; background:#1e222b;">
-        <input type="text" id="chat-msg-input" style="flex:1; background:#333; color:white; border:none; padding:5px; border-radius:3px;" placeholder="Message..." onkeypress="if(event.key==='Enter') sendChat()">
+    <div style="display:flex; padding:10px; background:#1e222b;">
+        <input type="text" id="chat-msg-input" style="flex:1; background:#333; color:white; border:none; padding:8px; border-radius:5px;" placeholder="Press Enter to send..." onkeypress="if(event.key==='Enter') sendChat()">
     </div>
 </div>
 
@@ -149,6 +145,7 @@
     let isBuffetRush = false;
     let totalClicks = 0;
     let unlockedAchievements = [];
+    let currentKing = "";
 
     const upgrades = [
         { id: 0, name: "Extra Torta", cost: 15, power: 0.1, type: "click", count: 0 },
@@ -174,21 +171,29 @@
             const btn = document.createElement('button');
             btn.className = 'upgrade'; btn.id = `up-${u.id}`;
             btn.onclick = () => buyUpgrade(u.id);
-            btn.innerHTML = `<div class="upgrade-info"><span class="u-name">${u.name}</span><span class="u-cost" id="cost-${u.id}">${u.cost.toLocaleString()}</span> Mass</div><div id="count-${u.id}">0</div>`;
+            btn.innerHTML = `
+                <div class="u-info">
+                    <span class="u-name">${u.name}</span>
+                    <span class="u-cost" id="cost-${u.id}">${u.cost.toLocaleString()}</span> Mass
+                </div>
+                <div class="u-count" id="count-${u.id}">0</div>
+            `;
             shop.appendChild(btn);
         });
     }
 
-    // 1. Core Logic & Prestige Multiplier
     function getBoost() { return 1 + (goldenTortas * 0.1); }
 
     document.getElementById('lincoln-main').addEventListener('click', (e) => {
         let val = clickPower * getBoost();
         if (isBuffetRush) val *= 10;
         
-        // 4. Leaderboard Taxing (Visual logic)
-        energy += val;
-        totalClicks++;
+        // 4. Global Tax Logic (Subtract 1% if you aren't the king)
+        if (currentKing !== "" && localStorage.getItem('chat_name') !== currentKing) {
+            val *= 0.99;
+        }
+
+        energy += val; totalClicks++;
         checkAchievements();
         showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
         updateUI();
@@ -204,32 +209,20 @@
         }
     }
 
-    // 2. Buffet Rush Event
-    setInterval(() => {
-        if (!isBuffetRush && Math.random() < 0.1) startBuffetRush();
-    }, 60000);
-
     function startBuffetRush() {
         isBuffetRush = true;
-        const img = document.getElementById('lincoln-main');
+        document.getElementById('lincoln-main').classList.add('buffet-active');
         const timer = document.getElementById('event-timer');
-        img.classList.add('buffet-active');
         timer.style.display = 'block';
         let left = 30;
         const interval = setInterval(() => {
             left--; document.getElementById('timer-sec').innerText = left;
             if (left <= 0) {
                 clearInterval(interval); isBuffetRush = false;
-                img.classList.remove('buffet-active'); timer.style.display = 'none';
+                document.getElementById('lincoln-main').classList.remove('buffet-active');
+                timer.style.display = 'none';
             }
         }, 1000);
-    }
-
-    // 3. Visual Evolutions
-    function updateVisuals() {
-        const img = document.getElementById('lincoln-main');
-        if (energy > 1000000) img.style.filter = "contrast(1.2) drop-shadow(0 0 10px gold)";
-        if (energy > 100000000) img.style.transform = `scale(${1 + Math.sin(Date.now()/500)*0.02})`;
     }
 
     function updateUI() {
@@ -238,7 +231,6 @@
         document.getElementById('stat-cps').innerText = (cps * getBoost()).toFixed(1);
         document.getElementById('stat-prestige').innerText = goldenTortas;
         document.getElementById('stat-boost').innerText = (goldenTortas * 10).toFixed(0);
-        
         document.getElementById('prestige-btn').style.display = energy >= 1000000000 ? 'block' : 'none';
 
         upgrades.forEach(u => {
@@ -250,46 +242,46 @@
                 document.getElementById(`count-${u.id}`).innerText = u.count;
             }
         });
-        updateVisuals();
+        
+        // Visual Evolution
+        const img = document.getElementById('lincoln-main');
+        if (energy > 1000000) img.style.filter = "drop-shadow(0 0 15px gold)";
+        if (energy > 100000000) img.style.transform = `scale(${1 + Math.sin(Date.now()/500)*0.01})`;
     }
 
-    function prestige() {
-        if (confirm("Reset everything for Golden Tortas?")) {
-            let gained = Math.floor(Math.sqrt(energy / 1000000000));
-            goldenTortas += gained;
-            energy = 0; clickPower = 1; cps = 0;
-            upgrades.forEach(u => { u.count = 0; u.cost = Math.ceil(u.cost / Math.pow(1.35, u.count)); }); // reset costs
-            location.reload(); // Hard refresh to reset shop state simply
-            cloudSave();
-        }
-    }
-
-    // 5. Achievements
     function checkAchievements() {
-        const list = [
-            { id: "steel", name: "Finger of Steel", req: () => totalClicks >= 1000 },
-            { id: "million", name: "Mass Millionaire", req: () => energy >= 1000000 }
+        const a = [
+            { id: "steel", name: "Finger of Steel", req: totalClicks >= 1000 },
+            { id: "mil", name: "Mass Millionaire", req: energy >= 1000000 }
         ];
-        list.forEach(a => {
-            if (!unlockedAchievements.includes(a.id) && a.req()) {
-                unlockedAchievements.push(a.id);
-                showAchievement(a.name);
+        a.forEach(ach => {
+            if (!unlockedAchievements.includes(ach.id) && ach.req) {
+                unlockedAchievements.push(ach.id);
+                const b = document.getElementById('achievement-banner');
+                b.innerText = "🏆 Unlocked: " + ach.name; b.style.display = "block";
+                setTimeout(() => b.style.display = "none", 4000);
             }
         });
     }
 
-    function showAchievement(name) {
-        const b = document.getElementById('achievement-banner');
-        b.innerText = "Unlocked: " + name; b.style.display = "block";
-        setTimeout(() => b.style.display = "none", 4000);
+    async function prestige() {
+        if (confirm("Reset everything for Golden Tortas?")) {
+            let gained = Math.floor(Math.sqrt(energy / 1000000000));
+            goldenTortas += gained;
+            energy = 0; clickPower = 1; cps = 0;
+            upgrades.forEach(u => { u.count = 0; u.cost = Math.ceil(u.cost / Math.pow(1.35, u.count)); });
+            await cloudSave();
+            location.reload();
+        }
     }
 
-    // Standard Utils (Sync, Chat, Particles)
     async function cloudSave() {
+        document.getElementById('sync-status').innerText = "Syncing...";
         await _supabase.from('leaderboard').upsert({ 
             username: sessionId, clicks: Math.floor(energy), 
             golden_tortas: goldenTortas, achievements: unlockedAchievements.join(',') 
         }, { onConflict: 'username' });
+        document.getElementById('sync-status').innerText = "Vaulted";
     }
 
     async function cloudLoad() {
@@ -299,6 +291,35 @@
             unlockedAchievements = data.achievements ? data.achievements.split(',') : [];
             updateUI();
         }
+        document.getElementById('sync-status').innerText = "Vault Connected";
+        fetchKing();
+    }
+
+    async function fetchKing() {
+        const { data } = await _supabase.from('king_of_the_hill').select('*').maybeSingle();
+        if (data) {
+            currentKing = data.username;
+            document.getElementById('king-display').innerText = `👑 Current King: ${data.username} (${data.clicks.toLocaleString()} Mass)`;
+        }
+    }
+
+    function toggleChat() { 
+        const b = document.getElementById('chat-box'); 
+        b.style.display = b.style.display === 'flex' ? 'none' : 'flex';
+        if (!localStorage.getItem('chat_name')) localStorage.setItem('chat_name', prompt("Enter Chat Name:") || "Anonymous");
+        if(b.style.display === 'flex') fetchMessages();
+    }
+
+    async function fetchMessages() {
+        const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(20);
+        if (data) document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `<div class="msg"><b>${m.username}:</b> ${m.message}</div>`).join('');
+    }
+
+    async function sendChat() {
+        const i = document.getElementById('chat-msg-input');
+        if (!i.value) return;
+        await _supabase.from('global_chat').insert([{ username: localStorage.getItem('chat_name'), message: i.value }]);
+        i.value = ""; fetchMessages();
     }
 
     function showParticle(x, y, text) {
@@ -307,25 +328,13 @@
         document.body.appendChild(p); setTimeout(() => p.remove(), 800);
     }
 
-    function toggleChat() { 
-        const b = document.getElementById('chat-box'); b.style.display = b.style.display === 'flex' ? 'none' : 'flex';
-        if (!localStorage.getItem('chat_name')) localStorage.setItem('chat_name', prompt("Chat Name:") || "Lincoln");
-        if(b.style.display === 'flex') fetchMessages();
-    }
-
-    async function sendChat() {
-        const i = document.getElementById('chat-msg-input');
-        await _supabase.from('global_chat').insert([{ username: localStorage.getItem('chat_name'), message: i.value }]);
-        i.value = ""; fetchMessages();
-    }
-
-    async function fetchMessages() {
-        const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(15);
-        if (data) document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `<div class="msg"><b>${m.username}:</b> ${m.message}</div>`).join('');
-    }
+    function resetGame() { if(confirm("ERASE ALL PROGRESS?")) { localStorage.clear(); location.reload(); } }
 
     setInterval(() => { energy += (cps * getBoost() / 10); updateUI(); }, 100);
     setInterval(cloudSave, 30000);
+    setInterval(fetchKing, 60000);
+    setInterval(() => { if (Math.random() < 0.05) startBuffetRush(); }, 60000);
+    
     initShop(); cloudLoad();
 </script>
 </body>
