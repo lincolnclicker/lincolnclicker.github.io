@@ -196,6 +196,45 @@
 
     let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
+    function openAdmin() {
+    // You can add a password check here if you want extra security
+    // let pw = prompt("Admin Password:"); if(pw !== "1234") return;
+
+    document.getElementById('admin-panel').style.display = 'block';
+}
+
+async function adminAction(type) {
+    const target = document.getElementById('admin-target-user').value;
+    const val = document.getElementById('admin-value').value;
+
+    if (!target) return alert("Enter a target username");
+
+    if (type === 'mass') {
+        const amount = parseFloat(val);
+        // If targeting yourself, update local energy immediately
+        if (target === chatName) {
+            energy += amount;
+            updateUI();
+        }
+        // Update the database for the target
+        await _supabase.from('leaderboard').update({ clicks: amount }).eq('username', target);
+        alert(`Gave ${amount} mass to ${target}`);
+    } 
+    
+    if (type === 'timeout') {
+        await _supabase.from('global_chat').insert([{ 
+            username: 'SYSTEM', 
+            message: `${target} has been timed out for ${val} minutes.` 
+        }]);
+    }
+}
+
+async function clearChatNow() {
+    if(!confirm("Delete all chat messages?")) return;
+    const { error } = await _supabase.from('global_chat').delete().neq('username', 'KEEP_ALIVE');
+    if(!error) alert("Chat cleared!");
+}
+    
     function initShop() {
         const shop = document.getElementById('shop'); shop.innerHTML = '';
         upgrades.forEach(u => {
@@ -405,3 +444,4 @@ fetchKing();
 </script>
 </body>
 </html>
+
