@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lincoln Clicker: Auto-Save Edition</title>
+    <title>Lincoln Clicker: The Mass Grind</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -51,7 +51,7 @@
         #lincoln-image:active { transform: scale(0.92); }
 
         .upgrade-section {
-            width: 400px;
+            width: 420px;
             background-color: var(--gray);
             overflow-y: auto;
             padding: 20px;
@@ -73,8 +73,11 @@
 
         .upgrade-card:hover:not(.disabled) { background: #333; border-left-color: var(--primary); }
         .upgrade-card.disabled { opacity: 0.2; cursor: not-allowed; filter: grayscale(1); }
+        
+        .up-info { display: flex; flex-direction: column; }
+        .up-name { font-size: 1.1rem; color: #fff; text-transform: uppercase; font-weight: bold; }
+        .up-benefit { font-size: 0.8rem; color: #888; }
         .up-cost { font-weight: bold; color: var(--gold); font-family: monospace; font-size: 1.1rem; }
-        .up-name { font-size: 1rem; color: #fff; text-transform: uppercase; }
         
         #save-status { position: absolute; bottom: 10px; left: 10px; color: #444; font-size: 0.7rem; }
     </style>
@@ -86,7 +89,7 @@
     <div class="game-section">
         <div class="stats-container">
             <h1 id="mass-display">0</h1>
-            <div style="color: #888; letter-spacing: 2px;">MASS</div>
+            <div style="color: #888; letter-spacing: 2px;">TOTAL MASS</div>
             <div style="margin-top:15px; font-weight: bold; color: #666;">
                 SEC: <span id="cps-display">0</span> | CLICK: <span id="cpc-display">1</span>
             </div>
@@ -95,7 +98,7 @@
     </div>
 
     <div class="upgrade-section">
-        <h3 style="text-align:center; color: var(--primary); margin-top:0; letter-spacing: 3px;">THE GRIND</h3>
+        <h3 style="text-align:center; color: var(--primary); margin-top:0; letter-spacing: 3px;">THE UPGRADES</h3>
         <div id="upgrade-list"></div>
     </div>
 
@@ -109,30 +112,29 @@
         let cpc = 1;
         let userId = null;
 
+        // 15 UPGRADES - Using your specific names
         const upgradeData = [
             { name: "Fast Eat", cost: 20, power: 0.5, type: "click" },
             { name: "Small Torta", cost: 100, power: 0.2, type: "cps" },
             { name: "Chud Glance", cost: 500, power: 1.5, type: "click" },
             { name: "Obese Gains", cost: 1500, power: 1, type: "cps" },
-            { name: "Big Eat", cost: 5000, power: 4, type: "click" },
+            { name: "Mega Eat", cost: 5000, power: 4, type: "click" },
             { name: "Torta Stand", cost: 12000, power: 5, type: "cps" },
-            { name: "Chud Focus", cost: 35000, power: 12, type: "click" },
-            { name: "Heavy Weight", cost: 85000, power: 20, type: "cps" },
+            { name: "Chud Mentality", cost: 35000, power: 12, type: "click" },
+            { name: "Obese Empire", cost: 85000, power: 20, type: "cps" },
             { name: "Infinite Eat", cost: 200000, power: 40, type: "click" },
-            { name: "Torta Factory", cost: 500000, power: 75, type: "cps" },
-            { name: "Chud Legend", cost: 1200000, power: 150, type: "click" },
+            { name: "Supreme Torta", cost: 500000, power: 75, type: "cps" },
+            { name: "Chud God", cost: 1200000, power: 150, type: "click" },
             { name: "Massive Obese", cost: 4000000, power: 300, type: "cps" },
-            { name: "God Torta", cost: 15000000, power: 800, type: "click" },
-            { name: "Chud Aura", cost: 50000000, power: 2000, type: "cps" },
+            { name: "The Last Torta", cost: 15000000, power: 800, type: "click" },
+            { name: "Chud Singularity", cost: 50000000, power: 2000, type: "cps" },
             { name: "Ultimate Mass", cost: 200000000, power: 5000, type: "cps" }
         ];
 
-        // Anonymous Login logic
         async function startSession() {
             const { data, error } = await supabaseClient.auth.signInAnonymously();
             if (error) {
                 document.getElementById('save-status').innerText = "Cloud Error: Local Play Only";
-                console.error(error);
             } else {
                 userId = data.user.id;
                 document.getElementById('save-status').innerText = "Cloud Synced";
@@ -144,11 +146,18 @@
             const list = document.getElementById('upgrade-list');
             list.innerHTML = '';
             upgradeData.forEach((up, i) => {
+                const benefitText = up.type === "click" ? `+${up.power} per click` : `+${up.power} per sec`;
                 const card = document.createElement('div');
                 card.className = 'upgrade-card disabled';
                 card.id = `up-${i}`;
                 card.onclick = () => buyUpgrade(i);
-                card.innerHTML = `<div><span class="up-name">${up.name}</span></div><div class="up-cost" id="cost-${i}">${up.cost}</div>`;
+                card.innerHTML = `
+                    <div class="up-info">
+                        <span class="up-name">${up.name}</span>
+                        <span class="up-benefit">${benefitText}</span>
+                    </div>
+                    <div class="up-cost" id="cost-${i}">${up.cost}</div>
+                `;
                 list.appendChild(card);
             });
         }
@@ -207,7 +216,7 @@
         }
 
         setInterval(() => { if(cps > 0) { mass += (cps / 10); updateUI(); } }, 100);
-        setInterval(saveToSupabase, 20000); // Autosave every 20s
+        setInterval(saveToSupabase, 20000);
 
         initShop();
         startSession();
