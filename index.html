@@ -220,110 +220,8 @@ let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
 // --- FUNCTIONS ---
 
-function updateUI() {
-    document.getElementById('score-text').innerText = Math.floor(energy).toLocaleString();
-    document.getElementById('stat-click').innerText = (clickPower * eventMultiplier).toFixed(1);
-    document.getElementById('stat-cps').innerText = (cps * eventMultiplier).toFixed(1);
-    document.getElementById('stat-prestige').innerText = goldenTortas;
+// 1. Update the openAdmin function to check the database
 
-    // Background changes based on mass
-    const b = document.body;
-    if (energy > 1000000) { b.className = 'bg-space'; }
-    else if (energy > 100000) { b.className = 'bg-factory'; }
-    else if (energy > 10000) { b.className = 'bg-buffet'; }
-    else { b.className = 'bg-kitchen'; }
-
-    // Highlight affordable upgrades
-    upgrades.forEach(u => {
-        const btn = document.getElementById(`up-${u.id}`);
-        if (btn) {
-            btn.disabled = energy < u.cost;
-            btn.classList.toggle('can-afford', energy >= u.cost);
-            document.getElementById(`cost-${u.id}`).innerText = u.cost.toLocaleString() + " Mass";
-            document.getElementById(`count-${u.id}`).innerText = u.count;
-        }
-    });
-
-    // Show prestige button if energy > 1 billion
-    document.getElementById('prestige-btn').style.display = energy >= 1000000000 ? 'block' : 'none';
-}
-    
-    // 1. Update the openAdmin function to check the database
-
-    
-    // Function for the Admin to send the message
-async function sendAnnouncement() {
-    const { data: adminCheck } = await _supabase.from('leaderboard').select('admin').eq('username', chatName).single();
-    if (!adminCheck || !adminCheck.admin) return alert("Unauthorized.");
-
-    const msg = prompt("Enter Global Announcement:");
-    if (!msg) return;
-
-    const expiresAt = new Date(Date.now() + 10000).toISOString(); // 10 seconds
-    
-    await _supabase.from('game_events').insert([{ 
-        event_type: 'announcement', 
-        message: msg, 
-        expires_at: expiresAt 
-    }]);
-
-    document.getElementById('admin-panel').style.display = 'none';
-}
-
-// Function that displays the message for EVERYONE
-function handleNewEvent(event) {
-    if (eventTimer) clearInterval(eventTimer);
-    const oldNotice = document.getElementById('event-notice');
-    if (oldNotice) oldNotice.remove();
-
-    const expiry = new Date(event.expires_at.replace(' ', 'T')).getTime();
-    
-    const notice = document.createElement('div');
-    notice.id = "event-notice";
-    // CRITICAL: pointer-events: none; added at the end so you can still click the Torta!
-    notice.style = "position:fixed; top:15%; left:50%; transform:translateX(-50%); color:white; padding:20px 40px; border-radius:15px; font-weight:bold; z-index:10000; box-shadow:0 0 30px rgba(0,0,0,0.8); text-align:center; font-size:1.5rem; border: 3px solid var(--gold); background: #2f3542; min-width: 300px; pointer-events: none;";
-    document.body.appendChild(notice);
-
-    eventTimer = setInterval(() => {
-        const now = new Date().getTime();
-        const timeLeft = expiry - now;
-
-        if (timeLeft <= 0) {
-            eventMultiplier = 1;
-            document.body.style.boxShadow = "none";
-            notice.remove();
-            clearInterval(eventTimer);
-            return;
-        }
-
-        const seconds = Math.ceil(timeLeft / 1000);
-
-        switch(event.event_type) {
-            case 'announcement':
-                notice.style.background = "#6c5ce7"; 
-                notice.innerHTML = `📢 <b>ADMIN ALERT:</b><br>${event.message}`;
-                break;
-            case 'feast':
-                eventMultiplier = 2;
-                notice.style.background = "var(--gold)";
-                notice.style.color = "black";
-                notice.innerText = `🔥 THE BUFFET IS OPEN! 2X MASS (${seconds}s) 🔥`;
-                break;
-            case 'storm':
-                eventMultiplier = 5; 
-                notice.style.background = "#00d2ff";
-                notice.style.color = "black";
-                notice.innerText = `⚡ TORTA STORM! 5X CLICK (${seconds}s) ⚡`;
-                break;
-            case 'low_carb':
-                eventMultiplier = 0.5;
-                notice.style.background = "#ff4757";
-                notice.innerText = `🥗 LOW CARB DAY... 0.5X MASS (${seconds}s) 🥗`;
-                break;
-        }
-    }, 1000);
-}
-    
     async function changeName() {
     let newName = prompt("Enter your new username:", chatName || "");
     
@@ -554,57 +452,17 @@ function showParticle(x, y, text) {
 function resetGame() { if (confirm("Reset everything?")) { localStorage.clear(); location.reload(); } }
 
 async function startGame() {
-    initShop(); 
-    await cloudLoad(); // Loads your mass and upgrades first
-
-    // 1. ADD THE CLICK LISTENER
-    document.getElementById('lincoln-main').addEventListener('click', (e) => {
-        let gain = clickPower * eventMultiplier;
-        energy += gain;
-        totalClicks++;
-        showParticle(e.clientX, e.clientY, `+${gain.toFixed(1)}`);
-        updateUI(); // Refreshes numbers on screen
-    });
-
-    // 2. ADD THE AUTOMATIC MASS LOOP (CPS)
-    setInterval(() => {
-        if (cps > 0) {
-            energy += (cps * eventMultiplier) / 10;
-            updateUI();
-        }
-    }, 100);
-
-    // 3. SUPABASE REALTIME (Events & Announcements)
-    _supabase.channel('game-events').on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'game_events' 
-    }, (p) => handleNewEvent(p.new)).subscribe();
-
-    // Check for active events on startup
-    const { data } = await _supabase.from('game_events')
-        .select('*')
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false })
-        .limit(1);
-    
+    initShop(); cloudLoad();
+    _supabase.channel('game-events').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, (p) => handleNewEvent(p.new)).subscribe();
+    const { data } = await _supabase.from('game_events').select('*').gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false }).limit(1);
     if (data && data[0]) handleNewEvent(data[0]);
-
-    // 4. TIMERS
-    setInterval(cloudSave, 20000); 
-    setInterval(fetchLeaderboard, 15000);
-    setInterval(() => { 
-        if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); 
-    }, 5000);
-
+    setInterval(cloudSave, 20000); setInterval(fetchLeaderboard, 15000);
+    setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
     fetchLeaderboard();
-    updateUI(); // Run once at start to show loaded data
 }
 
 startGame();
 </script>
 </body>
 </html>
-
-
 
