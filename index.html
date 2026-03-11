@@ -219,61 +219,105 @@ const initialUpgrades = [
 
 let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
-// --- 2. MULTI-EVENT SYSTEM ---
+// --- 2. SAVE & LOAD SYSTEM (THE FIX) ---
 
-async function prestige() {
-    const gain = Math.floor(Math.pow(energy / 1000000000, 0.5));
-    if (confirm(`Weighing in will reset your Mass and Upgrades, but you'll gain ${gain} Golden Tortas. Proceed?`)) {
+async function cloudSave() {
+    const saveObj = { 
+        energy, clickPower, cps, goldenTortas, totalClicks,
+        upgrades: upgrades.map(u => ({ count: u.count, cost: u.cost }))
+    };
+    
+    // Save to browser
+    localStorage.setItem('lincoln_local_save', JSON.stringify(saveObj));
+    
+    // Save to Cloud
+    if (chatName) {
+        document.getElementById('sync-status').innerText = "Vaulting...";
+        const { error } = await _supabase.from('leaderboard').upsert({ 
+            username: chatName, 
+            clicks: Math.floor(energy), 
+            golden_tortas: goldenTortas 
+        }, { onConflict: 'username' });
         
-        // --- Global Announcement ---
-        if (chatName) {
-            await _supabase.from('global_chat').insert([{ 
-                username: 'SYSTEM', 
-                message: `🎊 ${chatName} has WEIGHED IN and gained ${gain} Golden Tortas! 🎊` 
-            }]);
-        }
-
-        goldenTortas += gain;
-        energy = 0;
-        clickPower = 1;
-        cps = 0;
-        upgrades = initialUpgrades.map(u => ({...u, count: 0}));
-        
-        await cloudSave();
-        initShop(); 
-        updateUI();
-        
-        alert("You've evolved! The grind for mass begins anew, but much faster.");
+        if (!error) document.getElementById('sync-status').innerText = "Cloud Synced ✅";
     }
 }
+
+async function cloudLoad() {
+    document.getElementById('sync-status').innerText = "Syncing...";
+    const local = localStorage.getItem('lincoln_local_save');
     
-    async function triggerEvent(type) {
-    const expiresAt = new Date(Date.now() + 5 * 60000).toISOString();
-    await _supabase.from('game_events').insert([{ event_type: type, expires_at: expiresAt }]);
-    document.getElementById('admin-panel').style.display = 'none';
+    if (local) {
+        const d = JSON.parse(local);
+        energy = d.energy || 0;
+        goldenTortas = d.golden_tortas || 0;
+        totalClicks = d.totalClicks || 0;
+
+        if (d.upgrades) {
+            // Reset base stats and recalculate from saved upgrades
+            clickPower = 1;
+            cps = 0;
+            d.upgrades.forEach((savedU, i) => { 
+                if(upgrades[i]) { 
+                    upgrades[i].count = savedU.count; 
+                    upgrades[i].cost = savedU.cost; 
+                    // Add the power back
+                    if (upgrades[i].type === "click") clickPower += (upgrades[i].power * savedU.count);
+                    else cps += (upgrades[i].power * savedU.count);
+                } 
+            });
+        }
+    }
+    updateUI(); 
+    fetchLeaderboard();
 }
 
-function initRealtimeEvents() {
-    _supabase.channel('game-events')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, 
-        (payload) => handleNewEvent(payload.new))
-        .subscribe();
+// --- 3. CORE GAMEPLAY ---
+
+document.getElementById('lincoln-main').addEventListener('click', (e) => {
+    let val = (clickPower * (1 + (goldenTortas * 0.1))) * eventMultiplier;
+    if (currentKing && chatName && chatName !== currentKing) val *= 0.99;
+    
+    energy += val; 
+    totalClicks++;
+    showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}${eventMultiplier > 1 ? ' 🔥' : ''}`);
+    updateUI();
+
+    if (totalClicks % 25 === 0) cloudSave(); // Backup save every 25 clicks
+});
+
+setInterval(() => { 
+    let boostedCPS = (cps * (1 + (goldenTortas * 0.1))) * (currentEvent === 'storm' ? 1 : eventMultiplier);
+    energy += (boostedCPS / 10); 
+    updateUI(); 
+}, 100);
+
+function buyUpgrade(id) {
+    const u = upgrades[id];
+    if (energy >= u.cost) {
+        energy -= u.cost; 
+        u.count++;
+        if (u.type === "click") clickPower += u.power; else cps += u.power;
+        u.cost = Math.ceil(u.cost * 1.35); 
+        updateUI(); 
+        cloudSave(); // Save instantly on purchase
+    }
 }
+
+// --- 4. EVENTS & SOCIAL ---
 
 function handleNewEvent(event) {
-    if (eventTimer) clearInterval(eventTimer); // Clear previous interval if any
+    if (eventTimer) clearInterval(eventTimer);
     const oldNotice = document.getElementById('event-notice');
     if (oldNotice) oldNotice.remove();
 
     const expiry = new Date(event.expires_at.replace(' ', 'T')).getTime();
     
-    // Create the notice element
     const notice = document.createElement('div');
     notice.id = "event-notice";
     notice.style = "position:fixed; top:10%; left:50%; transform:translateX(-50%); color:black; padding:15px 30px; border-radius:50px; font-weight:bold; z-index:10000; box-shadow:0 0 20px black; animation: pulse-gold 1s infinite; text-align:center;";
     document.body.appendChild(notice);
 
-    // This interval updates the countdown every second
     eventTimer = setInterval(() => {
         const now = new Date().getTime();
         const timeLeft = expiry - now;
@@ -295,102 +339,23 @@ function handleNewEvent(event) {
                 eventMultiplier = 2;
                 notice.style.background = "var(--gold)";
                 notice.innerText = `🔥 THE BUFFET IS OPEN! 2X MASS (${seconds}s) 🔥`;
-                document.body.style.boxShadow = "inset 0 0 100px rgba(241, 196, 15, 0.7)";
                 break;
             case 'storm':
                 eventMultiplier = 5; 
                 notice.style.background = "#00d2ff";
                 notice.innerText = `⚡ TORTA STORM! 5X CLICK (${seconds}s) ⚡`;
-                document.body.style.boxShadow = "inset 0 0 100px rgba(0, 210, 255, 0.7)";
                 break;
             case 'low_carb':
                 eventMultiplier = 0.5;
                 notice.style.background = "#ff4757";
                 notice.style.color = "white";
                 notice.innerText = `🥗 LOW CARB DAY... 0.5X MASS (${seconds}s) 🥗`;
-                document.body.style.boxShadow = "inset 0 0 100px rgba(255, 71, 87, 0.7)";
                 break;
         }
     }, 1000);
 }
 
-async function checkActiveEvents() {
-    const { data } = await _supabase
-        .from('game_events')
-        .select('*')
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-    if (data && data.length > 0) {
-        handleNewEvent(data[0]);
-    }
-}
-
-// --- 3. CORE GAMEPLAY ---
-
-document.getElementById('lincoln-main').addEventListener('click', (e) => {
-    let val = (clickPower * (1 + (goldenTortas * 0.1))) * eventMultiplier;
-    if (currentKing && chatName && chatName !== currentKing) val *= 0.99;
-    
-    energy += val; 
-    totalClicks++;
-    showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}${eventMultiplier > 1 ? ' 🔥' : ''}`);
-    updateUI();
-
-    if (totalClicks % 25 === 0) cloudSave();
-});
-
-setInterval(() => { 
-    let boostedCPS = (cps * (1 + (goldenTortas * 0.1))) * (currentEvent === 'storm' ? 1 : eventMultiplier);
-    energy += (boostedCPS / 10); 
-    updateUI(); 
-}, 100);
-
-// --- 4. UI & UTILITIES ---
-
-function openAdmin() { document.getElementById('admin-panel').style.display = 'block'; }
-
-async function adminAction(type) {
-    const target = document.getElementById('admin-target-user').value;
-    const val = document.getElementById('admin-value').value;
-    if (!target) return alert("Enter a target username");
-    if (type === 'mass') {
-        const amount = parseFloat(val);
-        if (target === chatName) { energy += amount; updateUI(); }
-        await _supabase.from('leaderboard').update({ clicks: amount }).eq('username', target);
-    } 
-    if (type === 'timeout') {
-        await _supabase.from('global_chat').insert([{ username: 'SYSTEM', message: `${target} has been timed out.` }]);
-    }
-}
-
-async function clearChatNow() {
-    if (!confirm("Delete all chat?")) return;
-    await _supabase.from('global_chat').delete().gt('created_at', '2000-01-01');
-}
-
-function initShop() {
-    const shop = document.getElementById('shop'); shop.innerHTML = '';
-    upgrades.forEach(u => {
-        const btn = document.createElement('button');
-        btn.className = 'upgrade'; btn.id = `up-${u.id}`;
-        btn.onclick = () => buyUpgrade(u.id);
-        btn.innerHTML = `<div class="u-info"><span class="u-name">${u.name}</span><span class="u-desc">${u.desc}</span><span class="u-cost" id="cost-${u.id}">${u.cost.toLocaleString()} Mass</span></div><div class="u-count" id="count-${u.id}">${u.count}</div>`;
-        shop.appendChild(btn);
-    });
-}
-
-function buyUpgrade(id) {
-    const u = upgrades[id];
-    if (energy >= u.cost) {
-        energy -= u.cost; 
-        u.count++;
-        // ... rest of your logic ...
-        updateUI(); 
-        cloudSave(); // Save instantly when spending mass
-    }
-}
+// --- REST OF THE UI FUNCTIONS ---
 
 function updateUI() {
     document.getElementById('score-text').innerText = Math.floor(energy).toLocaleString();
@@ -408,44 +373,20 @@ function updateUI() {
             document.getElementById(`count-${u.id}`).innerText = u.count;
         }
     });
-
-    const body = document.body; const label = document.getElementById('env-label');
-    if (energy < 100000) { body.className = 'bg-kitchen'; label.innerText = "LOCATION: THE KITCHEN"; }
-    else if (energy < 10000000) { body.className = 'bg-buffet'; label.innerText = "LOCATION: INFINITE BUFFET"; }
-    else if (energy < 1000000000) { body.className = 'bg-factory'; label.innerText = "LOCATION: TORTA FACTORY"; }
-    else { body.className = 'bg-space'; label.innerText = "LOCATION: OUTER SPACE"; }
 }
 
-async function cloudLoad() {
-    document.getElementById('sync-status').innerText = "Loading Cloud Save...";
-    
-    // 1. Try Local first
-    const local = localStorage.getItem('lincoln_local_save');
-    if (local) {
-        const d = JSON.parse(local);
-        energy = d.energy || 0;
-        goldenTortas = d.goldenTortas || 0;
-        // ... apply upgrade counts ...
-    }
-
-    // 2. FORCE check Supabase (This is the real fix for refreshes)
-    if (chatName) {
-        const { data } = await _supabase.from('leaderboard').select('*').eq('username', chatName).single();
-        if (data) {
-            // If the cloud has more mass, use the cloud data!
-            if (data.clicks > energy) energy = data.clicks;
-            if (data.golden_tortas > goldenTortas) goldenTortas = data.golden_tortas;
-            
-            // Recalculate stats from the cloud data
-            clickPower = 1;
-            cps = 0;
-            // Add logic here to loop through data.upgrade_data if you added that column
-        }
-    }
-    updateUI();
+function initShop() {
+    const shop = document.getElementById('shop'); shop.innerHTML = '';
+    upgrades.forEach(u => {
+        const btn = document.createElement('button');
+        btn.className = 'upgrade'; btn.id = `up-${u.id}`;
+        btn.onclick = () => buyUpgrade(u.id);
+        btn.innerHTML = `<div class="u-info"><span class="u-name">${u.name}</span><span class="u-desc">${u.desc}</span><span class="u-cost" id="cost-${u.id}">${u.cost.toLocaleString()} Mass</span></div><div class="u-count" id="count-${u.id}">${u.count}</div>`;
+        shop.appendChild(btn);
+    });
 }
 
-    async function fetchLeaderboard() {
+async function fetchLeaderboard() {
     const { data } = await _supabase.from('leaderboard').select('username, clicks, golden_tortas').order('clicks', { ascending: false }).limit(10);
     if (data) {
         document.getElementById('lb-content').innerHTML = data.map((u, i) => `
@@ -453,31 +394,18 @@ async function cloudLoad() {
     }
 }
 
-async function changeName() {
-    if (!chatName) return;
-    let newName = prompt("New username:", chatName);
-    if (!newName || newName === chatName) return;
-    await _supabase.from('leaderboard').update({ username: newName }).eq('username', chatName);
-    chatName = newName;
-    localStorage.setItem('chat_name', chatName);
-}
-
-async function sendChat(emoteMsg = null) {
-    if (!chatName) return;
-    const input = document.getElementById('chat-msg-input');
-    const message = emoteMsg || input.value;
-    if (!message) return;
-    await _supabase.from('global_chat').insert([{ username: chatName, message: message }]);
-    input.value = ""; fetchMessages();
-}
-
-async function fetchMessages() {
-    const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(30);
-    if (data) {
-        document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `
-            <div class="msg ${m.username === currentKing ? 'king-msg' : ''}"><b>${m.username}:</b> ${m.message}</div>`).join('');
-        const c = document.getElementById('chat-messages'); c.scrollTop = c.scrollHeight;
+async function fetchKing() {
+    const { data } = await _supabase.from('leaderboard').select('username').order('clicks', { ascending: false }).limit(1);
+    if (data && data.length > 0) {
+        currentKing = data[0].username;
+        document.getElementById('king-display').innerText = `👑 King: ${currentKing}`;
     }
+}
+
+function showParticle(x, y, text) {
+    const p = document.createElement('div'); p.className = 'particle'; p.innerText = text;
+    p.style.left = x + 'px'; p.style.top = y + 'px';
+    document.body.appendChild(p); setTimeout(() => p.remove(), 800);
 }
 
 function toggleChat() {
@@ -492,68 +420,35 @@ function toggleChat() {
     b.style.display = 'flex'; fetchMessages();
 }
 
-async function cloudLoad() {
-    const local = localStorage.getItem('lincoln_local_save');
-    if (local) {
-        const d = JSON.parse(local);
-        energy = d.energy || 0; clickPower = d.clickPower || 1; cps = d.cps || 0; goldenTortas = d.goldenTortas || 0;
-        d.upgrades?.forEach((u, i) => { if(upgrades[i]) { upgrades[i].count = u.count; upgrades[i].cost = u.cost; } });
-    }
-    updateUI(); fetchLeaderboard();
-}
-
-function showParticle(x, y, text) {
-    const p = document.createElement('div'); p.className = 'particle'; p.innerText = text;
-    p.style.left = x + 'px'; p.style.top = y + 'px';
-    document.body.appendChild(p); setTimeout(() => p.remove(), 800);
-}
-
-async function fetchKing() {
-    const { data } = await _supabase.from('leaderboard').select('username').order('clicks', { ascending: false }).limit(1);
-    if (data && data.length > 0) {
-        currentKing = data[0].username;
-        document.getElementById('king-display').innerText = `👑 King: ${currentKing}`;
+async function fetchMessages() {
+    const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(30);
+    if (data) {
+        document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `
+            <div class="msg ${m.username === currentKing ? 'king-msg' : ''}"><b>${m.username}:</b> ${m.message}</div>`).join('');
+        const c = document.getElementById('chat-messages'); c.scrollTop = c.scrollHeight;
     }
 }
 
-function sendEmote(char) { sendChat(char); }
-
-function resetGame() {
-    if (confirm("ARE YOU SURE? You will lose ALL your mass and upgrades!")) {
-        localStorage.removeItem('lincoln_local_save');
-        location.reload();
-    }
-}
-
-// --- 5. INITIALIZATION ---
 async function startGame() {
-    // 1. Load basic stats
     initShop(); 
-    cloudLoad();
-    
-    // 2. Connect to Realtime (for live button clicks)
+    await cloudLoad(); 
     initRealtimeEvents();
-    
-    // 3. Check for existing events (for refreshes)
     await checkActiveEvents(); 
-    
-    // 4. Start the background loops
     fetchKing();
-    setInterval(cloudSave, 5000); // 5000ms = 5 seconds
+    
+    setInterval(cloudSave, 5000); // Save every 5 seconds
     setInterval(fetchLeaderboard, 15000);
     setInterval(fetchKing, 15000); 
     setInterval(() => { 
         if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); 
     }, 5000);
-    
-    console.log("Game fully initialized and synced.");
 }
 
-// Launch the game
 startGame();
 </script>
 </body>
 </html>
+
 
 
 
