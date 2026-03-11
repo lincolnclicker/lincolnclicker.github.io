@@ -3,162 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lincoln Clicker</title>
+    <title>Lincoln Clicker: Hardcore Mass</title>
     <style>
+        :root {
+            --primary: #b71c1c;
+            --dark: #0a0a0a;
+            --light: #e0e0e0;
+            --gray: #1e1e1e;
+            --gold: #fbc02d;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
+            font-family: 'Segoe UI', Impact, sans-serif;
+            background-color: var(--dark);
+            color: var(--light);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .game-section {
+            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            margin: 0;
-            user-select: none;
+            background: radial-gradient(circle, #222 0%, #000 100%);
         }
 
-        #game-container {
+        .stats-container {
             text-align: center;
-            background: white;
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
         }
 
-        .stats {
-            font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
-            color: #d32f2f; /* Red to match the shirt */
-        }
+        h1 { font-size: 4rem; margin: 0; color: var(--primary); text-shadow: 2px 2px 5px #000; }
+        .sub-stat { font-size: 1.1rem; color: #888; text-transform: uppercase; }
 
         #lincoln-image {
-            width: 250px;
-            height: 250px;
+            width: 320px;
+            height: 320px;
             border-radius: 50%;
             object-fit: cover;
             cursor: pointer;
-            transition: transform 0.1s;
-            border: 5px solid #d32f2f;
+            border: 6px solid var(--primary);
+            box-shadow: 0 0 40px rgba(183, 28, 28, 0.2);
+            transition: transform 0.05s;
         }
 
-        #lincoln-image:active {
-            transform: scale(0.95);
+        #lincoln-image:active { transform: scale(0.94); }
+
+        .upgrade-section {
+            width: 380px;
+            background-color: var(--gray);
+            overflow-y: auto;
+            padding: 20px;
+            border-left: 2px solid #333;
         }
 
-        .upgrades {
-            margin-top: 2rem;
+        .upgrade-card {
+            background: #252525;
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 8px;
             display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        button {
-            padding: 10px 20px;
-            font-size: 1rem;
+            justify-content: space-between;
+            align-items: center;
             cursor: pointer;
-            background-color: #d32f2f;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            transition: background 0.3s;
+            border-left: 4px solid transparent;
         }
 
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
+        .upgrade-card:hover { background: #2d2d2d; border-left-color: var(--primary); }
+        .upgrade-card.disabled { opacity: 0.3; cursor: not-allowed; }
 
-        button:hover:not(:disabled) {
-            background-color: #b71c1c;
-        }
+        .up-name { font-weight: bold; font-size: 1rem; color: #fff; display: block; }
+        .up-desc { font-size: 0.75rem; color: #777; }
+        .up-cost { font-weight: bold; color: var(--gold); font-family: monospace; }
 
-        .per-second {
-            font-size: 1rem;
-            color: #666;
-            margin-top: 0.5rem;
+        #reset-btn {
+            margin-top: 20px;
+            background: transparent;
+            color: #444;
+            border: 1px solid #333;
+            padding: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 0.7rem;
         }
     </style>
 </head>
 <body>
 
-    <div id="game-container">
-        <div class="stats">Mass: <span id="mass-count">0</span></div>
-        <div class="per-second">Mass per second: <span id="mps-count">0</span></div>
-        
-        <img src="IMG_0668.jpg" id="lincoln-image" alt="Lincoln">
-
-        <div class="upgrades">
-            <button id="upgrade1" onclick="buyUpgrade(1)">
-                Better Glasses (Cost: 10)<br>+1 per click
-            </button>
-            <button id="upgrade2" onclick="buyUpgrade(2)">
-                Auto-Lincoln (Cost: 50)<br>+1 mass/sec
-            </button>
-            <button id="upgrade3" onclick="buyUpgrade(3)">
-                Mega Mass (Cost: 200)<br>+5 mass/sec
-            </button>
+    <div class="game-section">
+        <div class="stats-container">
+            <h1 id="mass-display">0</h1>
+            <div class="sub-stat">Current Mass</div>
+            <div class="sub-stat" style="font-size: 0.9rem; margin-top:10px;">
+                CPS: <span id="cps-display">0</span> | Per Click: <span id="cpc-display">1</span>
+            </div>
         </div>
+        <img src="IMG_0668.jpg" id="lincoln-image" alt="Lincoln" onclick="doClick()">
+    </div>
+
+    <div class="upgrade-section">
+        <h3 style="text-align:center; color: var(--primary); margin-top:0;">HARDCORE SHOP</h3>
+        <div id="upgrade-list"></div>
+        <button id="reset-btn" onclick="resetGame()">WIPE DATA</button>
     </div>
 
     <script>
         let mass = 0;
-        let clickValue = 1;
-        let massPerSecond = 0;
+        let cps = 0;
+        let cpc = 1;
 
-        let costs = {
-            up1: 10,
-            up2: 50,
-            up3: 200
-        };
+        // NERFED VALUES: Upgrades give way less power, costs scale faster
+        const upgradeData = [
+            { name: "Slow Eat", desc: "+0.5 per click", cost: 25, power: 0.5, type: "click" },
+            { name: "Cold Torta", desc: "+0.2 mass/sec", cost: 150, power: 0.2, type: "cps" },
+            { name: "Chud Glance", desc: "+2 per click", cost: 800, power: 2, type: "click" },
+            { name: "Bulking", desc: "+1.5 mass/sec", cost: 2500, power: 1.5, type: "cps" },
+            { name: "Chew More", desc: "+5 per click", cost: 10000, power: 5, type: "click" },
+            { name: "Torta Cart", desc: "+8 mass/sec", cost: 35000, power: 8, type: "cps" },
+            { name: "Hard Chud", desc: "+15 per click", cost: 120000, power: 15, type: "click" },
+            { name: "Obese Walk", desc: "+30 mass/sec", cost: 450000, power: 30, type: "cps" },
+            { name: "Grease Gulp", desc: "+50 per click", cost: 1500000, power: 50, type: "click" },
+            { name: "Torta Kitchen", desc: "+120 mass/sec", cost: 6000000, power: 120, type: "cps" },
+            { name: "Chud Legend", desc: "+200 per click", cost: 25000000, power: 200, type: "click" },
+            { name: "Massive Obese", desc: "+500 mass/sec", cost: 100000000, power: 500, type: "cps" },
+            { name: "God Torta", desc: "+1,000 per click", cost: 500000000, power: 1000, type: "click" },
+            { name: "Chud Aura", desc: "+2,500 mass/sec", cost: 2000000000, power: 2500, type: "cps" },
+            { name: "True Mass", desc: "+8,000 mass/sec", cost: 10000000000, power: 8000, type: "cps" }
+        ];
 
-        const imageElement = document.getElementById('lincoln-image');
-        const massDisplay = document.getElementById('mass-count');
-        const mpsDisplay = document.getElementById('mps-count');
-
-        // Logic for clicking Lincoln
-        imageElement.onclick = () => {
-            mass += clickValue;
-            updateDisplay();
-        };
-
-        function buyUpgrade(type) {
-            if (type === 1 && mass >= costs.up1) {
-                mass -= costs.up1;
-                clickValue += 1;
-                costs.up1 = Math.floor(costs.up1 * 1.5);
-                document.getElementById('upgrade1').innerHTML = `Better Glasses (Cost: ${costs.up1})<br>+1 per click`;
-            } else if (type === 2 && mass >= costs.up2) {
-                mass -= costs.up2;
-                massPerSecond += 1;
-                costs.up2 = Math.floor(costs.up2 * 1.5);
-                document.getElementById('upgrade2').innerHTML = `Auto-Lincoln (Cost: ${costs.up2})<br>+1 mass/sec`;
-            } else if (type === 3 && mass >= costs.up3) {
-                mass -= costs.up3;
-                massPerSecond += 5;
-                costs.up3 = Math.floor(costs.up3 * 1.5);
-                document.getElementById('upgrade3').innerHTML = `Mega Mass (Cost: ${costs.up3})<br>+5 mass/sec`;
+        function loadGame() {
+            const saved = localStorage.getItem('lincolnHardSave');
+            if (saved) {
+                const data = JSON.parse(saved);
+                mass = data.mass;
+                cps = data.cps;
+                cpc = data.cpc;
+                data.costs.forEach((c, i) => upgradeData[i].cost = c);
             }
-            updateDisplay();
         }
 
-        function updateDisplay() {
-            massDisplay.innerText = Math.floor(mass);
-            mpsDisplay.innerText = massPerSecond;
-            
-            // Disable buttons if you can't afford them
-            document.getElementById('upgrade1').disabled = mass < costs.up1;
-            document.getElementById('upgrade2').disabled = mass < costs.up2;
-            document.getElementById('upgrade3').disabled = mass < costs.up3;
+        function saveGame() {
+            const data = {
+                mass: mass,
+                cps: cps,
+                cpc: cpc,
+                costs: upgradeData.map(u => u.cost)
+            };
+            localStorage.setItem('lincolnHardSave', JSON.stringify(data));
         }
 
-        // Game Loop for Auto-Clickers
-        setInterval(() => {
-            mass += massPerSecond / 10;
-            updateDisplay();
-        }, 100);
+        function init() {
+            loadGame();
+            const list = document.getElementById('upgrade-list');
+            list.innerHTML = '';
+            upgradeData.forEach((up, i) => {
+                const card = document.createElement('div');
+                card.className = 'upgrade-card';
+                card.id = `up-${i}`;
+                card.onclick = () => buyUpgrade(i);
+                card.innerHTML = `
+                    <div><span class="up-name">${up.name}</span><span class="up-desc">${up.desc}</span></div>
+                    <div class="up-cost" id="cost-${i}">${Math.floor(up.cost)}</div>
+                `;
+                list.appendChild(card);
+            });
+            updateUI();
+        }
 
+        function doClick() {
+            mass += cpc;
+            updateUI();
+        }
+
+        function buyUpgrade(i) {
+            const up = upgradeData[i];
+            if (mass >= up.cost) {
+                mass -= up.cost;
+                if (up.type === "click") cpc += up.power;
+                else cps += up.power;
+                // EXTREME SCALING: 1.9x cost jump
+                up.cost = Math.floor(up.cost * 1.9);
+                updateUI();
+                saveGame();
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('mass-display').innerText = Math.floor(mass).toLocaleString();
+            document.getElementById('cps-display').innerText = cps.toFixed(1);
+            document.getElementById('cpc-display').innerText = cpc.toFixed(1);
+            upgradeData.forEach((up, i) => {
+                const btn = document.getElementById(`up-${i}`);
+                document.getElementById(`cost-${i}`).innerText = Math.floor(up.cost).toLocaleString();
+                mass >= up.cost ? btn.classList.remove('disabled') : btn.classList.add('disabled');
+            });
+        }
+
+        function resetGame() {
+            if(confirm("Confirm hard reset?")) {
+                localStorage.removeItem('lincolnHardSave');
+                location.reload();
+            }
+        }
+
+        setInterval(() => { mass += (cps / 10); updateUI(); }, 100);
+        setInterval(saveGame, 10000); // Save every 10s
+        init();
     </script>
 </body>
 </html>
