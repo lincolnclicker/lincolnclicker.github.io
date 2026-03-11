@@ -25,17 +25,12 @@
             transition: background 1s ease-in-out;
         }
 
-        /* Dynamic Background States */
         .bg-kitchen { background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=1200'); }
         .bg-buffet { background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200'); }
         .bg-factory { background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1200'); }
         .bg-space { background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200'); }
 
-        #game-wrapper { 
-            max-width: 1200px; width: 100%; display: flex; gap: 20px; padding: 20px; 
-            box-sizing: border-box; z-index: 1;
-        }
-
+        #game-wrapper { max-width: 1200px; width: 100%; display: flex; gap: 20px; padding: 20px; box-sizing: border-box; z-index: 1; }
         .clicker-section { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; }
 
         #score-panel {
@@ -44,13 +39,12 @@
             box-sizing: border-box; backdrop-filter: blur(15px);
         }
 
-        #score-text { font-size: 3.5rem; color: var(--gold); margin: 0; line-height: 1; text-shadow: 0 0 10px rgba(241, 196, 15, 0.5); }
+        #score-text { font-size: 3.5rem; color: var(--gold); margin: 0; line-height: 1; }
 
         #lincoln-main {
             width: 300px; height: 300px; border-radius: 50%; cursor: pointer;
             object-fit: cover; border: 8px solid var(--secondary);
             transition: transform 0.05s, filter 0.3s; user-select: none;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         #lincoln-main:active { transform: scale(0.94); }
@@ -78,25 +72,43 @@
 
         .prestige-btn { background: var(--gold); color: black; font-weight: bold; width: 100%; padding: 15px; border-radius: 12px; border: none; cursor: pointer; margin-top: 10px; }
 
-        #chat-icon { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 30px; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        #chat-icon { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 30px; z-index: 1000; }
         #chat-box { position: fixed; bottom: 90px; right: 20px; width: 340px; height: 500px; background: var(--chat-bg); border: 2px solid var(--primary); border-radius: 12px; display: none; flex-direction: column; z-index: 1000; overflow: hidden; }
         #chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 0.85rem; background: #1a1e26; }
         
         .emote-bar { display: flex; gap: 5px; padding: 8px; background: #2f3542; border-top: 1px solid #444; }
-        .emote-btn { background: #3e4452; border: none; border-radius: 4px; padding: 5px 8px; cursor: pointer; font-size: 1.2rem; transition: 0.2s; }
-        .emote-btn:hover { background: var(--primary); }
+        .emote-btn { background: #3e4452; border: none; border-radius: 4px; padding: 5px 8px; cursor: pointer; font-size: 1.2rem; }
 
-        .msg { margin-bottom: 8px; padding: 6px; border-radius: 6px; background: rgba(255,255,255,0.05); border-left: 3px solid transparent; }
-        .king-msg { border-left: 3px solid var(--gold); background: rgba(241, 196, 15, 0.1); animation: kingGlow 2s infinite alternate; }
+        .msg { margin-bottom: 8px; padding: 6px; border-radius: 6px; background: rgba(255,255,255,0.05); }
+        .king-msg { border-left: 3px solid var(--gold); background: rgba(241, 196, 15, 0.1); }
+
+        #admin-panel {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: #2f3542; border: 3px solid var(--gold); padding: 20px; border-radius: 15px;
+            z-index: 10001; box-shadow: 0 0 50px #000; width: 280px;
+        }
+        .admin-input { width: 100%; padding: 8px; margin-bottom: 10px; background: #1e222b; border: 1px solid #444; color: white; }
         
-        @keyframes kingGlow { from { box-shadow: inset 0 0 5px rgba(241,196,15,0.1); } to { box-shadow: inset 0 0 15px rgba(241,196,15,0.3); } }
-
-        #achievement-banner { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--gold); color: black; padding: 12px 25px; border-radius: 30px; font-weight: bold; display: none; z-index: 2000; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
+        #achievement-banner { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--gold); color: black; padding: 12px 25px; border-radius: 30px; font-weight: bold; display: none; z-index: 2000; }
         .particle { position: fixed; pointer-events: none; animation: flyUp 0.8s forwards; font-weight: bold; color: var(--gold); z-index: 999; }
         @keyframes flyUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-120px); opacity: 0; } }
     </style>
 </head>
 <body class="bg-kitchen">
+
+<div id="admin-trigger" onclick="openAdmin()" style="position:fixed; top:0; right:0; width:30px; height:30px; cursor:pointer; opacity:0.01; z-index:9999;">⚙️</div>
+
+<div id="admin-panel">
+    <h3 style="margin-top:0; color:var(--gold);">GOD MODE</h3>
+    <label style="font-size:0.7rem;">Target Username</label>
+    <input type="text" id="admin-target-user" class="admin-input" placeholder="Username">
+    
+    <button onclick="adminAction('mass')" style="width:100%; background:var(--gold); padding:8px; border:none; margin-bottom:5px; font-weight:bold; cursor:pointer;">Give 1B Mass</button>
+    <button onclick="adminAction('timeout')" style="width:100%; background:#e67e22; padding:8px; border:none; margin-bottom:5px; color:white; cursor:pointer;">Timeout (10 min)</button>
+    <button onclick="adminAction('ban')" style="width:100%; background:#e74c3c; padding:8px; border:none; margin-bottom:10px; color:white; cursor:pointer;">PERMA BAN</button>
+    
+    <button onclick="document.getElementById('admin-panel').style.display='none'" style="width:100%; background:none; border:none; color:#aaa; cursor:pointer;">Close</button>
+</div>
 
 <div id="achievement-banner">Achievement Unlocked!</div>
 
@@ -105,23 +117,16 @@
         <div id="score-panel">
             <h1 id="score-text">0</h1>
             <p id="env-label" style="margin: 5px 0; letter-spacing: 2px; font-size: 0.7rem; color: #aaa;">LOCATION: THE KITCHEN</p>
-            
             <div style="font-size: 0.8rem; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; margin-top: 10px;">
                 Per Click: <span id="stat-click">1</span> | Sec: <span id="stat-cps">0</span><br>
                 Golden Tortas: <span id="stat-prestige" style="color:var(--gold)">0</span>
             </div>
             <div id="sync-status" style="font-size: 0.65rem; color: #777; margin-top: 8px;">Connecting...</div>
         </div>
-        
         <img src="IMG_0668.jpg" id="lincoln-main" alt="Lincoln">
-        
-        <button class="prestige-btn" id="prestige-btn" style="display:none;" onclick="prestige()">
-            WEIGH IN (Prestige)
-        </button>
-
+        <button class="prestige-btn" id="prestige-btn" style="display:none;" onclick="prestige()">WEIGH IN</button>
         <button onclick="resetGame()" style="background:none; border:none; color:#555; margin-top:20px; cursor:pointer; font-size: 0.7rem; text-decoration: underline;">Hard Reset</button>
     </div>
-
     <div class="shop-container" id="shop"></div>
 </div>
 
@@ -133,17 +138,14 @@
     </div>
     <div style="background: #000; padding: 5px; font-size: 0.7rem; color: var(--gold); text-align: center;" id="king-display">👑 Loading King...</div>
     <div id="chat-messages"></div>
-    
     <div class="emote-bar">
         <button class="emote-btn" onclick="sendEmote('🍔')">🍔</button>
         <button class="emote-btn" onclick="sendEmote('🌮')">🌮</button>
         <button class="emote-btn" onclick="sendEmote('👑')">👑</button>
         <button class="emote-btn" onclick="sendEmote('🔥')">🔥</button>
-        <button class="emote-btn" onclick="sendEmote('🫠')">🫠</button>
     </div>
-
     <div style="display:flex; padding:10px; background:#1e222b;">
-        <input type="text" id="chat-msg-input" style="flex:1; background:#333; color:white; border:none; padding:8px; border-radius:5px;" placeholder="Type message..." onkeypress="if(event.key==='Enter') sendChat()">
+        <input type="text" id="chat-msg-input" style="flex:1; background:#333; color:white; border:none; padding:8px; border-radius:5px;" placeholder="Message..." onkeypress="if(event.key==='Enter') sendChat()">
     </div>
 </div>
 
@@ -152,14 +154,8 @@
     const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuc3RybWJpb3NkeWtpcXl4Y3VhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDEzMDEsImV4cCI6MjA4ODc3NzMwMX0.hf6kiAniU-Hw1J3xuYPK_xlUO9BLR3d5vkEq41uf8co';
     const _supabase = supabase.createClient(DB_URL, DB_KEY);
 
-    let energy = 0;
-    let clickPower = 1;
-    let cps = 0;
-    let goldenTortas = 0;
-    let totalClicks = 0;
-    let unlockedAchievements = [];
-    let currentKing = "";
-    let chatName = localStorage.getItem('chat_name') || null;
+    let energy = 0, clickPower = 1, cps = 0, goldenTortas = 0, totalClicks = 0, unlockedAchievements = [];
+    let currentKing = "", chatName = localStorage.getItem('chat_name') || null;
 
     const upgrades = [
         { id: 0, name: "Extra Torta", cost: 15, power: 0.1, type: "click", count: 0 },
@@ -185,24 +181,15 @@
             const btn = document.createElement('button');
             btn.className = 'upgrade'; btn.id = `up-${u.id}`;
             btn.onclick = () => buyUpgrade(u.id);
-            btn.innerHTML = `
-                <div class="u-info">
-                    <span class="u-name">${u.name}</span>
-                    <span class="u-cost" id="cost-${u.id}">${u.cost.toLocaleString()} Mass</span>
-                </div>
-                <div class="u-count" id="count-${u.id}">${u.count}</div>
-            `;
+            btn.innerHTML = `<div class="u-info"><span class="u-name">${u.name}</span><span class="u-cost" id="cost-${u.id}">${u.cost.toLocaleString()} Mass</span></div><div class="u-count" id="count-${u.id}">${u.count}</div>`;
             shop.appendChild(btn);
         });
     }
 
-    function getBoost() { return 1 + (goldenTortas * 0.1); }
-
     document.getElementById('lincoln-main').addEventListener('click', (e) => {
-        let val = clickPower * getBoost();
+        let val = clickPower * (1 + (goldenTortas * 0.1));
         if (currentKing && chatName && chatName !== currentKing) val *= 0.99;
         energy += val; totalClicks++;
-        checkAchievements();
         showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
         updateUI();
     });
@@ -212,19 +199,17 @@
         if (energy >= u.cost) {
             energy -= u.cost; u.count++;
             if (u.type === "click") clickPower += u.power; else cps += u.power;
-            u.cost = Math.ceil(u.cost * 1.35); 
-            updateUI();
-            cloudSave();
+            u.cost = Math.ceil(u.cost * 1.35); updateUI(); cloudSave();
         }
     }
 
     function updateUI() {
         document.getElementById('score-text').innerText = Math.floor(energy).toLocaleString();
-        document.getElementById('stat-click').innerText = (clickPower * getBoost()).toFixed(1);
-        document.getElementById('stat-cps').innerText = (cps * getBoost()).toFixed(1);
+        document.getElementById('stat-click').innerText = (clickPower * (1 + (goldenTortas * 0.1))).toFixed(1);
+        document.getElementById('stat-cps').innerText = (cps * (1 + (goldenTortas * 0.1))).toFixed(1);
         document.getElementById('stat-prestige').innerText = goldenTortas;
         document.getElementById('prestige-btn').style.display = energy >= 1000000000 ? 'block' : 'none';
-
+        
         upgrades.forEach(u => {
             const btn = document.getElementById(`up-${u.id}`);
             if (btn) {
@@ -235,26 +220,18 @@
             }
         });
 
-        // Background Logic
-        const body = document.body;
-        const label = document.getElementById('env-label');
+        const body = document.body; const label = document.getElementById('env-label');
         if (energy < 100000) { body.className = 'bg-kitchen'; label.innerText = "LOCATION: THE KITCHEN"; }
         else if (energy < 10000000) { body.className = 'bg-buffet'; label.innerText = "LOCATION: INFINITE BUFFET"; }
         else if (energy < 1000000000) { body.className = 'bg-factory'; label.innerText = "LOCATION: TORTA FACTORY"; }
         else { body.className = 'bg-space'; label.innerText = "LOCATION: OUTER SPACE"; }
-
-        const img = document.getElementById('lincoln-main');
-        if (energy > 1000000) img.style.filter = "drop-shadow(0 0 15px gold)";
-        if (energy > 100000000) img.style.transform = `scale(${1 + Math.sin(Date.now()/500)*0.01})`;
     }
 
     async function cloudSave() {
         const saveObj = { energy, clickPower, cps, goldenTortas, upgrades: upgrades.map(u => ({count: u.count, cost: u.cost})), unlockedAchievements, totalClicks };
         localStorage.setItem('lincoln_local_save', JSON.stringify(saveObj));
         if (chatName) {
-            await _supabase.from('leaderboard').upsert({ 
-                username: chatName, clicks: Math.floor(energy), golden_tortas: goldenTortas, achievements: unlockedAchievements.join(',') 
-            }, { onConflict: 'username' });
+            await _supabase.from('leaderboard').upsert({ username: chatName, clicks: Math.floor(energy), golden_tortas: goldenTortas }, { onConflict: 'username' });
             document.getElementById('sync-status').innerText = "Vaulted";
         }
     }
@@ -263,40 +240,51 @@
         const local = localStorage.getItem('lincoln_local_save');
         if (local) {
             const d = JSON.parse(local);
-            energy = d.energy || 0; clickPower = d.clickPower || 1; cps = d.cps || 0; goldenTortas = d.goldenTortas || 0;
-            totalClicks = d.totalClicks || 0;
+            energy = d.energy; clickPower = d.clickPower; cps = d.cps; goldenTortas = d.goldenTortas;
             d.upgrades?.forEach((u, i) => { if(upgrades[i]) { upgrades[i].count = u.count; upgrades[i].cost = u.cost; } });
-            unlockedAchievements = d.unlockedAchievements || [];
         }
-        updateUI();
-        fetchKing();
+        updateUI(); fetchKing();
     }
 
-    function toggleChat() { 
-        const b = document.getElementById('chat-box');
-        if (b.style.display === 'flex') { b.style.display = 'none'; return; }
-        while (!chatName || chatName.trim() === "") {
-            let input = prompt("Enter username for Global Chat:");
-            if (input === null) return;
-            chatName = input.trim();
-        }
-        localStorage.setItem('chat_name', chatName);
-        b.style.display = 'flex';
-        fetchMessages();
-    }
-
-    async function sendChat() {
-        const i = document.getElementById('chat-msg-input');
-        if (!i.value || !chatName) return;
-        await _supabase.from('global_chat').insert([{ username: chatName, message: i.value }]);
-        i.value = ""; fetchMessages();
-    }
-
-    async function sendEmote(emoji) {
+    async function openAdmin() {
         if (!chatName) return;
-        await _supabase.from('global_chat').insert([{ username: chatName, message: emoji }]);
-        fetchMessages();
+        const { data } = await _supabase.from('leaderboard').select('is_admin').eq('username', chatName).maybeSingle();
+        if (data?.is_admin) document.getElementById('admin-panel').style.display = 'block';
     }
+
+    async function adminAction(type) {
+        const target = document.getElementById('admin-target-user').value;
+        if (!target) return alert("Enter a target username!");
+
+        if (type === 'mass') {
+            if (target === chatName) { energy += 1000000000; updateUI(); cloudSave(); }
+            else { await _supabase.from('leaderboard').update({ clicks: 1000000000 }).eq('username', target); }
+            alert("Injected 1B Mass!");
+        } else if (type === 'timeout') {
+            const date = new Date(); date.setMinutes(date.getMinutes() + 10);
+            await _supabase.from('leaderboard').update({ timeout_until: date.toISOString() }).eq('username', target);
+            alert("Timed out " + target);
+        } else if (type === 'ban') {
+            await _supabase.from('leaderboard').update({ is_banned: true }).eq('username', target);
+            alert("Banned " + target);
+        }
+    }
+
+    async function sendChat(emoteMsg = null) {
+        if (!chatName) return;
+        const input = document.getElementById('chat-msg-input');
+        const message = emoteMsg || input.value;
+        if (!message) return;
+
+        const { data } = await _supabase.from('leaderboard').select('is_banned, timeout_until').eq('username', chatName).maybeSingle();
+        if (data?.is_banned) return alert("You are permanently banned.");
+        if (data?.timeout_until && new Date(data.timeout_until) > new Date()) return alert("You are timed out.");
+
+        await _supabase.from('global_chat').insert([{ username: chatName, message: message }]);
+        input.value = ""; fetchMessages();
+    }
+
+    function sendEmote(e) { sendChat(e); }
 
     async function fetchMessages() {
         const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(20);
@@ -304,29 +292,26 @@
             document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `
                 <div class="msg ${m.username === currentKing ? 'king-msg' : ''}">
                     <b style="color:${m.username === currentKing ? 'var(--gold)' : 'var(--secondary)'}">${m.username}:</b> ${m.message}
-                </div>
-            `).join('');
-            const chatMsgs = document.getElementById('chat-messages');
-            chatMsgs.scrollTop = chatMsgs.scrollHeight;
+                </div>`).join('');
+            const c = document.getElementById('chat-messages'); c.scrollTop = c.scrollHeight;
         }
+    }
+
+    function toggleChat() {
+        const b = document.getElementById('chat-box');
+        if (b.style.display === 'flex') { b.style.display = 'none'; return; }
+        while (!chatName || chatName.trim() === "") {
+            let input = prompt("Username:");
+            if (input === null) return;
+            chatName = input.trim();
+        }
+        localStorage.setItem('chat_name', chatName);
+        b.style.display = 'flex'; fetchMessages();
     }
 
     async function fetchKing() {
         const { data } = await _supabase.from('king_of_the_hill').select('*').maybeSingle();
-        if (data) { currentKing = data.username; document.getElementById('king-display').innerText = `👑 Current King: ${data.username}`; }
-    }
-
-    function checkAchievements() {
-        const a = [{ id: "steel", name: "Finger of Steel", req: totalClicks >= 1000 }, { id: "mil", name: "Mass Millionaire", req: energy >= 1000000 }];
-        a.forEach(ach => {
-            if (!unlockedAchievements.includes(ach.id) && ach.req) {
-                unlockedAchievements.push(ach.id);
-                const b = document.getElementById('achievement-banner');
-                b.innerText = "🏆 Unlocked: " + ach.name; b.style.display = "block";
-                setTimeout(() => b.style.display = "none", 4000);
-                cloudSave();
-            }
-        });
+        if (data) { currentKing = data.username; document.getElementById('king-display').innerText = `👑 King: ${data.username}`; }
     }
 
     function showParticle(x, y, text) {
@@ -335,20 +320,13 @@
         document.body.appendChild(p); setTimeout(() => p.remove(), 800);
     }
 
-    async function resetGame() {
-        if (confirm("Reset Mass to 0? (Keep username)")) {
-            energy = 0; clickPower = 1; cps = 0; goldenTortas = 0; totalClicks = 0; unlockedAchievements = [];
-            const originalCosts = [15, 100, 500, 1200, 3000, 10000, 25000, 85000, 200000, 500000, 2000000, 8000000, 40000000, 150000000, 2500000000];
-            upgrades.forEach((u, i) => { u.count = 0; u.cost = originalCosts[i]; });
-            updateUI(); initShop(); cloudSave();
-        }
-    }
+    function resetGame() { if (confirm("Reset?")) { energy = 0; clickPower = 1; cps = 0; goldenTortas = 0; initShop(); updateUI(); cloudSave(); } }
 
-    setInterval(() => { energy += (cps * getBoost() / 10); updateUI(); }, 100);
+    setInterval(() => { energy += (cps * (1 + (goldenTortas * 0.1)) / 10); updateUI(); }, 100);
     setInterval(cloudSave, 20000);
     setInterval(fetchKing, 15000);
     setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
-    
+
     initShop(); cloudLoad();
 </script>
 </body>
