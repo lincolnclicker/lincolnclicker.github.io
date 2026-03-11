@@ -152,6 +152,7 @@
                 <div id="sync-status" style="font-size: 0.65rem; color: #777; margin-top: 8px;">Sync Active</div>
             </div>
             <img src="IMG_0668.jpg" id="lincoln-main" alt="Lincoln">
+            <img src="IMG_0682.jpg" style="display:none;" alt="preload">
             <button class="prestige-btn" id="prestige-btn" style="display:none;" onclick="prestige()">WEIGH IN</button>
             <div style="margin-top:20px;">
                 <button onclick="changeName()" style="background:none; border:none; color:var(--secondary); cursor:pointer; font-size: 0.7rem; text-decoration: underline; margin-right: 10px;">Change Name</button>
@@ -324,25 +325,65 @@ function handleNewEvent(event) {
     const oldNotice = document.getElementById('event-notice');
     if (oldNotice) oldNotice.remove();
 
+    const mainImg = document.getElementById('lincoln-main');
+    const DEFAULT_IMG = "IMG_0668.jpg"; 
+    const STORM_IMG = "IMG_0682.jpg"; // Replace with your actual storm image file name
+
     const expiry = new Date(event.expires_at.replace(' ', 'T')).getTime();
+    
     const notice = document.createElement('div');
     notice.id = "event-notice";
-    notice.style = "position:fixed; top:10%; left:50%; transform:translateX(-50%); color:black; padding:15px 30px; border-radius:50px; font-weight:bold; z-index:10000; box-shadow:0 0 20px black; animation: pulse-gold 1s infinite; text-align:center;";
+    // Added pointer-events: none so you can click through it
+    notice.style = "position:fixed; top:10%; left:50%; transform:translateX(-50%); color:black; padding:15px 30px; border-radius:50px; font-weight:bold; z-index:10000; box-shadow:0 0 20px black; text-align:center; pointer-events:none;";
     document.body.appendChild(notice);
 
     eventTimer = setInterval(() => {
         const now = new Date().getTime();
         const timeLeft = expiry - now;
+
+        // --- WHEN EVENT ENDS ---
         if (timeLeft <= 0) {
-            eventMultiplier = 1; currentEvent = null;
-            document.body.style.boxShadow = "none"; notice.remove();
-            clearInterval(eventTimer); return;
+            eventMultiplier = 1;
+            currentEvent = null;
+            mainImg.src = DEFAULT_IMG; // Back to normal
+            mainImg.style.filter = "none"; // Remove any storm glow
+            document.body.style.boxShadow = "none";
+            notice.remove();
+            clearInterval(eventTimer);
+            return;
         }
+
         const seconds = Math.ceil(timeLeft / 1000);
         currentEvent = event.event_type;
-        if (currentEvent === 'feast') { eventMultiplier = 2; notice.style.background = "var(--gold)"; notice.innerText = `🔥 FEAST! 2X MASS (${seconds}s)`; }
-        else if (currentEvent === 'storm') { eventMultiplier = 5; notice.style.background = "#00d2ff"; notice.innerText = `⚡ STORM! 5X CLICK (${seconds}s)`; }
-        else if (currentEvent === 'low_carb') { eventMultiplier = 0.5; notice.style.background = "#ff4757"; notice.innerText = `🥗 LOW CARB! 0.5X MASS (${seconds}s)`; }
+
+        // --- EVENT TYPES ---
+        switch(currentEvent) {
+            case 'feast':
+                eventMultiplier = 2;
+                notice.style.background = "var(--gold)";
+                notice.innerText = `🔥 FEAST! 2X MASS (${seconds}s)`;
+                break;
+            case 'storm':
+                eventMultiplier = 5;
+                notice.style.background = "#00d2ff";
+                notice.innerText = `⚡ STORM! 5X CLICK (${seconds}s)`;
+                
+                // CHANGE THE IMAGE HERE
+                if (mainImg.src.indexOf(STORM_IMG) === -1) {
+                    mainImg.src = STORM_IMG;
+                    mainImg.style.filter = "drop-shadow(0 0 20px #00d2ff)"; // Optional glow
+                }
+                break;
+            case 'low_carb':
+                eventMultiplier = 0.5;
+                notice.style.background = "#ff4757";
+                notice.innerText = `🥗 LOW CARB! 0.5X MASS (${seconds}s)`;
+                break;
+            case 'announcement':
+                notice.style.background = "#6c5ce7"; 
+                notice.innerHTML = `📢 <b>ADMIN:</b><br>${event.message}`;
+                break;
+        }
     }, 1000);
 }
 
@@ -496,5 +537,6 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
