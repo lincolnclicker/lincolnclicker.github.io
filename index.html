@@ -26,7 +26,6 @@
             box-sizing: border-box;
         }
 
-        /* Fixed Left Section */
         .clicker-section { 
             flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center;
         }
@@ -48,7 +47,6 @@
         #lincoln-main:active { transform: scale(0.94); }
         .buffet-active { border-color: var(--buffet-color) !important; box-shadow: 0 0 20px var(--buffet-color); }
 
-        /* Fixed Shop Layout */
         .shop-container {
             flex: 1.2; background: rgba(255, 255, 255, 0.05); padding: 15px;
             border-radius: 20px; height: 90vh; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1);
@@ -74,7 +72,6 @@
             padding: 15px; border-radius: 12px; border: none; cursor: pointer; margin-top: 10px;
         }
 
-        /* UI Overlays */
         #chat-icon { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
         #chat-box { position: fixed; bottom: 90px; right: 20px; width: 320px; height: 450px; background: var(--chat-bg); border: 2px solid var(--primary); border-radius: 12px; display: none; flex-direction: column; z-index: 100; }
         #chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 0.85rem; background: #1a1e26; }
@@ -132,7 +129,7 @@
 
 <script>
     const DB_URL = 'https://cnstrmbiosdykiqyxcua.supabase.co';
-    const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuc3RybWJpb3NkeWtpcXl4Y3VhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDEzMDEsImV4cCI6MjA4ODc3NzMwMX0.hf6kiAniU-Hw1J3xuYPK_xlUO9BLR3d5vkEq41uf8co';
+    const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuc3RybWJpb3NkeWtpcXl4Y3VhIiwicm9sZES6ImFub24iLCJpYXQiOjE3NzMyMDEzMDEsImV4cCI6MjA4ODc3NzMwMX0.hf6kiAniU-Hw1J3xuYPK_xlUO9BLR3d5vkEq41uf8co';
     const _supabase = supabase.createClient(DB_URL, DB_KEY);
 
     let sessionId = localStorage.getItem('lincoln_session_id') || ('user_' + Math.random().toString(36).substr(2, 9));
@@ -146,6 +143,7 @@
     let totalClicks = 0;
     let unlockedAchievements = [];
     let currentKing = "";
+    let chatName = localStorage.getItem('chat_name') || "Anonymous";
 
     const upgrades = [
         { id: 0, name: "Extra Torta", cost: 15, power: 0.1, type: "click", count: 0 },
@@ -187,11 +185,7 @@
     document.getElementById('lincoln-main').addEventListener('click', (e) => {
         let val = clickPower * getBoost();
         if (isBuffetRush) val *= 10;
-        
-        // 4. Global Tax Logic (Subtract 1% if you aren't the king)
-        if (currentKing !== "" && localStorage.getItem('chat_name') !== currentKing) {
-            val *= 0.99;
-        }
+        if (currentKing !== "" && chatName !== currentKing) val *= 0.99;
 
         energy += val; totalClicks++;
         checkAchievements();
@@ -207,22 +201,6 @@
             u.cost = Math.ceil(u.cost * 1.35); 
             updateUI();
         }
-    }
-
-    function startBuffetRush() {
-        isBuffetRush = true;
-        document.getElementById('lincoln-main').classList.add('buffet-active');
-        const timer = document.getElementById('event-timer');
-        timer.style.display = 'block';
-        let left = 30;
-        const interval = setInterval(() => {
-            left--; document.getElementById('timer-sec').innerText = left;
-            if (left <= 0) {
-                clearInterval(interval); isBuffetRush = false;
-                document.getElementById('lincoln-main').classList.remove('buffet-active');
-                timer.style.display = 'none';
-            }
-        }, 1000);
     }
 
     function updateUI() {
@@ -242,50 +220,23 @@
                 document.getElementById(`count-${u.id}`).innerText = u.count;
             }
         });
-        
-        // Visual Evolution
-        const img = document.getElementById('lincoln-main');
-        if (energy > 1000000) img.style.filter = "drop-shadow(0 0 15px gold)";
-        if (energy > 100000000) img.style.transform = `scale(${1 + Math.sin(Date.now()/500)*0.01})`;
-    }
-
-    function checkAchievements() {
-        const a = [
-            { id: "steel", name: "Finger of Steel", req: totalClicks >= 1000 },
-            { id: "mil", name: "Mass Millionaire", req: energy >= 1000000 }
-        ];
-        a.forEach(ach => {
-            if (!unlockedAchievements.includes(ach.id) && ach.req) {
-                unlockedAchievements.push(ach.id);
-                const b = document.getElementById('achievement-banner');
-                b.innerText = "🏆 Unlocked: " + ach.name; b.style.display = "block";
-                setTimeout(() => b.style.display = "none", 4000);
-            }
-        });
-    }
-
-    async function prestige() {
-        if (confirm("Reset everything for Golden Tortas?")) {
-            let gained = Math.floor(Math.sqrt(energy / 1000000000));
-            goldenTortas += gained;
-            energy = 0; clickPower = 1; cps = 0;
-            upgrades.forEach(u => { u.count = 0; u.cost = Math.ceil(u.cost / Math.pow(1.35, u.count)); });
-            await cloudSave();
-            location.reload();
-        }
     }
 
     async function cloudSave() {
         document.getElementById('sync-status').innerText = "Syncing...";
+        // Save using the chatName set by the user
         await _supabase.from('leaderboard').upsert({ 
-            username: sessionId, clicks: Math.floor(energy), 
-            golden_tortas: goldenTortas, achievements: unlockedAchievements.join(',') 
+            username: chatName, 
+            clicks: Math.floor(energy), 
+            golden_tortas: goldenTortas, 
+            achievements: unlockedAchievements.join(',') 
         }, { onConflict: 'username' });
         document.getElementById('sync-status').innerText = "Vaulted";
     }
 
     async function cloudLoad() {
-        const { data } = await _supabase.from('leaderboard').select('*').eq('username', sessionId).maybeSingle();
+        // Try to load by sessionId or chatName
+        const { data } = await _supabase.from('leaderboard').select('*').eq('username', chatName).maybeSingle();
         if (data) {
             energy = data.clicks; goldenTortas = data.golden_tortas || 0;
             unlockedAchievements = data.achievements ? data.achievements.split(',') : [];
@@ -306,8 +257,20 @@
     function toggleChat() { 
         const b = document.getElementById('chat-box'); 
         b.style.display = b.style.display === 'flex' ? 'none' : 'flex';
-        if (!localStorage.getItem('chat_name')) localStorage.setItem('chat_name', prompt("Enter Chat Name:") || "Anonymous");
+        if (!localStorage.getItem('chat_name')) {
+            const newName = prompt("Enter Chat Name:") || "Anonymous";
+            chatName = newName;
+            localStorage.setItem('chat_name', chatName);
+            cloudSave(); // Sync name immediately
+        }
         if(b.style.display === 'flex') fetchMessages();
+    }
+
+    async function sendChat() {
+        const i = document.getElementById('chat-msg-input');
+        if (!i.value) return;
+        await _supabase.from('global_chat').insert([{ username: chatName, message: i.value }]);
+        i.value = ""; fetchMessages();
     }
 
     async function fetchMessages() {
@@ -315,17 +278,25 @@
         if (data) document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `<div class="msg"><b>${m.username}:</b> ${m.message}</div>`).join('');
     }
 
-    async function sendChat() {
-        const i = document.getElementById('chat-msg-input');
-        if (!i.value) return;
-        await _supabase.from('global_chat').insert([{ username: localStorage.getItem('chat_name'), message: i.value }]);
-        i.value = ""; fetchMessages();
-    }
-
     function showParticle(x, y, text) {
         const p = document.createElement('div'); p.className = 'particle'; p.innerText = text;
         p.style.left = x + 'px'; p.style.top = y + 'px';
         document.body.appendChild(p); setTimeout(() => p.remove(), 800);
+    }
+
+    function checkAchievements() {
+        const a = [
+            { id: "steel", name: "Finger of Steel", req: totalClicks >= 1000 },
+            { id: "mil", name: "Mass Millionaire", req: energy >= 1000000 }
+        ];
+        a.forEach(ach => {
+            if (!unlockedAchievements.includes(ach.id) && ach.req) {
+                unlockedAchievements.push(ach.id);
+                const b = document.getElementById('achievement-banner');
+                b.innerText = "🏆 Unlocked: " + ach.name; b.style.display = "block";
+                setTimeout(() => b.style.display = "none", 4000);
+            }
+        });
     }
 
     function resetGame() { if(confirm("ERASE ALL PROGRESS?")) { localStorage.clear(); location.reload(); } }
