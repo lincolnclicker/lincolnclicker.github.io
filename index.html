@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liam's Projects</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #0a0a0a; color: #fff; margin: 0; display: flex; flex-direction: column; align-items: center; }
+        header { padding: 40px 20px; text-align: center; }
+        h1 { font-size: 3rem; color: #00ffcc; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0; }
+        .subtitle { color: #888; margin-top: 5px; }
+        
+        .project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; width: 90%; max-width: 1200px; padding: 20px; }
+        
+        .project-card { 
+            background: #1a1a1a; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            transition: 0.3s; 
+            cursor: pointer; 
+            border: 1px solid #333; 
+            text-decoration: none; 
+            color: inherit; 
+            position: relative;
+        }
+
+        .project-card:hover:not(.locked) { 
+            transform: translateY(-8px); 
+            box-shadow: 0 10px 30px rgba(0, 255, 204, 0.2); 
+            border-color: #00ffcc; 
+        }
+
+        /* Locked State Styles */
+        .project-card.locked {
+            cursor: not-allowed;
+            filter: grayscale(0.8);
+            opacity: 0.7;
+        }
+
+        .lock-overlay {
+            display: none;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+            color: #ff4757;
+            font-weight: bold;
+        }
+
+        .locked .lock-overlay { display: flex; }
+
+        .preview-box { height: 150px; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; }
+        .project-info { padding: 15px; text-align: center; }
+        .project-info h2 { margin: 0; font-size: 1.2rem; color: #00ffcc; }
+        .project-info p { color: #888; font-size: 0.8rem; margin-top: 8px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Liam's Projects</h1>
+        <p class="subtitle">Interactive Portfolio & Game Lab</p>
+    </header>
+
+    <main class="project-grid">
+        <a href="flappy.html" class="project-card">
+            <div class="preview-box" style="background: #70c5ce;">🐦</div>
+            <div class="project-info"><h2>Flappy Master</h2><p>Arcade bird survival.</p></div>
+        </a>
+
+        <a href="neon-jump.html" class="project-card">
+            <div class="preview-box" style="background: #111; color: #ff00ff;">⚡</div>
+            <div class="project-info"><h2>Neon Jump</h2><p>Endless neon runner.</p></div>
+        </a>
+
+        <a href="emerald.html" class="project-card pc-only" id="game-emerald">
+            <div class="lock-overlay">
+                <span>🔒 PC ONLY</span>
+                <span style="font-size: 0.7rem;">Keyboard Required</span>
+            </div>
+            <div class="preview-box" style="background: #5d9948;">🏰</div>
+            <div class="project-info"><h2>Emerald Chronicles</h2><p>Retro RPG adventure.</p></div>
+        </a>
+
+        <a href="gravity-flip.html" class="project-card pc-only" id="game-gravity">
+            <div class="lock-overlay">
+                <span>🔒 PC ONLY</span>
+                <span style="font-size: 0.7rem;">Keyboard Required</span>
+            </div>
+            <div class="preview-box" style="background: #0f0f13; border-bottom: 2px solid #4af;">🚀</div>
+            <div class="project-info"><h2>Gravity Flip</h2><p>High-speed physics flipping.</p></div>
+        </a>
+
+        <a href="benjamin-clicker.html" class="project-card">
+            <div class="preview-box" style="background: #2a2a2a; border-bottom: 2px solid #ff4500;">🖱️</div>
+            <div class="project-info"><h2>Benjamin Clicker</h2><p>Click to build an empire.</p></div>
+        </a>
+    </main>
+
+    <footer style="margin: 40px; color: #444; font-size: 0.8rem;">
+        Made by Liam
+    </footer>
+
+    <script>
+        // Simple Device Detection
+        function checkDevice() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 0);
+            
+            if (isMobile) {
+                // Find all games marked as pc-only
+                const pcGames = document.querySelectorAll('.pc-only');
+                
+                pcGames.forEach(game => {
+                    game.classList.add('locked');
+                    // Disable the link so they can't click it
+                    game.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        alert("This game requires a keyboard and is only available on Computer.");
+                    });
+                });
+            }
+        }
+
+        // Run the check when the page loads
+        window.onload = checkDevice;
+    </script>
+
+</body>
+</html>
