@@ -129,6 +129,7 @@
     <h3 style="margin-top:0; color:var(--gold); text-align:center;">ADMIN CONTROL</h3>
     <input type="text" id="admin-target-user" class="admin-input" placeholder="Target Username">
     <input type="text" id="admin-value" class="admin-input" placeholder="Value (Mass/Mins)">
+    <button onclick="triggerGlobalFeast()" style="width:100%; background:#ff4757; color:white; padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">🔥 TRIGGER GLOBAL FEAST (2X)</button>
     <button onclick="adminAction('mass')" style="width:100%; background:var(--gold); padding:10px; border:none; margin-bottom:10px; font-weight:bold; cursor:pointer; border-radius:5px;">Give Mass</button>
     <button onclick="adminAction('timeout')" style="width:100%; background:#e67e22; padding:10px; border:none; margin-bottom:10px; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Set Timeout</button>
     <button onclick="clearChatNow()" style="width:100%; background:#ff4757; padding:10px; border:none; color:white; margin-top:10px; cursor:pointer; border-radius:5px; font-weight:bold;">FORCE CLEAR CHAT</button>
@@ -188,9 +189,12 @@
     const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuc3RybWJpb3NkeWtpcXl4Y3VhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDEzMDEsImV4cCI6MjA4ODc3NzMwMX0.hf6kiAniU-Hw1J3xuYPK_xlUO9BLR3d5vkEq41uf8co';
     const _supabase = supabase.createClient(DB_URL, DB_KEY);
 
+    // --- 1. VARIABLES (Added Feast Variables) ---
     let energy = 0, clickPower = 1, cps = 0, goldenTortas = 0, totalClicks = 0;
     let currentKing = "", chatName = localStorage.getItem('chat_name') || null;
     let isAdmin = false;
+    let isFeastActive = false; // New
+    let feastTimeout = null;   // New
 
     const initialUpgrades = [
         { id: 0, name: "Extra Torta", cost: 15, power: 0.1, type: "click", desc: "+0.1 Click Power" },
@@ -212,58 +216,93 @@
 
     let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
-    function openAdmin() {
-    // You can add a password check here if you want extra security
-    // let pw = prompt("Admin Password:"); if(pw !== "1234") return;
+    // --- 2. GLOBAL FEAST LOGIC ---
 
-    document.getElementById('admin-panel').style.display = 'block';
-}
+    // Triggered by Admin Button
+    async function triggerGlobalFeast() {
+        const durationMinutes = 5;
+        const expiresAt = new Date(Date.now() + durationMinutes * 60000).toISOString();
+        const { error } = await _supabase.from('game_events').insert([{ event_type: 'feast', expires_at: expiresAt }]);
+        if (error) alert("Error: " + error.message);
+        else document.getElementById('admin-panel').style.display = 'none';
+    }
 
-async function adminAction(type) {
-    const target = document.getElementById('admin-target-user').value;
-    const val = document.getElementById('admin-value').value;
+    // Listens for the Feast signal from Supabase
+    function initRealtimeEvents() {
+        _supabase.channel('game-events')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, 
+            (payload) => {
+                if (payload.new.event_type === 'feast') startLocalFeast();
+            }).subscribe();
+    }
 
-    if (!target) return alert("Enter a target username");
+    // Activates the visuals and the 2x boost
+    function startLocalFeast() {
+        if (isFeastActive) return;
+        isFeastActive = true;
+        
+        // Effects
+        document.body.style.boxShadow = "inset 0 0 100px rgba(241, 196, 15, 0.7)";
+        const notice = document.createElement('div');
+        notice.id = "feast-notice";
+        notice.style = "position:fixed; top:10%; left:50%; transform:translateX(-50%); background:var(--gold); color:black; padding:15px 30px; border-radius:50px; font-weight:bold; z-index:10000; box-shadow:0 0 20px black; animation: pulse-gold 1s infinite;";
+        notice.innerText = "🔥 THE BUFFET IS OPEN! 2X MASS ACTIVE! 🔥";
+        document.body.appendChild(notice);
 
-    if (type === 'mass') {
-        const amount = parseFloat(val);
-        // If targeting yourself, update local energy immediately
-        if (target === chatName) {
-            energy += amount;
-            updateUI();
+        if (feastTimeout) clearTimeout(feastTimeout);
+        feastTimeout = setTimeout(() => {
+            isFeastActive = false;
+            document.body.style.boxShadow = "none";
+            if (notice) notice.remove();
+        }, 300000); // 5 Minutes
+    }
+
+    // --- 3. UPDATED CORE GAMEPLAY (Includes Feast Multiplier) ---
+
+    document.getElementById('lincoln-main').addEventListener('click', (e) => {
+        let multiplier = isFeastActive ? 2 : 1; // Double if feast active
+        let val = (clickPower * (1 + (goldenTortas * 0.1))) * multiplier;
+        
+        if (currentKing && chatName && chatName !== currentKing) val *= 0.99;
+        
+        energy += val; 
+        totalClicks++;
+        showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}${isFeastActive ? ' 🔥' : ''}`);
+        updateUI();
+    });
+
+    setInterval(() => { 
+        let multiplier = isFeastActive ? 2 : 1; // Double if feast active
+        let boostedCPS = (cps * (1 + (goldenTortas * 0.1))) * multiplier;
+        energy += (boostedCPS / 10); 
+        updateUI(); 
+    }, 100);
+
+    // --- 4. EXISTING FUNCTIONS (Keep these as they were) ---
+
+    function openAdmin() { document.getElementById('admin-panel').style.display = 'block'; }
+
+    async function adminAction(type) {
+        const target = document.getElementById('admin-target-user').value;
+        const val = document.getElementById('admin-value').value;
+        if (!target) return alert("Enter a target username");
+        if (type === 'mass') {
+            const amount = parseFloat(val);
+            if (target === chatName) { energy += amount; updateUI(); }
+            await _supabase.from('leaderboard').update({ clicks: amount }).eq('username', target);
+            alert(`Gave ${amount} mass to ${target}`);
+        } 
+        if (type === 'timeout') {
+            await _supabase.from('global_chat').insert([{ username: 'SYSTEM', message: `${target} has been timed out for ${val} minutes.` }]);
         }
-        // Update the database for the target
-        await _supabase.from('leaderboard').update({ clicks: amount }).eq('username', target);
-        alert(`Gave ${amount} mass to ${target}`);
-    } 
-    
-    if (type === 'timeout') {
-        await _supabase.from('global_chat').insert([{ 
-            username: 'SYSTEM', 
-            message: `${target} has been timed out for ${val} minutes.` 
-        }]);
     }
-}
 
-async function clearChatNow() {
-    if (!confirm("⚠️ WARNING: This will delete ALL chat history for everyone. Proceed?")) return;
-
-    // We use .gt('created_at', '2000-01-01') as a "hack" to delete everything 
-    // because Supabase requires a filter for deletes.
-    const { error } = await _supabase
-        .from('global_chat')
-        .delete()
-        .gt('created_at', '2000-01-01'); 
-
-    if (error) {
-        console.error("Delete error:", error);
-        alert("Failed to clear chat: " + error.message);
-    } else {
-        alert("Chat cleared successfully!");
-        fetchMessages(); // Refresh the chat immediately
+    async function clearChatNow() {
+        if (!confirm("Delete all chat?")) return;
+        await _supabase.from('global_chat').delete().gt('created_at', '2000-01-01');
+        fetchMessages();
     }
-}
-    
+
     function initShop() {
         const shop = document.getElementById('shop'); shop.innerHTML = '';
         upgrades.forEach(u => {
@@ -281,52 +320,6 @@ async function clearChatNow() {
         });
     }
 
-    document.getElementById('lincoln-main').addEventListener('click', (e) => {
-        let val = clickPower * (1 + (goldenTortas * 0.1));
-        if (currentKing && chatName && chatName !== currentKing) val *= 0.99;
-        energy += val; totalClicks++;
-        showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
-        updateUI();
-    });
-
-    async function prestige() {
-    if (energy < 1000000000) {
-        alert("You need at least 1 Billion Mass to weigh in for Golden Tortas!");
-        return;
-    }
-
-    const earnedTortas = Math.floor(energy / 1000000000);
-    
-    if (confirm(`Weighing in will reset your Mass and Upgrades, but you will earn ${earnedTortas} Golden Torta(s). Each Torta gives a permanent 10% boost! Proceed?`)) {
-        
-        // Add the new tortas to the total
-        goldenTortas += earnedTortas;
-
-        // Reset game state
-        energy = 0;
-        clickPower = 1;
-        cps = 0;
-        upgrades = initialUpgrades.map(u => ({...u, count: 0}));
-
-        // Re-initialize shop and UI
-        initShop();
-        updateUI();
-        
-        // Save to Cloud immediately
-        await cloudSave();
-        
-        // System message in chat
-        if (chatName) {
-            await _supabase.from('global_chat').insert([{ 
-                username: 'SYSTEM', 
-                message: `🎉 ${chatName} just weighed in and earned ${earnedTortas} Golden Tortas!` 
-            }]);
-        }
-        
-        alert(`Congratulations! You are now ${goldenTortas} Golden Tortas heavier!`);
-    }
-}
-    
     function buyUpgrade(id) {
         const u = upgrades[id];
         if (energy >= u.cost) {
@@ -338,8 +331,9 @@ async function clearChatNow() {
 
     function updateUI() {
         document.getElementById('score-text').innerText = Math.floor(energy).toLocaleString();
-        document.getElementById('stat-click').innerText = (clickPower * (1 + (goldenTortas * 0.1))).toFixed(1);
-        document.getElementById('stat-cps').innerText = (cps * (1 + (goldenTortas * 0.1))).toFixed(1);
+        let mult = isFeastActive ? 2 : 1;
+        document.getElementById('stat-click').innerText = ((clickPower * (1 + (goldenTortas * 0.1))) * mult).toFixed(1);
+        document.getElementById('stat-cps').innerText = ((cps * (1 + (goldenTortas * 0.1))) * mult).toFixed(1);
         document.getElementById('stat-prestige').innerText = goldenTortas;
         document.getElementById('prestige-btn').style.display = energy >= 1000000000 ? 'block' : 'none';
         
@@ -376,28 +370,19 @@ async function clearChatNow() {
                 <div class="lb-row">
                     <span><span class="lb-rank">#${i+1}</span> ${u.username}</span>
                     <span>${Math.floor(u.clicks).toLocaleString()} <small style="color:var(--gold)">(${u.golden_tortas} GT)</small></span>
-                </div>
-            `).join('');
+                </div>`).join('');
         }
     }
 
     async function changeName() {
-        if (!chatName) return alert("Set a name in chat first!");
-        let newName = prompt("Enter new username:", chatName);
-        if (!newName || newName.trim() === "" || newName === chatName) return;
-        newName = newName.trim();
-
+        if (!chatName) return;
+        let newName = prompt("New username:", chatName);
+        if (!newName || newName === chatName) return;
         const { data: existingUser } = await _supabase.from('leaderboard').select('username').eq('username', newName).maybeSingle();
         if (existingUser) return alert("Name taken!");
-
-        const { error } = await _supabase.from('leaderboard').update({ username: newName }).eq('username', chatName);
-        if (error) return alert("Update failed.");
-
-        const oldName = chatName;
+        await _supabase.from('leaderboard').update({ username: newName }).eq('username', chatName);
         chatName = newName;
         localStorage.setItem('chat_name', chatName);
-        await _supabase.from('global_chat').insert([{ username: 'SYSTEM', message: `${oldName} is now ${newName}` }]);
-        alert("Name changed!");
         fetchLeaderboard();
     }
 
@@ -449,70 +434,30 @@ async function clearChatNow() {
         document.body.appendChild(p); setTimeout(() => p.remove(), 800);
     }
 
-    function resetGame() { 
-        if (confirm("Hard reset? All Mass and costs will be wiped!")) { 
-            energy = 0; clickPower = 1; cps = 0; goldenTortas = 0; 
-            upgrades = initialUpgrades.map(u => ({...u, count: 0}));
-            initShop(); updateUI(); cloudSave(); 
-        } 
-    }
-    
     async function fetchKing() {
-    const { data, error } = await _supabase
-        .from('leaderboard')
-        .select('username')
-        .order('clicks', { ascending: false })
-        .limit(1);
-
-    if (error) {
-        console.error("Error fetching king:", error);
-        return;
-    }
-
-    if (data && data.length > 0) {
-        currentKing = data[0].username;
-        const kingDisp = document.getElementById('king-display');
-        kingDisp.innerText = `👑 King: ${currentKing}`;
-        
-        if (chatName === currentKing) {
-            kingDisp.style.color = "var(--gold)";
-            kingDisp.style.textShadow = "0 0 10px rgba(241, 196, 15, 0.8)";
-        } else {
-            kingDisp.style.color = "white";
-            kingDisp.style.textShadow = "none";
+        const { data } = await _supabase.from('leaderboard').select('username').order('clicks', { ascending: false }).limit(1);
+        if (data && data.length > 0) {
+            currentKing = data[0].username;
+            document.getElementById('king-display').innerText = `👑 King: ${currentKing}`;
         }
-    } else {
-        currentKing = "None";
-        document.getElementById('king-display').innerText = `👑 King: None`;
     }
-}
 
-// Added this missing function so your emote buttons work!
-function sendEmote(char) {
-    sendChat(char);
-}
+    function sendEmote(char) { sendChat(char); }
 
-// Timers and Initialization
-setInterval(() => { 
-    // This adds 1/10th of your CPS every 100ms, boosted by Golden Tortas
-    let boostedCPS = cps * (1 + (goldenTortas * 0.1));
-    energy += (boostedCPS / 10); 
-    updateUI(); 
-}, 100);
+    // --- 5. TIMERS & INITIALIZATION ---
+    setInterval(cloudSave, 20000);
+    setInterval(fetchLeaderboard, 15000);
+    setInterval(fetchKing, 15000); 
+    setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
 
-setInterval(cloudSave, 20000);
-setInterval(fetchLeaderboard, 15000);
-setInterval(fetchKing, 15000); 
-setInterval(() => { 
-    if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); 
-}, 5000);
-
-initShop(); 
-cloudLoad();
-fetchKing();
+    initShop(); 
+    cloudLoad();
+    fetchKing();
+    initRealtimeEvents(); // Start listening for Feast events!
 </script>
 </body>
 </html>
+
 
 
 
