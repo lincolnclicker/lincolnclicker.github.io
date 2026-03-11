@@ -29,6 +29,7 @@
             display: flex;
             justify-content: center;
             min-height: 100vh;
+            overflow: hidden;
         }
 
         #game-wrapper {
@@ -101,6 +102,7 @@
             align-items: center;
             margin-bottom: 12px;
             transition: 0.2s;
+            text-align: left;
         }
 
         .upgrade:disabled { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; }
@@ -119,9 +121,9 @@
         }
 
         #sync-status {
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             margin-top: 10px;
-            color: #888;
+            color: #aaa;
         }
 
         @keyframes flyUp {
@@ -136,14 +138,16 @@
     <div class="clicker-section">
         <div id="score-panel">
             <h1 id="score-text">0</h1>
-            <p style="letter-spacing: 2px;">LINCOLN MASS</p>
-            <div style="font-size: 0.9rem; color: #ccc; margin-top: 10px;">
+            <p style="letter-spacing: 2px; margin: 5px 0;">LINCOLN MASS</p>
+            <div style="font-size: 0.9rem; color: #ccc;">
                 Bulk per Click: <span id="stat-click">1</span><br>
                 Passive Gains: <span id="stat-cps">0</span>
             </div>
-            <div id="sync-status">Connecting to Vault...</div>
+            <div id="sync-status">Syncing with Vault...</div>
         </div>
+        
         <img src="IMG_0668.jpg" id="lincoln-main" alt="Lincoln">
+        
         <br>
         <button onclick="resetGame()" style="background:none; border:1px solid #555; color:#777; margin-top:30px; cursor:pointer; font-size: 0.7rem;">Evaporate Progress</button>
     </div>
@@ -155,9 +159,11 @@
     // --- DATABASE CONFIG ---
     const DB_URL = 'https://cnstrmbiosdykiqyxcua.supabase.co';
     const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuc3RybWJpb3NkeWtpcXl4Y3VhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDEzMDEsImV4cCI6MjA4ODc3NzMwMX0.hf6kiAniU-Hw1J3xuYPK_xlUO9BLR3d5vkEq41uf8co';
-    const supabase = lib.createClient(DB_URL, DB_KEY);
+    
+    // Initializing Supabase correctly
+    const _supabase = supabase.createClient(DB_URL, DB_KEY);
 
-    // Generate or get a unique anonymous ID for this browser session
+    // Session ID logic (No usernames needed)
     let sessionId = localStorage.getItem('lincoln_session_id');
     if (!sessionId) {
         sessionId = 'user_' + Math.random().toString(36).substr(2, 9);
@@ -168,6 +174,7 @@
     let clickPower = 1;
     let cps = 0;
 
+    // All original upgrades included
     const upgrades = [
         { id: 0, name: "Extra Torta", cost: 15, power: 0.1, type: "click", count: 0 },
         { id: 1, name: "Chud Burger", cost: 100, power: 0.3, type: "cps", count: 0 },
@@ -206,6 +213,7 @@
         });
     }
 
+    // Click handler with particles
     document.getElementById('lincoln-main').addEventListener('click', (e) => {
         energy += clickPower;
         showParticle(e.clientX, e.clientY, `+${clickPower.toFixed(1)}`);
@@ -220,8 +228,10 @@
             if (u.type === "click") clickPower += u.power;
             else cps += u.power;
             
+            // Hard Mode Scaling
             u.cost = Math.ceil(u.cost * 1.35); 
             updateUI();
+            cloudSave(); // Save whenever an upgrade is bought
         }
     }
 
@@ -254,63 +264,57 @@
         setTimeout(() => p.remove(), 800);
     }
 
-    // --- NEW CLOUD SAVE SYSTEM ---
+    // --- CLOUD SAVE LOGIC ---
     async function cloudSave() {
-        document.getElementById('sync-status').innerText = "Syncing with Vault...";
+        const status = document.getElementById('sync-status');
+        status.innerText = "Syncing...";
         
-        const saveData = {
-            energy, 
-            clickPower, 
-            cps,
-            upgradeCounts: upgrades.map(u => u.count),
-            upgradeCosts: upgrades.map(u => u.cost)
-        };
-
-        const { error } = await supabase
+        const { error } = await _supabase
             .from('leaderboard')
             .upsert({ 
-                username: sessionId, // Using Session ID as the unique key
+                username: sessionId, 
                 clicks: Math.floor(energy) 
             }, { onConflict: 'username' });
 
         if (!error) {
-            document.getElementById('sync-status').innerText = "Progress Vaulted";
-            // Also keep a local backup just in case
-            localStorage.setItem('lincoln_local_backup', JSON.stringify(saveData));
+            status.innerText = "Progress Vaulted";
+            // Local backup for instant loading
+            const backup = { energy, clickPower, cps, 
+                             counts: upgrades.map(u => u.count), 
+                             costs: upgrades.map(u => u.cost) };
+            localStorage.setItem('lincoln_backup', JSON.stringify(backup));
         } else {
-            document.getElementById('sync-status').innerText = "Sync Error - Saving Locally";
-            localStorage.setItem('lincoln_local_backup', JSON.stringify(saveData));
+            status.innerText = "Offline Mode";
         }
     }
 
     async function cloudLoad() {
-        // First, check for local backup for instant load
-        const local = localStorage.getItem('lincoln_local_backup');
-        if (local) applyData(JSON.parse(local));
+        // 1. Try Local backup first for speed
+        const local = localStorage.getItem('lincoln_backup');
+        if (local) {
+            const d = JSON.parse(local);
+            energy = d.energy || 0;
+            clickPower = d.clickPower || 1;
+            cps = d.cps || 0;
+            d.counts?.forEach((c, i) => { if(upgrades[i]) upgrades[i].count = c; });
+            d.costs?.forEach((c, i) => { if(upgrades[i]) upgrades[i].cost = c; });
+            updateUI();
+        }
 
-        // Then, try to pull from Supabase to sync across devices/refreshes
-        const { data, error } = await supabase
+        // 2. Fetch latest mass from Supabase
+        const { data, error } = await _supabase
             .from('leaderboard')
             .select('*')
             .eq('username', sessionId)
-            .single();
+            .maybeSingle();
 
         if (data && !error) {
-            // Note: Since 'leaderboard' usually only stores clicks, 
-            // you'd need a separate table for full state. 
-            // For now, we restore total clicks from cloud.
-            energy = Math.max(energy, data.clicks);
-            updateUI();
+            if (data.clicks > energy) {
+                energy = data.clicks;
+                updateUI();
+            }
+            document.getElementById('sync-status').innerText = "Connected to Vault";
         }
-    }
-
-    function applyData(d) {
-        energy = d.energy || 0;
-        clickPower = d.clickPower || 1;
-        cps = d.cps || 0;
-        d.upgradeCounts?.forEach((c, i) => { if(upgrades[i]) upgrades[i].count = c; });
-        d.upgradeCosts?.forEach((c, i) => { if(upgrades[i]) upgrades[i].cost = c; });
-        updateUI();
     }
 
     function resetGame() {
@@ -320,7 +324,7 @@
         }
     }
 
-    // Loops
+    // Main passive income loop
     setInterval(() => {
         if (cps > 0) {
             energy += (cps / 10);
@@ -328,8 +332,8 @@
         }
     }, 100);
 
-    // Save every 30 seconds
-    setInterval(cloudSave, 30000);
+    // Auto-save every 20 seconds
+    setInterval(cloudSave, 20000);
 
     initShop();
     cloudLoad();
