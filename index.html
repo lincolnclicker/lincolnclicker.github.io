@@ -26,9 +26,7 @@
             box-sizing: border-box;
         }
 
-        .clicker-section { 
-            flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center;
-        }
+        .clicker-section { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; }
 
         #score-panel {
             background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 20px;
@@ -41,7 +39,7 @@
         #lincoln-main {
             width: 300px; height: 300px; border-radius: 50%; cursor: pointer;
             object-fit: cover; border: 8px solid var(--secondary);
-            transition: transform 0.05s; user-select: none;
+            transition: transform 0.05s, filter 0.3s; user-select: none;
         }
 
         #lincoln-main:active { transform: scale(0.94); }
@@ -64,24 +62,22 @@
 
         .u-info { text-align: left; }
         .u-name { font-weight: bold; color: #fab1a0; display: block; font-size: 1rem; }
-        .u-cost { color: #55efc4; font-size: 0.9rem; }
+        .u-gain { font-size: 0.75rem; color: var(--secondary); font-weight: normal; }
+        .u-cost { color: #55efc4; font-size: 0.9rem; display: block; margin-top: 2px; }
         .u-count { font-size: 1.5rem; font-weight: bold; opacity: 0.6; }
 
-        .prestige-btn {
-            background: var(--gold); color: black; font-weight: bold; width: 100%;
-            padding: 15px; border-radius: 12px; border: none; cursor: pointer; margin-top: 10px;
-        }
+        .prestige-btn { background: var(--gold); color: black; font-weight: bold; width: 100%; padding: 15px; border-radius: 12px; border: none; cursor: pointer; margin-top: 10px; }
 
-        #chat-icon { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-        #chat-box { position: fixed; bottom: 90px; right: 20px; width: 320px; height: 450px; background: var(--chat-bg); border: 2px solid var(--primary); border-radius: 12px; display: none; flex-direction: column; z-index: 100; }
+        #chat-icon { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 30px; z-index: 1000; }
+        #chat-box { position: fixed; bottom: 90px; right: 20px; width: 320px; height: 450px; background: var(--chat-bg); border: 2px solid var(--primary); border-radius: 12px; display: none; flex-direction: column; z-index: 1000; }
         #chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 0.85rem; background: #1a1e26; }
-        .msg { margin-bottom: 8px; line-height: 1.4; padding: 5px; border-radius: 4px; background: rgba(255,255,255,0.03); }
-        .msg b { color: var(--secondary); }
+        .msg { margin-bottom: 8px; padding: 5px; border-radius: 4px; background: rgba(255,255,255,0.03); }
+        .king-tag { color: var(--gold) !important; font-size: 0.7rem; margin-left: 4px; }
 
+        #achievement-banner { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--gold); color: black; padding: 12px 25px; border-radius: 30px; font-weight: bold; display: none; z-index: 2000; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
+        
         .particle { position: fixed; pointer-events: none; animation: flyUp 0.8s forwards; font-weight: bold; color: var(--gold); z-index: 999; }
         @keyframes flyUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-120px); opacity: 0; } }
-
-        #achievement-banner { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--gold); color: black; padding: 12px 25px; border-radius: 30px; font-weight: bold; display: none; z-index: 1000; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
@@ -117,23 +113,20 @@
 <div id="chat-icon" onclick="toggleChat()">💬</div>
 <div id="chat-box">
     <div style="background:var(--primary); padding: 12px; font-weight: bold; display: flex; justify-content: space-between;">
-        <span>Global Chat & King</span>
+        <span>Global Chat</span>
         <span onclick="toggleChat()" style="cursor:pointer;">×</span>
     </div>
     <div style="background: #000; padding: 5px; font-size: 0.7rem; color: var(--gold); text-align: center;" id="king-display">👑 Loading King...</div>
     <div id="chat-messages"></div>
     <div style="display:flex; padding:10px; background:#1e222b;">
-        <input type="text" id="chat-msg-input" style="flex:1; background:#333; color:white; border:none; padding:8px; border-radius:5px;" placeholder="Press Enter to send..." onkeypress="if(event.key==='Enter') sendChat()">
+        <input type="text" id="chat-msg-input" style="flex:1; background:#333; color:white; border:none; padding:8px; border-radius:5px;" placeholder="Message..." onkeypress="if(event.key==='Enter') sendChat()">
     </div>
 </div>
 
 <script>
     const DB_URL = 'https://cnstrmbiosdykiqyxcua.supabase.co';
-    const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuc3RybWJpb3NkeWtpcXl4Y3VhIiwicm9sZES6ImFub24iLCJpYXQiOjE3NzMyMDEzMDEsImV4cCI6MjA4ODc3NzMwMX0.hf6kiAniU-Hw1J3xuYPK_xlUO9BLR3d5vkEq41uf8co';
+    const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuc3RybWJpb3NkeWtpcXl4Y3VhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDEzMDEsImV4cCI6MjA4ODc3NzMwMX0.hf6kiAniU-Hw1J3xuYPK_xlUO9BLR3d5vkEq41uf8co';
     const _supabase = supabase.createClient(DB_URL, DB_KEY);
-
-    let sessionId = localStorage.getItem('lincoln_session_id') || ('user_' + Math.random().toString(36).substr(2, 9));
-    localStorage.setItem('lincoln_session_id', sessionId);
 
     let energy = 0;
     let clickPower = 1;
@@ -169,10 +162,11 @@
             const btn = document.createElement('button');
             btn.className = 'upgrade'; btn.id = `up-${u.id}`;
             btn.onclick = () => buyUpgrade(u.id);
+            const label = u.type === "click" ? "Click" : "CPS";
             btn.innerHTML = `
                 <div class="u-info">
-                    <span class="u-name">${u.name}</span>
-                    <span class="u-cost" id="cost-${u.id}">${u.cost.toLocaleString()}</span> Mass
+                    <span class="u-name">${u.name} <span class="u-gain">+${u.power} ${label}</span></span>
+                    <span class="u-cost" id="cost-${u.id}">${u.cost.toLocaleString()} Mass</span>
                 </div>
                 <div class="u-count" id="count-${u.id}">0</div>
             `;
@@ -186,7 +180,6 @@
         let val = clickPower * getBoost();
         if (isBuffetRush) val *= 10;
         if (currentKing !== "" && chatName !== currentKing) val *= 0.99;
-
         energy += val; totalClicks++;
         checkAchievements();
         showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
@@ -200,6 +193,7 @@
             if (u.type === "click") clickPower += u.power; else cps += u.power;
             u.cost = Math.ceil(u.cost * 1.35); 
             updateUI();
+            cloudSave();
         }
     }
 
@@ -216,53 +210,80 @@
             if (btn) {
                 btn.disabled = energy < u.cost;
                 energy >= u.cost ? btn.classList.add('can-afford') : btn.classList.remove('can-afford');
-                document.getElementById(`cost-${u.id}`).innerText = u.cost.toLocaleString();
+                document.getElementById(`cost-${u.id}`).innerText = u.cost.toLocaleString() + " Mass";
                 document.getElementById(`count-${u.id}`).innerText = u.count;
             }
         });
+
+        // Restored Visuals
+        const img = document.getElementById('lincoln-main');
+        if (energy > 1000000) img.style.filter = "drop-shadow(0 0 15px gold)";
+        if (energy > 100000000) img.style.transform = `scale(${1 + Math.sin(Date.now()/500)*0.01})`;
     }
 
     async function cloudSave() {
         document.getElementById('sync-status').innerText = "Syncing...";
-        // Save using the chatName set by the user
+        const saveObj = { energy, clickPower, cps, goldenTortas, upgrades: upgrades.map(u => ({count: u.count, cost: u.cost})), unlockedAchievements };
+        localStorage.setItem('lincoln_local_save', JSON.stringify(saveObj));
+        
         await _supabase.from('leaderboard').upsert({ 
-            username: chatName, 
-            clicks: Math.floor(energy), 
-            golden_tortas: goldenTortas, 
-            achievements: unlockedAchievements.join(',') 
+            username: chatName, clicks: Math.floor(energy), golden_tortas: goldenTortas, achievements: unlockedAchievements.join(',') 
         }, { onConflict: 'username' });
         document.getElementById('sync-status').innerText = "Vaulted";
     }
 
     async function cloudLoad() {
-        // Try to load by sessionId or chatName
-        const { data } = await _supabase.from('leaderboard').select('*').eq('username', chatName).maybeSingle();
-        if (data) {
-            energy = data.clicks; goldenTortas = data.golden_tortas || 0;
-            unlockedAchievements = data.achievements ? data.achievements.split(',') : [];
-            updateUI();
+        const local = localStorage.getItem('lincoln_local_save');
+        if (local) {
+            const d = JSON.parse(local);
+            energy = d.energy; clickPower = d.clickPower; cps = d.cps; goldenTortas = d.goldenTortas || 0;
+            d.upgrades?.forEach((u, i) => { if(upgrades[i]) { upgrades[i].count = u.count; upgrades[i].cost = u.cost; } });
+            unlockedAchievements = d.unlockedAchievements || [];
         }
+        const { data } = await _supabase.from('leaderboard').select('*').eq('username', chatName).maybeSingle();
+        if (data && data.clicks > energy) { energy = data.clicks; goldenTortas = data.golden_tortas; }
+        updateUI();
         document.getElementById('sync-status').innerText = "Vault Connected";
         fetchKing();
     }
 
-    async function fetchKing() {
-        const { data } = await _supabase.from('king_of_the_hill').select('*').maybeSingle();
-        if (data) {
-            currentKing = data.username;
-            document.getElementById('king-display').innerText = `👑 Current King: ${data.username} (${data.clicks.toLocaleString()} Mass)`;
+    async function prestige() {
+        if (confirm("Prestige? (Reset for Golden Tortas)")) {
+            let gained = Math.floor(Math.sqrt(energy / 1000000000));
+            goldenTortas += gained; energy = 0; clickPower = 1; cps = 0;
+            upgrades.forEach(u => { u.count = 0; u.cost = Math.ceil(u.cost / Math.pow(1.35, u.count)); });
+            localStorage.removeItem('lincoln_local_save');
+            await cloudSave();
+            location.reload();
         }
     }
 
+    function checkAchievements() {
+        const a = [{ id: "steel", name: "Finger of Steel", req: totalClicks >= 1000 }, { id: "mil", name: "Mass Millionaire", req: energy >= 1000000 }];
+        a.forEach(ach => {
+            if (!unlockedAchievements.includes(ach.id) && ach.req) {
+                unlockedAchievements.push(ach.id);
+                const b = document.getElementById('achievement-banner');
+                b.innerText = "🏆 Unlocked: " + ach.name; b.style.display = "block";
+                setTimeout(() => b.style.display = "none", 4000);
+            }
+        });
+    }
+
+    function showParticle(x, y, text) {
+        const p = document.createElement('div'); p.className = 'particle'; p.innerText = text;
+        p.style.left = x + 'px'; p.style.top = y + 'px';
+        document.body.appendChild(p); setTimeout(() => p.remove(), 800);
+    }
+
+    async function fetchKing() {
+        const { data } = await _supabase.from('king_of_the_hill').select('*').maybeSingle();
+        if (data) { currentKing = data.username; document.getElementById('king-display').innerText = `👑 Current King: ${data.username}`; }
+    }
+
     function toggleChat() { 
-        const b = document.getElementById('chat-box'); 
-        b.style.display = b.style.display === 'flex' ? 'none' : 'flex';
-        if (!localStorage.getItem('chat_name')) {
-            const newName = prompt("Enter Chat Name:") || "Anonymous";
-            chatName = newName;
-            localStorage.setItem('chat_name', chatName);
-            cloudSave(); // Sync name immediately
-        }
+        const b = document.getElementById('chat-box'); b.style.display = b.style.display === 'flex' ? 'none' : 'flex';
+        if (!localStorage.getItem('chat_name')) { chatName = prompt("Name:") || "Lincoln"; localStorage.setItem('chat_name', chatName); cloudSave(); }
         if(b.style.display === 'flex') fetchMessages();
     }
 
@@ -274,36 +295,15 @@
     }
 
     async function fetchMessages() {
-        const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(20);
-        if (data) document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `<div class="msg"><b>${m.username}:</b> ${m.message}</div>`).join('');
+        const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(15);
+        if (data) document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `<div class="msg"><b>${m.username}${m.username===currentKing?'👑':''}:</b> ${m.message}</div>`).join('');
     }
 
-    function showParticle(x, y, text) {
-        const p = document.createElement('div'); p.className = 'particle'; p.innerText = text;
-        p.style.left = x + 'px'; p.style.top = y + 'px';
-        document.body.appendChild(p); setTimeout(() => p.remove(), 800);
-    }
-
-    function checkAchievements() {
-        const a = [
-            { id: "steel", name: "Finger of Steel", req: totalClicks >= 1000 },
-            { id: "mil", name: "Mass Millionaire", req: energy >= 1000000 }
-        ];
-        a.forEach(ach => {
-            if (!unlockedAchievements.includes(ach.id) && ach.req) {
-                unlockedAchievements.push(ach.id);
-                const b = document.getElementById('achievement-banner');
-                b.innerText = "🏆 Unlocked: " + ach.name; b.style.display = "block";
-                setTimeout(() => b.style.display = "none", 4000);
-            }
-        });
-    }
-
-    function resetGame() { if(confirm("ERASE ALL PROGRESS?")) { localStorage.clear(); location.reload(); } }
+    function resetGame() { if(confirm("Hard Reset?")) { localStorage.clear(); location.reload(); } }
 
     setInterval(() => { energy += (cps * getBoost() / 10); updateUI(); }, 100);
-    setInterval(cloudSave, 30000);
-    setInterval(fetchKing, 60000);
+    setInterval(cloudSave, 20000);
+    setInterval(fetchKing, 30000);
     setInterval(() => { if (Math.random() < 0.05) startBuffetRush(); }, 60000);
     
     initShop(); cloudLoad();
