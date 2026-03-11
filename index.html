@@ -191,7 +191,6 @@
 
     document.getElementById('lincoln-main').addEventListener('click', (e) => {
         let val = clickPower * (1 + (goldenTortas * 0.1));
-        if (currentKing && chatName && chatName !== currentKing) val *= 0.99;
         energy += val; totalClicks++;
         showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
         updateUI();
@@ -239,6 +238,25 @@
         }
     }
 
+    async function changeName() {
+        let newName = prompt("Enter new username:");
+        if (!newName || newName.trim() === "" || newName === chatName) return;
+        newName = newName.trim();
+
+        // Check if name is taken
+        const { data: existing } = await _supabase.from('leaderboard').select('username').eq('username', newName).maybeSingle();
+        if (existing) return alert("That username is already taken!");
+
+        const oldName = chatName;
+        chatName = newName;
+        localStorage.setItem('chat_name', chatName);
+
+        // Delete old entry and create new one with current mass
+        if (oldName) await _supabase.from('leaderboard').delete().eq('username', oldName);
+        cloudSave();
+        alert("Username updated to: " + chatName);
+    }
+
     async function cloudLoad() {
         const local = localStorage.getItem('lincoln_local_save');
         if (local) {
@@ -280,17 +298,12 @@
         }
     }
 
-    // UPDATED FORCE CLEAR: Bypasses "safe update" mode
     async function clearChatNow() {
         if (!isAdmin) return;
         const { error } = await _supabase.from('global_chat').delete().gt('id', 0);
         if (!error) {
-            await _supabase.from('global_chat').insert([{ username: "SYSTEM", message: "--- Chat Auto-Cleared by Admin ---" }]);
+            await _supabase.from('global_chat').insert([{ username: "SYSTEM", message: "--- Chat Purged ---" }]);
             fetchMessages();
-            alert("Chat database purged.");
-        } else {
-            console.error(error);
-            alert("Clear failed. Check Supabase RLS.");
         }
     }
 
@@ -321,13 +334,16 @@
         }
     }
 
-    function toggleChat() {
+    async function toggleChat() {
         const b = document.getElementById('chat-box');
         if (b.style.display === 'flex') { b.style.display = 'none'; return; }
         if (!chatName) {
             let input = prompt("Enter Username:");
             if (!input) return;
-            chatName = input.trim();
+            let name = input.trim();
+            const { data: existing } = await _supabase.from('leaderboard').select('username').eq('username', name).maybeSingle();
+            if (existing) return alert("Username taken!");
+            chatName = name;
             localStorage.setItem('chat_name', chatName);
             checkAdminStatus();
         }
@@ -358,10 +374,5 @@
     setInterval(fetchKing, 15000);
     setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
     
-    // Auto clear for Admin every 10 mins
-    setInterval(() => { if(isAdmin) clearChatNow(); }, 600000);
-
     initShop(); cloudLoad();
 </script>
-</body>
-</html>
