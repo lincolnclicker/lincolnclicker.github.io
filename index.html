@@ -220,9 +220,30 @@ let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
 // --- FUNCTIONS ---
 
-function openAdmin() { document.getElementById('admin-panel').style.display = 'block'; }
+// 1. Update the openAdmin function to check the database
+async function openAdmin() {
+    if (!chatName) return alert("Please set a username first.");
+
+    // Check if the current user is actually an admin in the database
+    const { data, error } = await _supabase
+        .from('leaderboard')
+        .select('admin')
+        .eq('username', chatName)
+        .single();
+
+    if (data && data.admin === true) {
+        document.getElementById('admin-panel').style.display = 'block';
+    } else {
+        console.warn("Unauthorized admin access attempt by:", chatName);
+        alert("Access Denied: You do not have administrator privileges.");
+    }
+}
 
 async function triggerEvent(type) {
+    // Re-verify admin status before letting the database call go through
+    const { data } = await _supabase.from('leaderboard').select('admin').eq('username', chatName).single();
+    if (!data || !data.admin) return alert("Nice try!");
+
     const expiresAt = new Date(Date.now() + 5 * 60000).toISOString();
     await _supabase.from('game_events').insert([{ event_type: type, expires_at: expiresAt }]);
     document.getElementById('admin-panel').style.display = 'none';
@@ -405,3 +426,4 @@ startGame();
 </script>
 </body>
 </html>
+
