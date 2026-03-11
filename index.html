@@ -111,8 +111,8 @@
         let cps = 0;
         let cpc = 1;
         let userId = null;
+        let isLoaded = false; // Prevent overwriting before load
 
-        // 15 UPGRADES - Using your specific names
         const upgradeData = [
             { name: "Fast Eat", cost: 20, power: 0.5, type: "click" },
             { name: "Small Torta", cost: 100, power: 0.2, type: "cps" },
@@ -137,8 +137,7 @@
                 document.getElementById('save-status').innerText = "Cloud Error: Local Play Only";
             } else {
                 userId = data.user.id;
-                document.getElementById('save-status').innerText = "Cloud Synced";
-                loadFromSupabase();
+                await loadFromSupabase(); // Wait for data before doing anything else
             }
         }
 
@@ -193,7 +192,7 @@
         }
 
         async function saveToSupabase() {
-            if (!userId) return;
+            if (!userId || !isLoaded) return; // DON'T SAVE IF DATA ISN'T LOADED YET
             const { error } = await supabaseClient.from('profiles').upsert({
                 id: userId,
                 mass: Math.floor(mass),
@@ -205,18 +204,30 @@
         }
 
         async function loadFromSupabase() {
-            let { data } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
+            let { data, error } = await supabaseClient.from('profiles').select('*').eq('id', userId).single();
+            
             if (data) {
                 mass = data.mass || 0;
                 cps = data.cps || 0;
                 cpc = data.cpc || 1;
-                if (data.costs) data.costs.forEach((c, i) => { if(upgradeData[i]) upgradeData[i].cost = c; });
+                if (data.costs) {
+                    data.costs.forEach((c, i) => { if(upgradeData[i]) upgradeData[i].cost = c; });
+                }
             }
+            
+            isLoaded = true; // Now it's safe to save!
+            document.getElementById('save-status').innerText = "Cloud Synced";
             updateUI();
         }
 
-        setInterval(() => { if(cps > 0) { mass += (cps / 10); updateUI(); } }, 100);
-        setInterval(saveToSupabase, 20000);
+        setInterval(() => { 
+            if(cps > 0) { 
+                mass += (cps / 10); 
+                updateUI(); 
+            } 
+        }, 100);
+
+        setInterval(saveToSupabase, 10000); // Autosave every 10s
 
         initShop();
         startSession();
