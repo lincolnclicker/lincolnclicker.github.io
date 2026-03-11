@@ -350,13 +350,58 @@
             initShop(); updateUI(); cloudSave(); 
         } 
     }
+    
+    async function fetchKing() {
+    const { data, error } = await _supabase
+        .from('leaderboard')
+        .select('username')
+        .order('clicks', { ascending: false })
+        .limit(1);
 
-    setInterval(() => { energy += (cps * (1 + (goldenTortas * 0.1)) / 10); updateUI(); }, 100);
-    setInterval(cloudSave, 20000);
-    setInterval(fetchLeaderboard, 15000);
-    setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
+    if (error) {
+        console.error("Error fetching king:", error);
+        return;
+    }
 
-    initShop(); cloudLoad();
+    if (data && data.length > 0) {
+        currentKing = data[0].username;
+        const kingDisp = document.getElementById('king-display');
+        kingDisp.innerText = `👑 King: ${currentKing}`;
+        
+        if (chatName === currentKing) {
+            kingDisp.style.color = "var(--gold)";
+            kingDisp.style.textShadow = "0 0 10px rgba(241, 196, 15, 0.8)";
+        } else {
+            kingDisp.style.color = "white";
+            kingDisp.style.textShadow = "none";
+        }
+    } else {
+        currentKing = "None";
+        document.getElementById('king-display').innerText = `👑 King: None`;
+    }
+}
+
+// Added this missing function so your emote buttons work!
+function sendEmote(char) {
+    sendChat(char);
+}
+
+// Timers and Initialization
+setInterval(() => { 
+    energy += (cps * (1 + (goldenTortas * 0.1)) / 10); 
+    updateUI(); 
+}, 100);
+
+setInterval(cloudSave, 20000);
+setInterval(fetchLeaderboard, 15000);
+setInterval(fetchKing, 15000); 
+setInterval(() => { 
+    if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); 
+}, 5000);
+
+initShop(); 
+cloudLoad();
+fetchKing();
 </script>
 </body>
 </html>
