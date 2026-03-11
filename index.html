@@ -125,7 +125,10 @@
         </div>
         <img src="IMG_0668.jpg" id="lincoln-main" alt="Lincoln">
         <button class="prestige-btn" id="prestige-btn" style="display:none;" onclick="prestige()">WEIGH IN</button>
-        <button onclick="resetGame()" style="background:none; border:none; color:#555; margin-top:20px; cursor:pointer; font-size: 0.7rem; text-decoration: underline;">Hard Reset</button>
+        <div style="margin-top:20px;">
+            <button onclick="changeName()" style="background:none; border:none; color:var(--secondary); cursor:pointer; font-size: 0.7rem; text-decoration: underline; margin-right: 10px;">Change Name</button>
+            <button onclick="resetGame()" style="background:none; border:none; color:#555; cursor:pointer; font-size: 0.7rem; text-decoration: underline;">Hard Reset</button>
+        </div>
     </div>
     <div class="shop-container" id="shop"></div>
 </div>
@@ -280,7 +283,6 @@
         }
     }
 
-    // UPDATED FORCE CLEAR: Bypasses "safe update" mode
     async function clearChatNow() {
         if (!isAdmin) return;
         const { error } = await _supabase.from('global_chat').delete().gt('id', 0);
@@ -292,6 +294,55 @@
             console.error(error);
             alert("Clear failed. Check Supabase RLS.");
         }
+    }
+
+    async function changeName() {
+        if (!chatName) {
+            alert("You don't have a name yet! Set one in chat first.");
+            return;
+        }
+
+        let newName = prompt("Enter new username:", chatName);
+        if (!newName || newName.trim() === "" || newName === chatName) return;
+        newName = newName.trim();
+
+        // 1. Check if the new name is taken
+        const { data: existingUser } = await _supabase
+            .from('leaderboard')
+            .select('username')
+            .eq('username', newName)
+            .maybeSingle();
+
+        if (existingUser) {
+            alert("That name is already taken!");
+            return;
+        }
+
+        // 2. Update the username column in leaderboard
+        const { error } = await _supabase
+            .from('leaderboard')
+            .update({ username: newName })
+            .eq('username', chatName);
+
+        if (error) {
+            alert("Error updating name. Please try again.");
+            console.error(error);
+            return;
+        }
+
+        // 3. Update local storage and current session
+        const oldName = chatName;
+        chatName = newName;
+        localStorage.setItem('chat_name', chatName);
+        
+        // 4. Update King display if needed and notify chat
+        await _supabase.from('global_chat').insert([
+            { username: 'SYSTEM', message: `${oldName} has changed their name to ${newName}` }
+        ]);
+
+        alert(`Name changed to ${newName}!`);
+        fetchKing();
+        updateUI();
     }
 
     async function sendChat(emoteMsg = null) {
@@ -358,7 +409,6 @@
     setInterval(fetchKing, 15000);
     setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
     
-    // Auto clear for Admin every 10 mins
     setInterval(() => { if(isAdmin) clearChatNow(); }, 600000);
 
     initShop(); cloudLoad();
