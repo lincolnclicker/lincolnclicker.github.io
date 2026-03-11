@@ -101,19 +101,14 @@
 
 <div id="admin-panel">
     <h3 style="margin-top:0; color:var(--gold); text-align:center;">ADMIN CONTROL</h3>
-    
     <input type="text" id="admin-target-user" class="admin-input" placeholder="Target Username">
     <input type="text" id="admin-value" class="admin-input" placeholder="Amount (Mass or Minutes)">
-    
     <button onclick="adminAction('mass')" style="width:100%; background:var(--gold); padding:10px; border:none; margin-bottom:10px; font-weight:bold; cursor:pointer; border-radius:5px;">Give Mass</button>
-    
     <button onclick="adminAction('timeout')" style="width:100%; background:#e67e22; padding:10px; border:none; margin-bottom:10px; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Set Timeout (Minutes)</button>
-    
     <div class="admin-grid">
         <button onclick="adminAction('ban')" style="background:#e74c3c; padding:10px; border:none; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Ban</button>
         <button onclick="adminAction('unban')" style="background:#2ecc71; padding:10px; border:none; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Unban</button>
     </div>
-    
     <button onclick="document.getElementById('admin-panel').style.display='none'" style="width:100%; background:none; border:none; color:#aaa; cursor:pointer; margin-top:15px; font-size:0.8rem;">Close Panel</button>
 </div>
 
@@ -130,7 +125,7 @@
             </div>
             <div id="sync-status" style="font-size: 0.65rem; color: #777; margin-top: 8px;">Connecting...</div>
         </div>
-        <img src="IMG_0668.jpg" id="lincoln-main" alt="Lincoln">
+        <img src="IMG_0677.jpg" id="lincoln-main" alt="Lincoln">
         <button class="prestige-btn" id="prestige-btn" style="display:none;" onclick="prestige()">WEIGH IN</button>
         <button onclick="resetGame()" style="background:none; border:none; color:#555; margin-top:20px; cursor:pointer; font-size: 0.7rem; text-decoration: underline;">Hard Reset</button>
     </div>
@@ -164,23 +159,26 @@
     let energy = 0, clickPower = 1, cps = 0, goldenTortas = 0, totalClicks = 0, unlockedAchievements = [];
     let currentKing = "", chatName = localStorage.getItem('chat_name') || null;
 
-    const upgrades = [
-        { id: 0, name: "Extra Torta", cost: 15, power: 0.1, type: "click", count: 0 },
-        { id: 1, name: "Chud Burger", cost: 100, power: 0.3, type: "cps", count: 0 },
-        { id: 2, name: "The Lard-o-Meter", cost: 500, power: 0.8, type: "cps", count: 0 },
-        { id: 3, name: "Bulk Season", cost: 1200, power: 0.6, type: "click", count: 0 },
-        { id: 4, name: "Torta Pounder 3000", cost: 3000, power: 2.5, type: "cps", count: 0 },
-        { id: 5, name: "Infinite Buffet Pass", cost: 10000, power: 7.0, type: "cps", count: 0 },
-        { id: 6, name: "Chudmosis", cost: 25000, power: 15.0, type: "cps", count: 0 },
-        { id: 7, name: "Deep Fried Top Hat", cost: 85000, power: 50.0, type: "cps", count: 0 },
-        { id: 8, name: "Torta Transfusion", cost: 200000, power: 12, type: "click", count: 0 },
-        { id: 9, name: "Gravy Shower", cost: 500000, power: 150, type: "cps", count: 0 },
-        { id: 10, name: "Mega-Chud Transformation", cost: 2000000, power: 500, type: "cps", count: 0 },
-        { id: 11, name: "The Giga-Torta", cost: 8000000, power: 1500, type: "cps", count: 0 },
-        { id: 12, name: "Sumo Lincoln", cost: 40000000, power: 1200, type: "click", count: 0 },
-        { id: 13, name: "Event Horizon Gut", cost: 150000000, power: 18000, type: "cps", count: 0 },
-        { id: 14, name: "The Final Chud-down", cost: 2500000000, power: 120000, type: "cps", count: 0 }
+    // Define original costs for reset functionality
+    const initialUpgrades = [
+        { id: 0, name: "Extra Torta", cost: 15, power: 0.1, type: "click" },
+        { id: 1, name: "Chud Burger", cost: 100, power: 0.3, type: "cps" },
+        { id: 2, name: "The Lard-o-Meter", cost: 500, power: 0.8, type: "cps" },
+        { id: 3, name: "Bulk Season", cost: 1200, power: 0.6, type: "click" },
+        { id: 4, name: "Torta Pounder 3000", cost: 3000, power: 2.5, type: "cps" },
+        { id: 5, name: "Infinite Buffet Pass", cost: 10000, power: 7.0, type: "cps" },
+        { id: 6, name: "Chudmosis", cost: 25000, power: 15.0, type: "cps" },
+        { id: 7, name: "Deep Fried Top Hat", cost: 85000, power: 50.0, type: "cps" },
+        { id: 8, name: "Torta Transfusion", cost: 200000, power: 12, type: "click" },
+        { id: 9, name: "Gravy Shower", cost: 500000, power: 150, type: "cps" },
+        { id: 10, name: "Mega-Chud Transformation", cost: 2000000, power: 500, type: "cps" },
+        { id: 11, name: "The Giga-Torta", cost: 8000000, power: 1500, type: "cps" },
+        { id: 12, name: "Sumo Lincoln", cost: 40000000, power: 1200, type: "click" },
+        { id: 13, name: "Event Horizon Gut", cost: 150000000, power: 18000, type: "cps" },
+        { id: 14, name: "The Final Chud-down", cost: 2500000000, power: 120000, type: "cps" }
     ];
+
+    let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
     function initShop() {
         const shop = document.getElementById('shop'); shop.innerHTML = '';
@@ -342,7 +340,23 @@
         document.body.appendChild(p); setTimeout(() => p.remove(), 800);
     }
 
-    function resetGame() { if (confirm("Reset?")) { energy = 0; clickPower = 1; cps = 0; goldenTortas = 0; initShop(); updateUI(); cloudSave(); } }
+    // FIX: resetGame now correctly resets upgrade stats
+    function resetGame() { 
+        if (confirm("Reset everything? This will wipe your Mass and all Upgrades!")) { 
+            energy = 0; 
+            clickPower = 1; 
+            cps = 0; 
+            goldenTortas = 0; 
+            totalClicks = 0;
+            
+            // Re-map the upgrades to their original initial values
+            upgrades = initialUpgrades.map(u => ({...u, count: 0}));
+            
+            initShop(); 
+            updateUI(); 
+            cloudSave(); 
+        } 
+    }
 
     setInterval(() => { energy += (cps * (1 + (goldenTortas * 0.1)) / 10); updateUI(); }, 100);
     setInterval(cloudSave, 20000);
