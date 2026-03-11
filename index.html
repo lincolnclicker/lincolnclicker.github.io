@@ -51,7 +51,6 @@
 
         #lincoln-main:active { transform: scale(0.94); }
 
-        /* Leaderboard Styling */
         #leaderboard-panel {
             background: rgba(0, 0, 0, 0.7); padding: 15px; border-radius: 20px;
             border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);
@@ -107,7 +106,7 @@
         @keyframes flyUp {  
             0% { transform: translateY(0); opacity: 1; }  
             100% { transform: translateY(-120px); opacity: 0; }  
-        } /* Fixed bracket here */
+        } 
 
         @keyframes pulse-gold {
             0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); }
@@ -187,6 +186,7 @@
         <input type="text" id="chat-msg-input" style="flex:1; background:#333; color:white; border:none; padding:8px; border-radius:5px;" placeholder="Message..." onkeypress="if(event.key==='Enter') sendChat()">
     </div>
 </div>
+
 <script>
 const DB_URL = 'https://cnstrmbiosdykiqyxcua.supabase.co';
 const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuc3RybWJpb3NkeWtpcXl4Y3VhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDEzMDEsImV4cCI6MjA4ODc3NzMwMX0.hf6kiAniU-Hw1J3xuYPK_xlUO9BLR3d5vkEq41uf8co';
@@ -195,8 +195,9 @@ const _supabase = supabase.createClient(DB_URL, DB_KEY);
 // --- 1. CORE VARIABLES ---
 let energy = 0, clickPower = 1, cps = 0, goldenTortas = 0, totalClicks = 0;
 let currentKing = "", chatName = localStorage.getItem('chat_name') || null;
-let eventMultiplier = 1; // Global Event Multiplier
+let eventMultiplier = 1; 
 let currentEvent = null;
+let eventTimer = null;
 
 const initialUpgrades = [
     { id: 0, name: "Extra Torta", cost: 15, power: 0.1, type: "click", desc: "+0.1 Click Power" },
@@ -234,9 +235,18 @@ function initRealtimeEvents() {
 }
 
 function handleNewEvent(event) {
-    if (currentEvent) return; 
+    // Clear any existing global event state
+    if (eventTimer) clearTimeout(eventTimer);
+    const oldNotice = document.getElementById('event-notice');
+    if (oldNotice) oldNotice.remove();
+
+    const now = new Date().getTime();
+    const expiry = new Date(event.expires_at).getTime();
+    const timeLeft = expiry - now;
+
+    if (timeLeft <= 0) return; // Already expired
+
     currentEvent = event.event_type;
-    
     const notice = document.createElement('div');
     notice.id = "event-notice";
     notice.style = "position:fixed; top:10%; left:50%; transform:translateX(-50%); color:black; padding:15px 30px; border-radius:50px; font-weight:bold; z-index:10000; box-shadow:0 0 20px black; animation: pulse-gold 1s infinite;";
@@ -265,12 +275,26 @@ function handleNewEvent(event) {
 
     document.body.appendChild(notice);
 
-    setTimeout(() => {
+    eventTimer = setTimeout(() => {
         eventMultiplier = 1;
         currentEvent = null;
         document.body.style.boxShadow = "none";
-        if (notice) notice.remove();
-    }, 300000); 
+        const n = document.getElementById('event-notice');
+        if (n) n.remove();
+    }, timeLeft);
+}
+
+async function checkActiveEvents() {
+    const { data } = await _supabase
+        .from('game_events')
+        .select('*')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+    if (data && data.length > 0) {
+        handleNewEvent(data[0]);
+    }
 }
 
 // --- 3. CORE GAMEPLAY ---
@@ -457,12 +481,7 @@ initShop();
 cloudLoad();
 fetchKing();
 initRealtimeEvents();
+checkActiveEvents(); // <--- This restores the event if you refresh
 </script>
 </body>
 </html>
-
-
-
-
-
-
