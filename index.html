@@ -472,16 +472,29 @@ async function cloudSave() {
     await _supabase.from('leaderboard').upsert({ username: chatName, clicks: energy, golden_tortas: goldenTortas }, { onConflict: 'username' });
 }
 
-async function cloudLoad() {
+const GAME_VERSION = "2.0"; // Change this whenever you want to reset everyone
+    
+    async function cloudLoad() {
     const local = localStorage.getItem('lincoln_local_save');
-    if (local) {
-        const d = JSON.parse(local);
-        energy = d.energy || 0; clickPower = d.clickPower || 1; cps = d.cps || 0; 
-        goldenTortas = d.goldenTortas || 0; totalClicks = d.totalClicks || 0;
-        d.upgrades?.forEach((savedU, i) => { 
-            if(upgrades[i]) { upgrades[i].count = savedU.count; upgrades[i].cost = savedU.cost; } 
-        });
+    const savedVersion = localStorage.getItem('game_version');
+
+    // If the versions don't match, ignore the old save and force a name pick
+    if (!local || savedVersion !== GAME_VERSION) {
+        localStorage.clear(); // Wipes old mass and old name
+        localStorage.setItem('game_version', GAME_VERSION);
+        energy = 0;
+        goldenTortas = 0;
+        chatName = null; // This forces the prompt to appear
+        updateUI();
+        return;
     }
+
+    const d = JSON.parse(local);
+    energy = d.energy || 0;
+    clickPower = d.clickPower || 1;
+    cps = d.cps || 0;
+    goldenTortas = d.goldenTortas || 0;
+    totalClicks = d.totalClicks || 0;
     updateUI();
 }
 
@@ -575,13 +588,56 @@ function showParticle(x, y, text) {
 
 function resetGame() { if (confirm("Reset everything?")) { localStorage.clear(); location.reload(); } }
 
-async function startGame() {
-    initShop(); cloudLoad();
+    async function startGame() {
+    initShop();
+    await cloudLoad(); // This wipes local storage if version is old
+
+    // --- REGISTRATION LOOP ---
+    // If the user has no name (due to a reset or being new), force them to pick one
+    if (!chatName) {
+        let nameAccepted = false;
+        while (!nameAccepted) {
+            let input = prompt("Welcome to the New Season! Enter a unique username to start your account:");
+            
+            if (!input || input.trim().length < 2 || input.trim().length > 15) {
+                alert("Username must be between 2 and 15 characters.");
+                continue;
+            }
+
+            let chosenName = input.trim();
+
+            // Try to "Reserve" the name in the database
+            const { error } = await _supabase
+                .from('leaderboard')
+                .insert([{ username: chosenName, clicks: 0, golden_tortas: 0 }]);
+
+            if (error) {
+                if (error.code === '23505') {
+                    alert("That name is already taken by someone else! Pick another.");
+                } else {
+                    alert("Database error. Please try again.");
+                }
+            } else {
+                // Success! Save it locally
+                chatName = chosenName;
+                localStorage.setItem('chat_name', chatName);
+                nameAccepted = true;
+            }
+        }
+    }
+    // --- END REGISTRATION ---
+
+    // Connect real-time listeners
     _supabase.channel('game-events').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, (p) => handleNewEvent(p.new)).subscribe();
+    
     const { data } = await _supabase.from('game_events').select('*').gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false }).limit(1);
     if (data && data[0]) handleNewEvent(data[0]);
-    setInterval(cloudSave, 20000); setInterval(fetchLeaderboard, 15000);
+
+    // Timers
+    setInterval(cloudSave, 20000); 
+    setInterval(fetchLeaderboard, 15000);
     setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
+    
     fetchLeaderboard();
 }
 
@@ -589,6 +645,7 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
 
