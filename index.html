@@ -7,6 +7,25 @@
     <link rel="icon" type="image/jpeg" href="IMG_0668.jpg">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+       
+        .raindrop {
+    position: fixed;
+    top: -10px;
+    width: 2px;
+    height: 15px;
+    background: #00d2ff;
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: 9998;
+    animation: rain-fall linear forwards;
+}
+
+@keyframes rain-fall {
+    to {
+        transform: translateY(110vh);
+    }
+}
+        
         :root {
             --primary: #6c5ce7;
             --secondary: #a29bfe;
@@ -399,19 +418,23 @@ async function triggerEvent(type) {
     document.getElementById('admin-panel').style.display = 'none';
 }
 
+let rainInterval = null;
+
 function handleNewEvent(event) {
     if (eventTimer) clearInterval(eventTimer);
+    if (rainInterval) clearInterval(rainInterval); // Clear existing rain
+    
     const oldNotice = document.getElementById('event-notice');
     if (oldNotice) oldNotice.remove();
 
     const mainImg = document.getElementById('lincoln-main');
     const DEFAULT_IMG = "IMG_0668.jpg"; 
-    const STORM_IMG = "IMG_0682.jpg"; // <--- CHANGE THIS to your storm filename!
+    const STORM_IMG = "IMG_0682.jpg"; 
 
     const expiry = new Date(event.expires_at.replace(' ', 'T')).getTime();
     const notice = document.createElement('div');
     notice.id = "event-notice";
-    notice.style = "position:fixed; top:10%; left:50%; transform:translateX(-50%); color:black; padding:15px 30px; border-radius:50px; font-weight:bold; z-index:10000; box-shadow:0 0 20px black; text-align:center; pointer-events:none;";
+    notice.style = "position:fixed; top:10%; left:50%; transform:translateX(-50%); color:black; padding:15px 30px; border-radius:50px; font-weight:bold; z-index:10000; box-shadow:0 0 20px rgba(0,0,0,0.5); text-align:center; pointer-events:none;";
     document.body.appendChild(notice);
 
     eventTimer = setInterval(() => {
@@ -421,11 +444,12 @@ function handleNewEvent(event) {
         if (timeLeft <= 0) {
             eventMultiplier = 1;
             currentEvent = null;
-            mainImg.src = DEFAULT_IMG; // RESET IMAGE
+            mainImg.src = DEFAULT_IMG;
             mainImg.style.filter = "none";
             document.body.style.boxShadow = "none";
             notice.remove();
             clearInterval(eventTimer);
+            if (rainInterval) clearInterval(rainInterval); // Stop rain
             return;
         }
 
@@ -437,17 +461,47 @@ function handleNewEvent(event) {
             notice.style.background = "#00d2ff";
             notice.innerText = `⚡ STORM! 5X CLICK (${seconds}s)`;
             
-            // SWAP IMAGE HERE
+            // Start raining if not already started
+            if (!rainInterval) {
+                rainInterval = setInterval(createRaindrop, 50);
+            }
+
             if (!mainImg.src.includes(STORM_IMG)) {
                 mainImg.src = STORM_IMG;
                 mainImg.style.filter = "drop-shadow(0 0 20px #00d2ff) brightness(1.2)";
             }
         } 
-        // ... (rest of your cases like feast or low_carb)
+        else if (currentEvent === 'feast') {
+            if (rainInterval) { clearInterval(rainInterval); rainInterval = null; }
+            eventMultiplier = 2;
+            notice.style.background = "var(--gold)";
+            notice.innerText = `🔥 FEAST! 2X TOTAL MASS (${seconds}s)`;
+            mainImg.style.filter = "drop-shadow(0 0 25px var(--gold))";
+        } 
+        else if (currentEvent === 'low_carb') {
+            if (rainInterval) { clearInterval(rainInterval); rainInterval = null; }
+            eventMultiplier = 0.5;
+            notice.style.background = "#ff4757";
+            notice.style.color = "white";
+            notice.innerText = `🥗 LOW CARB! 0.5X TOTAL MASS (${seconds}s)`;
+            mainImg.style.filter = "grayscale(0.6) opacity(0.8)";
+        }
     }, 1000);
 }
 
-document.getElementById('lincoln-main').addEventListener('click', (e) => {
+// Helper function to generate raindrops
+function createRaindrop() {
+    const drop = document.createElement('div');
+    drop.className = 'raindrop';
+    drop.style.left = Math.random() * 100 + 'vw';
+    drop.style.animationDuration = (Math.random() * 0.5 + 0.5) + 's'; // Fast rain
+    document.body.appendChild(drop);
+    
+    // Remove drop from DOM after it falls
+    setTimeout(() => { drop.remove(); }, 1000);
+}
+
+    document.getElementById('lincoln-main').addEventListener('click', (e) => {
     let val = (clickPower * (1 + (goldenTortas * 0.1))) * eventMultiplier;
     energy += val; totalClicks++;
     showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
@@ -640,6 +694,7 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
 
