@@ -226,12 +226,11 @@ const initialUpgrades = [
 
 let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
-// Functions
+// --- CORE FUNCTIONS ---
 async function startGame() {
     initShop();
     await cloudLoad();
 
-    // Click logic
     document.getElementById('lincoln-main').addEventListener('click', (e) => {
         const prestigeBoost = 1 + (goldenTortas * 0.1);
         const mult = (currentEvent === 'storm') ? 5 : 1;
@@ -243,7 +242,6 @@ async function startGame() {
         updateUI();
     });
 
-    // Main Game Loop (CPS)
     setInterval(() => {
         const prestigeBoost = 1 + (goldenTortas * 0.1);
         let currentCPS = cps * prestigeBoost;
@@ -252,7 +250,6 @@ async function startGame() {
         updateUI();
     }, 100);
 
-    // Leaderboard & Save Loops
     setInterval(cloudSave, 20000);
     setInterval(fetchLeaderboard, 15000);
     fetchLeaderboard();
@@ -291,19 +288,36 @@ function buyUpgrade(id) {
 }
 
 function updateUI() {
-    document.getElementById('score-text').innerText = Math.floor(energy).toLocaleString();
     const prestigeBoost = 1 + (goldenTortas * 0.1);
     const displayClick = (clickPower * prestigeBoost) * (currentEvent === 'storm' ? 5 : 1);
+    const displayCPS = (cps * prestigeBoost) * (currentEvent === 'feast' ? 2 : 1);
+
+    document.getElementById('score-text').innerText = Math.floor(energy).toLocaleString();
     document.getElementById('stat-click').innerText = displayClick.toFixed(1);
-    document.getElementById('stat-cps').innerText = (cps * prestigeBoost * (currentEvent === 'feast' ? 2 : 1)).toFixed(1);
+    document.getElementById('stat-cps').innerText = displayCPS.toFixed(1);
     document.getElementById('stat-prestige').innerText = goldenTortas;
+
+    document.getElementById('prestige-btn').style.display = energy >= 1000000000 ? 'block' : 'none';
 
     upgrades.forEach(u => {
         const btn = document.getElementById(`up-${u.id}`);
-        if (btn) btn.disabled = (energy < u.cost);
+        if (btn) {
+            btn.disabled = (energy < u.cost);
+            document.getElementById(`cost-${u.id}`).innerText = u.cost.toLocaleString() + " Mass";
+            document.getElementById(`count-${u.id}`).innerText = u.count;
+        }
     });
+
+    // Background Scaling
+    const body = document.body;
+    const label = document.getElementById('env-label');
+    if (energy < 100000) { body.className = 'bg-kitchen'; label.innerText = "LOCATION: THE KITCHEN"; }
+    else if (energy < 10000000) { body.className = 'bg-buffet'; label.innerText = "LOCATION: INFINITE BUFFET"; }
+    else if (energy < 1000000000) { body.className = 'bg-factory'; label.innerText = "LOCATION: TORTA FACTORY"; }
+    else { body.className = 'bg-space'; label.innerText = "LOCATION: OUTER SPACE"; }
 }
 
+// --- DATA & CLOUD ---
 async function cloudSave() {
     if (!chatName) return;
     const saveObj = { energy, clickPower, cps, goldenTortas, upgrades: upgrades.map(u => ({id: u.id, count: u.count, cost: u.cost})) };
@@ -326,17 +340,63 @@ async function cloudLoad() {
     updateUI();
 }
 
-// Add these to make the HTML buttons work
-window.openAdmin = async function() { /* admin logic here */ };
-window.prestige = async function() { /* prestige logic here */ };
-window.changeName = async function() { /* name logic here */ };
-window.resetGame = function() { localStorage.clear(); location.reload(); };
+async function fetchLeaderboard() {
+    const { data } = await _supabase.from('leaderboard').select('username, clicks').order('clicks', { ascending: false }).limit(10);
+    if (data) {
+        document.getElementById('lb-content').innerHTML = data.map((u, i) => `
+            <div class="lb-row"><span><span class="lb-rank">#${i+1}</span> ${u.username}</span><span>${Math.floor(u.clicks).toLocaleString()}</span></div>
+        `).join('');
+    }
+}
 
-// INITIALIZE
+// --- VISUALS ---
+function showParticle(x, y, text) {
+    const p = document.createElement('div');
+    p.className = 'particle'; p.innerText = text;
+    p.style.left = x + 'px'; p.style.top = y + 'px';
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 800);
+}
+
+// --- BUTTON WINDOW FUNCTIONS ---
+window.changeName = async function() {
+    let newName = prompt("Enter your new username:", chatName || "");
+    if (!newName || newName.trim().length < 2) return;
+    chatName = newName.trim();
+    localStorage.setItem('chat_name', chatName);
+    await cloudSave();
+    location.reload();
+};
+
+window.prestige = async function() {
+    if (energy < 1000000000) return alert("Need 1 Billion Mass!");
+    const bonus = Math.floor(Math.log10(energy / 1000000000)) + 1;
+    if (confirm(`Prestige for ${bonus} Golden Torta(s)? This resets Mass and Upgrades.`)) {
+        goldenTortas += bonus;
+        energy = 0; clickPower = 1; cps = 0;
+        upgrades = initialUpgrades.map(u => ({...u, count: 0}));
+        initShop();
+        await cloudSave();
+        updateUI();
+    }
+};
+
+window.openAdmin = async function() {
+    if (!chatName) return alert("Set a name first.");
+    const { data } = await _supabase.from('leaderboard').select('admin').eq('username', chatName).single();
+    if (data && data.admin) document.getElementById('admin-panel').style.display = 'block';
+    else alert("Access Denied.");
+};
+
+window.resetGame = function() {
+    if (confirm("Hard reset everything?")) { localStorage.clear(); location.reload(); }
+};
+
 document.addEventListener('DOMContentLoaded', startGame);
 </script>
 </body>
 </html>
+
 
 
 
