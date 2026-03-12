@@ -219,102 +219,132 @@ const initialUpgrades = [
 
 let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
-// --- FUNCTIONS ---
+// --- CORE FIXES ---
 
-// 1. Update the openAdmin function to check the database
-
+async function cloudSave() {
+    if (!chatName) return;
     
-    async function prestige() {
+    // Save locally
+    const saveObj = { energy, clickPower, cps, goldenTortas, totalClicks, upgrades: upgrades.map(u => ({id: u.id, count: u.count, cost: u.cost})) };
+    localStorage.setItem('lincoln_local_save', JSON.stringify(saveObj));
+
+    // Upsert to Leaderboard (Update if exists, Insert if not)
+    const { error } = await _supabase
+        .from('leaderboard')
+        .upsert({ 
+            username: chatName, 
+            clicks: Math.floor(energy), 
+            golden_tortas: goldenTortas 
+        }, { onConflict: 'username' });
+
+    const status = document.getElementById('sync-status');
+    if (error) {
+        status.innerText = "Sync Error!";
+        status.style.color = "#ff4757";
+    } else {
+        status.innerText = "Sync Active";
+        status.style.color = "#777";
+    }
+}
+
+async function cloudLoad() {
+    const local = localStorage.getItem('lincoln_local_save');
+    if (local) {
+        const d = JSON.parse(local);
+        energy = d.energy || 0;
+        clickPower = d.clickPower || 1;
+        cps = d.cps || 0; 
+        goldenTortas = d.goldenTortas || 0;
+        totalClicks = d.totalClicks || 0;
+        if (d.upgrades) {
+            d.upgrades.forEach((savedU, i) => { 
+                if(upgrades[i]) { 
+                    upgrades[i].count = savedU.count; 
+                    upgrades[i].cost = savedU.cost; 
+                } 
+            });
+        }
+    }
+    updateUI();
+}
+
+async function startGame() {
+    initShop();
+    await cloudLoad();
+
+    // FORCE USERNAME IF NULL
+    if (!chatName) {
+        let nameAccepted = false;
+        while (!nameAccepted) {
+            let input = prompt("Enter a unique username for the Leaderboard:");
+            if (!input) break;
+            let chosen = input.trim();
+            if (chosen.length < 2 || chosen.length > 15) {
+                alert("Name must be 2-15 characters.");
+                continue;
+            }
+
+            // Check if name exists by trying to insert
+            const { error } = await _supabase
+                .from('leaderboard')
+                .insert([{ username: chosen, clicks: energy, golden_tortas: goldenTortas }]);
+
+            if (error) {
+                if (error.code === '23505') alert("Name already taken! Try another.");
+                else alert("Database Error: " + error.message);
+            } else {
+                chatName = chosen;
+                localStorage.setItem('chat_name', chatName);
+                nameAccepted = true;
+            }
+        }
+    }
+
+    // Real-time Event Subscription
+    _supabase.channel('game-events').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, (p) => handleNewEvent(p.new)).subscribe();
+    
+    // Intervals
+    setInterval(cloudSave, 15000); 
+    setInterval(fetchLeaderboard, 10000);
+    setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
+    
+    fetchLeaderboard();
+}
+
+// --- KEEP YOUR REMAINING FUNCTIONS BELOW ---
+
+async function prestige() {
     if (energy < 1000000000) return alert("You need at least 1 Billion Mass to Weigh In!");
-
     const bonus = Math.floor(Math.log10(energy / 1000000000)) + 1;
-    
-    if (confirm(`Prestige now? You will lose all your current Mass and Upgrades, but you will gain ${bonus} Golden Torta(s). Each Golden Torta gives a permanent +10% boost to ALL production!`)) {
-        
-        // 1. Add the permanent currency
+    if (confirm(`Prestige now for ${bonus} Golden Torta(s)? You lose your Mass but keep your boost!`)) {
         goldenTortas += bonus;
-
-        // 2. Reset game state
-        energy = 0;
-        clickPower = 1;
-        cps = 0;
-        totalClicks = 0;
-
-        // 3. Reset upgrades to initial state
+        energy = 0; clickPower = 1; cps = 0; totalClicks = 0;
         upgrades = initialUpgrades.map(u => ({...u, count: 0}));
-
-        // 4. Update the Shop UI to show base costs again
         initShop();
-        
-        // 5. Save to cloud and update screen
         await cloudSave();
         updateUI();
-        
-        alert("You have Weighed In! Your new Golden Tortas have increased your power permanently.");
     }
 }
-    
-    async function changeName() {
+
+async function changeName() {
     let newName = prompt("Enter your new username:", chatName || "");
-    
-    // 1. Validation
-    if (!newName) return;
+    if (!newName || newName.trim() === chatName) return;
     newName = newName.trim();
-    if (newName === chatName) return;
-    if (newName.length < 2 || newName.length > 15) return alert("Name must be 2-15 characters.");
-
-    try {
-        // 2. Update the Database (Leaderboard)
-        // This moves your score and admin status to the new name
-        const { error } = await _supabase
-            .from('leaderboard')
-            .update({ username: newName })
-            .eq('username', chatName);
-
-        if (error) {
-            console.error("DB Error:", error);
-            return alert("That name might be taken or the database is busy.");
-        }
-
-        // 3. Update Local Storage
-        chatName = newName;
-        localStorage.setItem('chat_name', chatName);
-        
-        // 4. Force a Save and Reload
-        // We reload so the game recognizes the new name for Admin checks
-        await cloudSave(); 
-        alert("Name updated! Refreshing to sync...");
-        location.reload();
-
-    } catch (err) {
-        console.error("Change Name Failed:", err);
-        alert("Something went wrong changing your name.");
-    }
+    const { error } = await _supabase.from('leaderboard').update({ username: newName }).eq('username', chatName);
+    if (error) return alert("Name taken or error occurred.");
+    chatName = newName;
+    localStorage.setItem('chat_name', chatName);
+    location.reload();
 }
-    
-    async function openAdmin() {
-    if (!chatName) return alert("Please set a username first.");
 
-    // Check if the current user is actually an admin in the database
-    const { data, error } = await _supabase
-        .from('leaderboard')
-        .select('admin')
-        .eq('username', chatName)
-        .single();
-
-    if (data && data.admin === true) {
-        document.getElementById('admin-panel').style.display = 'block';
-    } else {
-        console.warn("Unauthorized admin access attempt by:", chatName);
-        alert("Access Denied: You do not have administrator privileges.");
-    }
+async function openAdmin() {
+    if (!chatName) return;
+    const { data } = await _supabase.from('leaderboard').select('admin').eq('username', chatName).single();
+    if (data?.admin) document.getElementById('admin-panel').style.display = 'block';
+    else alert("Denied.");
 }
 
 async function triggerEvent(type) {
-    // Re-verify admin status before letting the database call go through
-    const { data } = await _supabase.from('leaderboard').select('admin').eq('username', chatName).single();
-    if (!data || !data.admin) return alert("Nice try!");
-
     const expiresAt = new Date(Date.now() + 5 * 60000).toISOString();
     await _supabase.from('game_events').insert([{ event_type: type, expires_at: expiresAt }]);
     document.getElementById('admin-panel').style.display = 'none';
@@ -322,49 +352,33 @@ async function triggerEvent(type) {
 
 function handleNewEvent(event) {
     if (eventTimer) clearInterval(eventTimer);
-    const oldNotice = document.getElementById('event-notice');
-    if (oldNotice) oldNotice.remove();
-
     const mainImg = document.getElementById('lincoln-main');
     const DEFAULT_IMG = "IMG_0668.jpg"; 
-    const STORM_IMG = "IMG_0682.jpg"; // <--- CHANGE THIS to your storm filename!
+    const STORM_IMG = "IMG_0682.jpg"; 
 
     const expiry = new Date(event.expires_at.replace(' ', 'T')).getTime();
-    const notice = document.createElement('div');
+    const notice = document.getElementById('event-notice') || document.createElement('div');
     notice.id = "event-notice";
     notice.style = "position:fixed; top:10%; left:50%; transform:translateX(-50%); color:black; padding:15px 30px; border-radius:50px; font-weight:bold; z-index:10000; box-shadow:0 0 20px black; text-align:center; pointer-events:none;";
     document.body.appendChild(notice);
 
     eventTimer = setInterval(() => {
-        const now = new Date().getTime();
-        const timeLeft = expiry - now;
-
+        const timeLeft = expiry - new Date().getTime();
         if (timeLeft <= 0) {
-            eventMultiplier = 1;
-            currentEvent = null;
-            mainImg.src = DEFAULT_IMG; // RESET IMAGE
-            mainImg.style.filter = "none";
-            document.body.style.boxShadow = "none";
-            notice.remove();
-            clearInterval(eventTimer);
-            return;
+            eventMultiplier = 1; currentEvent = null;
+            mainImg.src = DEFAULT_IMG; notice.remove();
+            clearInterval(eventTimer); return;
         }
-
         const seconds = Math.ceil(timeLeft / 1000);
         currentEvent = event.event_type;
-
         if (currentEvent === 'storm') {
-            eventMultiplier = 5;
-            notice.style.background = "#00d2ff";
+            eventMultiplier = 5; notice.style.background = "#00d2ff";
             notice.innerText = `⚡ STORM! 5X CLICK (${seconds}s)`;
-            
-            // SWAP IMAGE HERE
-            if (!mainImg.src.includes(STORM_IMG)) {
-                mainImg.src = STORM_IMG;
-                mainImg.style.filter = "drop-shadow(0 0 20px #00d2ff) brightness(1.2)";
-            }
-        } 
-        // ... (rest of your cases like feast or low_carb)
+            if (!mainImg.src.includes(STORM_IMG)) mainImg.src = STORM_IMG;
+        } else if (currentEvent === 'feast') {
+            eventMultiplier = 2; notice.style.background = "#f1c40f";
+            notice.innerText = `🔥 FEAST! 2X TOTAL (${seconds}s)`;
+        }
     }, 1000);
 }
 
@@ -386,7 +400,6 @@ function updateUI() {
     document.getElementById('stat-cps').innerText = ((cps * (1 + (goldenTortas * 0.1))) * (currentEvent === 'storm' ? 1 : eventMultiplier)).toFixed(1);
     document.getElementById('stat-prestige').innerText = goldenTortas;
     document.getElementById('prestige-btn').style.display = energy >= 1000000000 ? 'block' : 'none';
-    
     upgrades.forEach(u => {
         const btn = document.getElementById(`up-${u.id}`);
         if (btn) {
@@ -396,43 +409,6 @@ function updateUI() {
             document.getElementById(`count-${u.id}`).innerText = u.count;
         }
     });
-
-    const body = document.body; const label = document.getElementById('env-label');
-    if (energy < 100000) { body.className = 'bg-kitchen'; label.innerText = "LOCATION: THE KITCHEN"; }
-    else if (energy < 10000000) { body.className = 'bg-buffet'; label.innerText = "LOCATION: INFINITE BUFFET"; }
-    else if (energy < 1000000000) { body.className = 'bg-factory'; label.innerText = "LOCATION: TORTA FACTORY"; }
-    else { body.className = 'bg-space'; label.innerText = "LOCATION: OUTER SPACE"; }
-}
-
-async function cloudSave() {
-    if (!chatName) return;
-    const saveObj = { energy, clickPower, cps, goldenTortas, totalClicks, upgrades: upgrades.map(u => ({id: u.id, count: u.count, cost: u.cost})) };
-    localStorage.setItem('lincoln_local_save', JSON.stringify(saveObj));
-    await _supabase.from('leaderboard').upsert({ username: chatName, clicks: energy, golden_tortas: goldenTortas }, { onConflict: 'username' });
-}
-
-async function cloudLoad() {
-    const local = localStorage.getItem('lincoln_local_save');
-    if (local) {
-        const d = JSON.parse(local);
-        energy = d.energy || 0; clickPower = d.clickPower || 1; cps = d.cps || 0; 
-        goldenTortas = d.goldenTortas || 0; totalClicks = d.totalClicks || 0;
-        d.upgrades?.forEach((savedU, i) => { 
-            if(upgrades[i]) { upgrades[i].count = savedU.count; upgrades[i].cost = savedU.cost; } 
-        });
-    }
-    updateUI();
-}
-
-// Admin Logic
-async function adminAction(type) {
-    const target = document.getElementById('admin-target-user').value;
-    const val = document.getElementById('admin-value').value;
-    if (!target) return alert("Enter target");
-    if (type === 'mass') {
-        if (target === chatName) { energy += parseFloat(val); updateUI(); }
-        await _supabase.from('leaderboard').update({ clicks: parseFloat(val) }).eq('username', target);
-    }
 }
 
 function initShop() {
@@ -451,20 +427,8 @@ function buyUpgrade(id) {
     if (energy >= u.cost) {
         energy -= u.cost; u.count++;
         if (u.type === "click") clickPower += u.power; else cps += u.power;
-        u.cost = Math.ceil(u.cost * 1.35); updateUI(); cloudSave();
+        u.cost = Math.ceil(u.cost * 1.35); updateUI();
     }
-}
-
-function toggleChat() {
-    const b = document.getElementById('chat-box');
-    if (b.style.display === 'flex') { b.style.display = 'none'; return; }
-    if (!chatName) {
-        let input = prompt("Enter Username:");
-        if (!input) return;
-        chatName = input.trim();
-        localStorage.setItem('chat_name', chatName);
-    }
-    b.style.display = 'flex'; fetchMessages();
 }
 
 async function fetchMessages() {
@@ -487,12 +451,21 @@ async function sendChat(emoteMsg = null) {
 
 function sendEmote(char) { sendChat(char); }
 
+function toggleChat() {
+    const b = document.getElementById('chat-box');
+    b.style.display = (b.style.display === 'flex') ? 'none' : 'flex';
+    if (b.style.display === 'flex') fetchMessages();
+}
+
 async function fetchLeaderboard() {
     const { data } = await _supabase.from('leaderboard').select('username, clicks, golden_tortas').order('clicks', { ascending: false }).limit(10);
     if (data) {
         document.getElementById('lb-content').innerHTML = data.map((u, i) => `
             <div class="lb-row"><span><span class="lb-rank">#${i+1}</span> ${u.username}</span><span>${Math.floor(u.clicks).toLocaleString()} <small>(${u.golden_tortas} GT)</small></span></div>`).join('');
-        if (data[0]) { currentKing = data[0].username; document.getElementById('king-display').innerText = `👑 King: ${currentKing}`; }
+        if (data[0]) { 
+            currentKing = data[0].username; 
+            document.getElementById('king-display').innerText = `👑 King: ${currentKing}`; 
+        }
     }
 }
 
@@ -504,20 +477,11 @@ function showParticle(x, y, text) {
 
 function resetGame() { if (confirm("Reset everything?")) { localStorage.clear(); location.reload(); } }
 
-async function startGame() {
-    initShop(); cloudLoad();
-    _supabase.channel('game-events').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, (p) => handleNewEvent(p.new)).subscribe();
-    const { data } = await _supabase.from('game_events').select('*').gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false }).limit(1);
-    if (data && data[0]) handleNewEvent(data[0]);
-    setInterval(cloudSave, 20000); setInterval(fetchLeaderboard, 15000);
-    setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
-    fetchLeaderboard();
-}
-
 startGame();
 </script>
 </body>
 </html>
+
 
 
 
