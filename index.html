@@ -26,6 +26,7 @@
             transition: background 1s ease-in-out;
         }
 
+        
         .bg-kitchen { background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=1200'); }
         .bg-buffet { background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200'); }
         .bg-factory { background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1200'); }
@@ -103,6 +104,28 @@
         
         .particle { position: fixed; pointer-events: none; animation: flyUp 0.8s forwards; font-weight: bold; color: var(--gold); z-index: 999; }
         
+        
+        #announcement-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: var(--gold);
+    color: black;
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+    z-index: 10002; /* Higher than admin panel */
+    display: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    animation: slideDown 0.5s ease;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
+}
+        
         #sync-alert {
     position: fixed;
     top: 20px;
@@ -137,7 +160,13 @@
 </head>
 <body class="bg-kitchen">
 
-<div id="admin-trigger" onclick="openAdmin()" style="position:fixed; top:0; right:0; width:60px; height:60px; cursor:pointer; opacity:0.01; z-index:9999;"></div>
+
+    <div id="announcement-bar" onclick="this.style.display='none'">
+    <span id="announcement-text"></span>
+    <span style="margin-left:20px; font-size:0.7rem; opacity:0.6;">(Click to dismiss)</span>
+</div>
+    
+    <div id="admin-trigger" onclick="openAdmin()" style="position:fixed; top:0; right:0; width:60px; height:60px; cursor:pointer; opacity:0.01; z-index:9999;"></div>
 
 <div id="admin-panel">
     <h3 style="margin-top:0; color:var(--gold); text-align:center;">ADMIN CONTROL</h3>
@@ -148,6 +177,10 @@
     <button onclick="triggerEvent('storm')" style="width:100%; background:#00d2ff; color:black; padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">⚡ STORM (5X CLICK)</button>
     <button onclick="triggerEvent('low_carb')" style="width:100%; background:#ff4757; color:white; padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">🥗 LOW CARB (0.5X TOTAL)</button>
 
+   <hr style="border: 0.5px solid #444; margin: 15px 0;">
+<input type="text" id="admin-announcement" class="admin-input" placeholder="Announcement Text...">
+<button onclick="postAnnouncement()" style="width:100%; background:white; color:black; padding:10px; border:none; font-weight:bold; cursor:pointer; border-radius:5px;">📢 BROADCAST</button>
+    
     <button onclick="adminAction('mass')" style="width:100%; background:var(--gold); padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">Give Mass</button>
     <button onclick="adminAction('timeout')" style="width:100%; background:#e67e22; padding:10px; border:none; margin-top:10px; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Set Timeout</button>
     <button onclick="clearChatNow()" style="width:100%; background:#ff4757; padding:10px; border:none; color:white; margin-top:10px; cursor:pointer; border-radius:5px; font-weight:bold;">FORCE CLEAR CHAT</button>
@@ -238,6 +271,37 @@ let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
 // 1. Update the openAdmin function to check the database
 
+    
+    // 1. Admin Function to send the message
+async function postAnnouncement() {
+    const text = document.getElementById('admin-announcement').value;
+    if (!text) return;
+
+    // Verify admin status
+    const { data } = await _supabase.from('leaderboard').select('admin').eq('username', chatName).single();
+    if (!data || !data.admin) return alert("Unauthorized");
+
+    const { error } = await _supabase.from('announcements').insert([{ text: text }]);
+    
+    if (!error) {
+        document.getElementById('admin-announcement').value = "";
+        alert("Broadcast sent!");
+    }
+}
+
+// 2. Logic to show the announcement to everyone
+function showAnnouncement(text) {
+    const bar = document.getElementById('announcement-bar');
+    const display = document.getElementById('announcement-text');
+    
+    display.innerText = "📣 ANNOUNCEMENT: " + text;
+    bar.style.display = 'block';
+
+    // Auto-hide after 15 seconds
+    setTimeout(() => {
+        bar.style.display = 'none';
+    }, 15000);
+}
     
     async function prestige() {
     if (energy < 1000000000) return alert("You need at least 1 Billion Mass to Weigh In!");
@@ -538,12 +602,37 @@ function showParticle(x, y, text) {
 function resetGame() { if (confirm("Reset everything?")) { localStorage.clear(); location.reload(); } }
 
 async function startGame() {
-    initShop(); cloudLoad();
-    _supabase.channel('game-events').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, (p) => handleNewEvent(p.new)).subscribe();
-    const { data } = await _supabase.from('game_events').select('*').gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false }).limit(1);
+    initShop(); 
+    cloudLoad();
+
+    // 1. Listen for Game Events (Storms, Feasts, etc.)
+    _supabase.channel('game-events')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, (p) => handleNewEvent(p.new))
+        .subscribe();
+
+    // 2. Listen for Admin Announcements (The new system)
+    _supabase.channel('announcements-realtime')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'announcements' }, (payload) => {
+            showAnnouncement(payload.new.text);
+        })
+        .subscribe();
+
+    // Check for active events on startup
+    const { data } = await _supabase.from('game_events')
+        .select('*')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1);
+    
     if (data && data[0]) handleNewEvent(data[0]);
-    setInterval(cloudSave, 20000); setInterval(fetchLeaderboard, 15000);
-    setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
+
+    // Background Loops
+    setInterval(cloudSave, 20000); 
+    setInterval(fetchLeaderboard, 15000);
+    setInterval(() => { 
+        if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); 
+    }, 5000);
+
     fetchLeaderboard();
 }
 
@@ -551,6 +640,7 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
 
