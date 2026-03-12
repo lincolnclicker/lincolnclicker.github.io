@@ -132,6 +132,8 @@
     <button onclick="triggerEvent('feast')" style="width:100%; background:var(--gold); color:black; padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">🔥 FEAST (2X TOTAL)</button>
     <button onclick="triggerEvent('storm')" style="width:100%; background:#00d2ff; color:black; padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">⚡ STORM (5X CLICK)</button>
     
+   <button onclick="sendAnnouncement()" style="width:100%; background:#a29bfe; color:black; padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">📢 GLOBAL ANNOUNCEMENT</button>
+    
     <button onclick="adminAction('mass')" style="width:100%; background:var(--gold); padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">Give Mass</button>
     <button onclick="adminAction('timeout')" style="width:100%; background:#e67e22; padding:10px; border:none; margin-top:10px; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Set Timeout</button>
     <button onclick="document.getElementById('admin-panel').style.display='none'" style="width:100%; background:none; border:none; color:#aaa; cursor:pointer; margin-top:15px; font-size:0.8rem; display:block; margin: 15px auto 0 auto;">Close</button>
@@ -221,6 +223,21 @@ let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
 // 1. Update the openAdmin function to check the database
 
+    
+    async function sendAnnouncement() {
+    // 1. Double check admin status
+    const { data } = await _supabase.from('leaderboard').select('admin').eq('username', chatName).single();
+    if (!data || !data.admin) return alert("Unauthorized");
+
+    const msg = prompt("Enter your global announcement:");
+    if (!msg) return;
+
+    // 2. Insert into Supabase
+    const { error } = await _supabase.from('announcements').insert([{ message: msg }]);
+    
+    if (error) alert("Failed to send: " + error.message);
+    else document.getElementById('admin-panel').style.display = 'none';
+}
     
     async function prestige() {
     if (energy < 1000000000) return alert("You need at least 1 Billion Mass to Weigh In!");
@@ -581,12 +598,56 @@ function showParticle(x, y, text) {
 function resetGame() { if (confirm("Reset everything?")) { localStorage.clear(); location.reload(); } }
 
 async function startGame() {
-    initShop(); cloudLoad();
-    _supabase.channel('game-events').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, (p) => handleNewEvent(p.new)).subscribe();
-    const { data } = await _supabase.from('game_events').select('*').gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false }).limit(1);
-    if (data && data[0]) handleNewEvent(data[0]);
-    setInterval(cloudSave, 20000); setInterval(fetchLeaderboard, 15000);
-    setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
+    // 1. Initialize UI and Load Data
+    initShop(); 
+    await cloudLoad(); // Loading cloud data before starting timers
+
+    // 2. The Manual Click Listener
+    // Moved here to ensure the DOM is ready before clicking starts
+    document.getElementById('lincoln-main').addEventListener('click', (e) => {
+        const prestigeBoost = 1 + (goldenTortas * 0.1);
+        const val = (clickPower * prestigeBoost) * eventMultiplier;
+        
+        energy += val; 
+        totalClicks++;
+        
+        // Show floating text (+Mass)
+        showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
+        
+        // Update UI immediately for responsiveness
+        updateUI();
+    });
+
+    // 3. Realtime Listener: Game Events (Storms/Feasts)
+    _supabase.channel('game-events')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, (p) => handleNewEvent(p.new))
+        .subscribe();
+
+    // Check if there is an active event currently running when the page loads
+    const { data: eventData } = await _supabase.from('game_events')
+        .select('*')
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1);
+    if (eventData && eventData[0]) handleNewEvent(eventData[0]);
+
+    // 4. Realtime Listener: Global Announcements (The Admin Popups)
+    _supabase.channel('global-announcements')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'announcements' }, payload => {
+            showAnnouncementPopup(payload.new.message);
+        })
+        .subscribe();
+
+    // 5. Game Loops (Timers)
+    setInterval(cloudSave, 20000);           // Save to Supabase every 20 seconds
+    setInterval(fetchLeaderboard, 15000);    // Update ranks every 15 seconds
+    
+    // Update Chat every 5 seconds, but only if the chat box is actually open
+    setInterval(() => { 
+        if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); 
+    }, 5000);
+
+    // Initial fetch to show leaderboard immediately
     fetchLeaderboard();
 }
 
@@ -594,6 +655,7 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
 
