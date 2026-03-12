@@ -110,8 +110,16 @@
 
 <div id="admin-panel">
     <h3 style="margin-top:0; color:var(--gold); text-align:center;">ADMIN CONTROL</h3>
+    <input type="text" id="admin-target-user" class="admin-input" placeholder="Target Username">
+    <input type="text" id="admin-value" class="admin-input" placeholder="Value (Mass/Mins)">
+    
     <button onclick="triggerEvent('feast')" style="width:100%; background:var(--gold); color:black; padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">🔥 FEAST (2X TOTAL)</button>
     <button onclick="triggerEvent('storm')" style="width:100%; background:#00d2ff; color:black; padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">⚡ STORM (5X CLICK)</button>
+
+    <button onclick="adminAction('mass')" style="width:100%; background:var(--success); color:black; padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">Give Mass</button>
+    <button onclick="adminAction('timeout')" style="width:100%; background:#e67e22; padding:10px; border:none; margin-top:10px; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Set Timeout</button>
+    <button onclick="clearChatNow()" style="width:100%; background:#ff4757; padding:10px; border:none; color:white; margin-top:10px; cursor:pointer; border-radius:5px; font-weight:bold;">FORCE CLEAR CHAT</button>
+    
     <button onclick="document.getElementById('admin-panel').style.display='none'" style="width:100%; background:none; border:none; color:#aaa; cursor:pointer; margin-top:15px; font-size:0.8rem; display:block; margin: 15px auto 0 auto;">Close</button>
 </div>
 
@@ -214,9 +222,8 @@ async function startGame() {
         }
     }
 
-    _supabase.channel('chat-updates').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_chat' }, (payload) => {
-        const chatBox = document.getElementById('chat-box');
-        if (chatBox.style.display !== 'flex') {
+    _supabase.channel('chat-updates').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_chat' }, () => {
+        if (document.getElementById('chat-box').style.display !== 'flex') {
             unreadCount++;
             document.getElementById('chat-badge').innerText = unreadCount;
             document.getElementById('chat-badge').style.display = 'flex';
@@ -370,10 +377,33 @@ async function fetchLeaderboard() {
     }
 }
 
+// ADMIN ACTIONS
 async function triggerEvent(type) {
     const expiresAt = new Date(Date.now() + 5 * 60000).toISOString();
     await _supabase.from('game_events').insert([{ event_type: type, expires_at: expiresAt }]);
     document.getElementById('admin-panel').style.display = 'none';
+}
+
+async function adminAction(action) {
+    const target = document.getElementById('admin-target-user').value;
+    const value = document.getElementById('admin-value').value;
+    if(!target) return alert("Enter target user!");
+
+    if(action === 'mass') {
+        const amt = parseFloat(value) || 0;
+        await _supabase.from('leaderboard').update({ clicks: amt }).eq('username', target);
+        alert(`Sent ${amt} mass to ${target}`);
+    } else if (action === 'timeout') {
+        alert(`${target} has been timed out for ${value} minutes.`);
+    }
+}
+
+async function clearChatNow() {
+    if(confirm("Wipe ALL chat messages?")) {
+        await _supabase.from('global_chat').delete().neq('id', 0);
+        alert("Chat wiped.");
+        location.reload();
+    }
 }
 
 async function openAdmin() {
