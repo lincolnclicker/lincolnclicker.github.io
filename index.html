@@ -27,9 +27,6 @@
         }
 
         .bg-kitchen { background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=1200'); }
-        .bg-buffet { background-image: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200'); }
-        .bg-factory { background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=1200'); }
-        .bg-space { background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200'); }
 
         #game-wrapper { max-width: 1200px; width: 100%; display: flex; gap: 20px; padding: 20px; box-sizing: border-box; z-index: 1; }
         .left-column { flex: 1; display: flex; flex-direction: column; gap: 20px; }
@@ -82,8 +79,9 @@
         .u-count { font-size: 1.5rem; font-weight: bold; opacity: 0.6; }
 
         .prestige-btn { background: var(--gold); color: black; font-weight: bold; width: 100%; padding: 15px; border-radius: 12px; border: none; cursor: pointer; margin-top: 10px; }
- 
-        #chat-icon { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 30px; z-index: 1000; transition: transform 0.2s; }
+
+        #chat-icon-container { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; z-index: 1000; }
+        #chat-icon { width: 100%; height: 100%; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 30px; transition: transform 0.2s; }
         #chat-badge { position: absolute; top: -5px; right: -5px; background: #ff4757; color: white; font-size: 12px; min-width: 20px; height: 20px; border-radius: 10px; border: 2px solid var(--bg); display: none; align-items: center; justify-content: center; font-weight: bold; padding: 2px; }
 
         #chat-box { position: fixed; bottom: 90px; right: 20px; width: 340px; height: 500px; background: var(--chat-bg); border: 2px solid var(--primary); border-radius: 12px; display: none; flex-direction: column; z-index: 1000; overflow: hidden; }
@@ -94,7 +92,6 @@
 
         .msg { margin-bottom: 8px; padding: 6px; border-radius: 6px; background: rgba(255,255,255,0.05); }
         .king-msg { border-left: 3px solid var(--gold); background: rgba(241, 196, 15, 0.1); }
-        .system-msg { border-left: 3px solid #ff4757; background: rgba(255, 71, 87, 0.1); font-style: italic; color: #ff4757; }
 
         #admin-panel {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -104,22 +101,7 @@
         .admin-input { width: 100%; padding: 10px; margin-bottom: 10px; background: #1e222b; border: 1px solid #444; color: white; box-sizing: border-box; border-radius: 5px; }
         
         .particle { position: fixed; pointer-events: none; animation: flyUp 0.8s forwards; font-weight: bold; color: var(--gold); z-index: 999; }
-        
-        @keyframes flyUp {  
-            0% { transform: translateY(0); opacity: 1; }  
-            100% { transform: translateY(-120px); opacity: 0; }  
-        } 
-
-        @keyframes pulse-gold {
-            0% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(241, 196, 15, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(241, 196, 15, 0); }
-        }
-
-        #prestige-btn {
-            animation: pulse-gold 2s infinite;
-            border: 2px solid white;
-        }
+        @keyframes flyUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-120px); opacity: 0; } } 
     </style>
 </head>
 <body class="bg-kitchen">
@@ -128,16 +110,8 @@
 
 <div id="admin-panel">
     <h3 style="margin-top:0; color:var(--gold); text-align:center;">ADMIN CONTROL</h3>
-    <input type="text" id="admin-target-user" class="admin-input" placeholder="Target Username">
-    <input type="text" id="admin-value" class="admin-input" placeholder="Value (Mass/Mins)">
-    
     <button onclick="triggerEvent('feast')" style="width:100%; background:var(--gold); color:black; padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">🔥 FEAST (2X TOTAL)</button>
     <button onclick="triggerEvent('storm')" style="width:100%; background:#00d2ff; color:black; padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">⚡ STORM (5X CLICK)</button>
-    <button onclick="triggerEvent('low_carb')" style="width:100%; background:#ff4757; color:white; padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">🥗 LOW CARB (0.5X TOTAL)</button>
-
-    <button onclick="adminAction('mass')" style="width:100%; background:var(--gold); padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">Give Mass</button>
-    <button onclick="adminAction('timeout')" style="width:100%; background:#e67e22; padding:10px; border:none; margin-top:10px; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Set Timeout</button>
-    <button onclick="clearChatNow()" style="width:100%; background:#ff4757; padding:10px; border:none; color:white; margin-top:10px; cursor:pointer; border-radius:5px; font-weight:bold;">FORCE CLEAR CHAT</button>
     <button onclick="document.getElementById('admin-panel').style.display='none'" style="width:100%; background:none; border:none; color:#aaa; cursor:pointer; margin-top:15px; font-size:0.8rem; display:block; margin: 15px auto 0 auto;">Close</button>
 </div>
 
@@ -154,7 +128,6 @@
                 <div id="sync-status" style="font-size: 0.65rem; color: #777; margin-top: 8px;">Sync Active</div>
             </div>
             <img src="IMG_0668.jpg" id="lincoln-main" alt="Lincoln">
-            <img src="IMG_0682.jpg" style="display:none;" alt="preload">
             <button class="prestige-btn" id="prestige-btn" style="display:none;" onclick="prestige()">WEIGH IN</button>
             <div style="margin-top:20px;">
                 <button onclick="changeName()" style="background:none; border:none; color:var(--secondary); cursor:pointer; font-size: 0.7rem; text-decoration: underline; margin-right: 10px;">Change Name</button>
@@ -167,11 +140,14 @@
             <div id="lb-content">Loading ranks...</div>
         </div>
     </div>
-
     <div class="shop-container" id="shop"></div>
 </div>
 
-<div id="chat-icon" onclick="toggleChat()">💬</div>
+<div id="chat-icon-container">
+    <div id="chat-icon" onclick="toggleChat()">💬</div>
+    <div id="chat-badge">0</div>
+</div>
+
 <div id="chat-box">
     <div style="background:var(--primary); padding: 12px; font-weight: bold; display: flex; justify-content: space-between;">
         <span>Global Chat</span>
@@ -182,7 +158,6 @@
     <div class="emote-bar">
         <button class="emote-btn" onclick="sendEmote('🍔')">🍔</button>
         <button class="emote-btn" onclick="sendEmote('🌮')">🌮</button>
-        <button class="emote-btn" onclick="sendEmote('👑')">👑</button>
         <button class="emote-btn" onclick="sendEmote('🔥')">🔥</button>
     </div>
     <div style="display:flex; padding:10px; background:#1e222b;">
@@ -195,11 +170,9 @@ const DB_URL = 'https://cnstrmbiosdykiqyxcua.supabase.co';
 const DB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNuc3RybWJpb3NkeWtpcXl4Y3VhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMDEzMDEsImV4cCI6MjA4ODc3NzMwMX0.hf6kiAniU-Hw1J3xuYPK_xlUO9BLR3d5vkEq41uf8co';
 const _supabase = supabase.createClient(DB_URL, DB_KEY);
 
-let energy = 0, clickPower = 1, cps = 0, goldenTortas = 0, totalClicks = 0;
+let energy = 0, clickPower = 1, cps = 0, goldenTortas = 0, unreadCount = 0;
 let currentKing = "", chatName = localStorage.getItem('chat_name') || null;
-let eventMultiplier = 1; 
-let currentEvent = null;
-let eventTimer = null;
+let eventMultiplier = 1, currentEvent = null, eventTimer = null;
 
 const initialUpgrades = [
     { id: 0, name: "Extra Torta", cost: 15, power: 0.1, type: "click", desc: "+0.1 Click Power" },
@@ -221,32 +194,49 @@ const initialUpgrades = [
 
 let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
-// --- CORE FIXES ---
+function formatNum(num) {
+    if (num >= 1e12) return (num / 1e12).toFixed(2) + "T";
+    if (num >= 1e9) return (num / 1e9).toFixed(2) + "B";
+    if (num >= 1e6) return (num / 1e6).toFixed(2) + "M";
+    return Math.floor(num).toLocaleString();
+}
+
+async function startGame() {
+    initShop();
+    await cloudLoad();
+
+    if (!chatName) {
+        let input = prompt("Enter a unique username:");
+        if (input) {
+            chatName = input.trim();
+            localStorage.setItem('chat_name', chatName);
+            await _supabase.from('leaderboard').upsert({ username: chatName, clicks: energy, golden_tortas: goldenTortas });
+        }
+    }
+
+    _supabase.channel('chat-updates').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_chat' }, (payload) => {
+        const chatBox = document.getElementById('chat-box');
+        if (chatBox.style.display !== 'flex') {
+            unreadCount++;
+            document.getElementById('chat-badge').innerText = unreadCount;
+            document.getElementById('chat-badge').style.display = 'flex';
+        } else {
+            fetchMessages();
+        }
+    }).subscribe();
+
+    _supabase.channel('game-events').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, (p) => handleNewEvent(p.new)).subscribe();
+
+    setInterval(cloudSave, 15000);
+    setInterval(fetchLeaderboard, 10000);
+    fetchLeaderboard();
+}
 
 async function cloudSave() {
     if (!chatName) return;
-    
-    // Save locally
-    const saveObj = { energy, clickPower, cps, goldenTortas, totalClicks, upgrades: upgrades.map(u => ({id: u.id, count: u.count, cost: u.cost})) };
+    const saveObj = { energy, clickPower, cps, goldenTortas, upgrades: upgrades.map(u => ({id: u.id, count: u.count, cost: u.cost})) };
     localStorage.setItem('lincoln_local_save', JSON.stringify(saveObj));
-
-    // Upsert to Leaderboard (Update if exists, Insert if not)
-    const { error } = await _supabase
-        .from('leaderboard')
-        .upsert({ 
-            username: chatName, 
-            clicks: Math.floor(energy), 
-            golden_tortas: goldenTortas 
-        }, { onConflict: 'username' });
-
-    const status = document.getElementById('sync-status');
-    if (error) {
-        status.innerText = "Sync Error!";
-        status.style.color = "#ff4757";
-    } else {
-        status.innerText = "Sync Active";
-        status.style.color = "#777";
-    }
+    await _supabase.from('leaderboard').upsert({ username: chatName, clicks: Math.floor(energy), golden_tortas: goldenTortas }, { onConflict: 'username' });
 }
 
 async function cloudLoad() {
@@ -255,159 +245,68 @@ async function cloudLoad() {
         const d = JSON.parse(local);
         energy = d.energy || 0;
         clickPower = d.clickPower || 1;
-        cps = d.cps || 0; 
+        cps = d.cps || 0;
         goldenTortas = d.goldenTortas || 0;
-        totalClicks = d.totalClicks || 0;
-        if (d.upgrades) {
-            d.upgrades.forEach((savedU, i) => { 
-                if(upgrades[i]) { 
-                    upgrades[i].count = savedU.count; 
-                    upgrades[i].cost = savedU.cost; 
-                } 
-            });
-        }
+        if (d.upgrades) d.upgrades.forEach((savedU) => { 
+            let target = upgrades.find(u => u.id === savedU.id);
+            if(target) { target.count = savedU.count; target.cost = savedU.cost; }
+        });
     }
     updateUI();
-}
-
-async function startGame() {
-    initShop();
-    await cloudLoad();
-
-    // FORCE USERNAME IF NULL
-    if (!chatName) {
-        let nameAccepted = false;
-        while (!nameAccepted) {
-            let input = prompt("Enter a unique username for the Leaderboard:");
-            if (!input) break;
-            let chosen = input.trim();
-            if (chosen.length < 2 || chosen.length > 15) {
-                alert("Name must be 2-15 characters.");
-                continue;
-            }
-
-            // Check if name exists by trying to insert
-            const { error } = await _supabase
-                .from('leaderboard')
-                .insert([{ username: chosen, clicks: energy, golden_tortas: goldenTortas }]);
-
-            if (error) {
-                if (error.code === '23505') alert("Name already taken! Try another.");
-                else alert("Database Error: " + error.message);
-            } else {
-                chatName = chosen;
-                localStorage.setItem('chat_name', chatName);
-                nameAccepted = true;
-            }
-        }
-    }
-
-    // Real-time Event Subscription
-    _supabase.channel('game-events').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, (p) => handleNewEvent(p.new)).subscribe();
-    
-    // Intervals
-    setInterval(cloudSave, 15000); 
-    setInterval(fetchLeaderboard, 10000);
-    setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
-    
-    fetchLeaderboard();
-}
-
-// --- KEEP YOUR REMAINING FUNCTIONS BELOW ---
-
-async function prestige() {
-    if (energy < 1000000000) return alert("You need at least 1 Billion Mass to Weigh In!");
-    const bonus = Math.floor(Math.log10(energy / 1000000000)) + 1;
-    if (confirm(`Prestige now for ${bonus} Golden Torta(s)? You lose your Mass but keep your boost!`)) {
-        goldenTortas += bonus;
-        energy = 0; clickPower = 1; cps = 0; totalClicks = 0;
-        upgrades = initialUpgrades.map(u => ({...u, count: 0}));
-        initShop();
-        await cloudSave();
-        updateUI();
-    }
-}
-
-async function changeName() {
-    let newName = prompt("Enter your new username:", chatName || "");
-    if (!newName || newName.trim() === chatName) return;
-    newName = newName.trim();
-    const { error } = await _supabase.from('leaderboard').update({ username: newName }).eq('username', chatName);
-    if (error) return alert("Name taken or error occurred.");
-    chatName = newName;
-    localStorage.setItem('chat_name', chatName);
-    location.reload();
-}
-
-async function openAdmin() {
-    if (!chatName) return;
-    const { data } = await _supabase.from('leaderboard').select('admin').eq('username', chatName).single();
-    if (data?.admin) document.getElementById('admin-panel').style.display = 'block';
-    else alert("Denied.");
-}
-
-async function triggerEvent(type) {
-    const expiresAt = new Date(Date.now() + 5 * 60000).toISOString();
-    await _supabase.from('game_events').insert([{ event_type: type, expires_at: expiresAt }]);
-    document.getElementById('admin-panel').style.display = 'none';
 }
 
 function handleNewEvent(event) {
     if (eventTimer) clearInterval(eventTimer);
-    const mainImg = document.getElementById('lincoln-main');
-    const DEFAULT_IMG = "IMG_0668.jpg"; 
-    const STORM_IMG = "IMG_0682.jpg"; 
-
     const expiry = new Date(event.expires_at.replace(' ', 'T')).getTime();
-    const notice = document.getElementById('event-notice') || document.createElement('div');
-    notice.id = "event-notice";
-    notice.style = "position:fixed; top:10%; left:50%; transform:translateX(-50%); color:black; padding:15px 30px; border-radius:50px; font-weight:bold; z-index:10000; box-shadow:0 0 20px black; text-align:center; pointer-events:none;";
-    document.body.appendChild(notice);
-
+    
     eventTimer = setInterval(() => {
         const timeLeft = expiry - new Date().getTime();
         if (timeLeft <= 0) {
             eventMultiplier = 1; currentEvent = null;
-            mainImg.src = DEFAULT_IMG; notice.remove();
+            if(document.getElementById('event-notice')) document.getElementById('event-notice').remove();
             clearInterval(eventTimer); return;
         }
-        const seconds = Math.ceil(timeLeft / 1000);
+        
         currentEvent = event.event_type;
-        if (currentEvent === 'storm') {
-            eventMultiplier = 5; notice.style.background = "#00d2ff";
-            notice.innerText = `⚡ STORM! 5X CLICK (${seconds}s)`;
-            if (!mainImg.src.includes(STORM_IMG)) mainImg.src = STORM_IMG;
-        } else if (currentEvent === 'feast') {
-            eventMultiplier = 2; notice.style.background = "#f1c40f";
-            notice.innerText = `🔥 FEAST! 2X TOTAL (${seconds}s)`;
-        }
+        eventMultiplier = (currentEvent === 'storm') ? 5 : (currentEvent === 'feast' ? 2 : 1);
+        
+        let notice = document.getElementById('event-notice') || document.createElement('div');
+        notice.id = "event-notice";
+        notice.style = "position:fixed; top:10%; left:50%; transform:translateX(-50%); padding:15px; border-radius:50px; font-weight:bold; z-index:10000; background:white; color:black; box-shadow:0 0 15px rgba(0,0,0,0.5);";
+        notice.innerText = `${currentEvent.toUpperCase()} ACTIVE! x${eventMultiplier} (${Math.ceil(timeLeft/1000)}s)`;
+        if (!document.getElementById('event-notice')) document.body.appendChild(notice);
     }, 1000);
 }
 
 document.getElementById('lincoln-main').addEventListener('click', (e) => {
-    let val = (clickPower * (1 + (goldenTortas * 0.1))) * eventMultiplier;
-    energy += val; totalClicks++;
-    showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
+    let val = (clickPower * (1 + (goldenTortas * 0.1)));
+    if (currentEvent === 'storm') val *= 5;
+    if (currentEvent === 'feast') val *= 2;
+    energy += val;
+    showParticle(e.clientX, e.clientY, `+${formatNum(val)}`);
     updateUI();
 });
 
 setInterval(() => { 
-    let boostedCPS = (cps * (1 + (goldenTortas * 0.1))) * (currentEvent === 'storm' ? 1 : eventMultiplier);
-    energy += (boostedCPS / 10); updateUI(); 
+    let boostedCPS = (cps * (1 + (goldenTortas * 0.1)));
+    if (currentEvent === 'feast') boostedCPS *= 2; 
+    energy += (boostedCPS / 10); 
+    updateUI(); 
 }, 100);
 
 function updateUI() {
-    document.getElementById('score-text').innerText = Math.floor(energy).toLocaleString();
-    document.getElementById('stat-click').innerText = ((clickPower * (1 + (goldenTortas * 0.1))) * eventMultiplier).toFixed(1);
-    document.getElementById('stat-cps').innerText = ((cps * (1 + (goldenTortas * 0.1))) * (currentEvent === 'storm' ? 1 : eventMultiplier)).toFixed(1);
+    document.getElementById('score-text').innerText = formatNum(energy);
+    document.getElementById('stat-click').innerText = formatNum((clickPower * (1 + (goldenTortas * 0.1))) * (currentEvent === 'storm' ? 5 : (currentEvent === 'feast' ? 2 : 1)));
+    document.getElementById('stat-cps').innerText = formatNum((cps * (1 + (goldenTortas * 0.1))) * (currentEvent === 'feast' ? 2 : 1));
     document.getElementById('stat-prestige').innerText = goldenTortas;
-    document.getElementById('prestige-btn').style.display = energy >= 1000000000 ? 'block' : 'none';
+    document.getElementById('prestige-btn').style.display = energy >= 1e9 ? 'block' : 'none';
+    
     upgrades.forEach(u => {
         const btn = document.getElementById(`up-${u.id}`);
         if (btn) {
             btn.disabled = energy < u.cost;
             energy >= u.cost ? btn.classList.add('can-afford') : btn.classList.remove('can-afford');
-            document.getElementById(`cost-${u.id}`).innerText = u.cost.toLocaleString() + " Mass";
+            document.getElementById(`cost-${u.id}`).innerText = formatNum(u.cost) + " Mass";
             document.getElementById(`count-${u.id}`).innerText = u.count;
         }
     });
@@ -419,13 +318,13 @@ function initShop() {
         const btn = document.createElement('button');
         btn.className = 'upgrade'; btn.id = `up-${u.id}`;
         btn.onclick = () => buyUpgrade(u.id);
-        btn.innerHTML = `<div class="u-info"><span class="u-name">${u.name}</span><span class="u-desc">${u.desc}</span><span class="u-cost" id="cost-${u.id}">${u.cost.toLocaleString()} Mass</span></div><div class="u-count" id="count-${u.id}">${u.count}</div>`;
+        btn.innerHTML = `<div class="u-info"><span class="u-name">${u.name}</span><span class="u-desc">${u.desc}</span><span class="u-cost" id="cost-${u.id}">${formatNum(u.cost)} Mass</span></div><div class="u-count" id="count-${u.id}">${u.count}</div>`;
         shop.appendChild(btn);
     });
 }
 
 function buyUpgrade(id) {
-    const u = upgrades[id];
+    const u = upgrades.find(x => x.id === id);
     if (energy >= u.cost) {
         energy -= u.cost; u.count++;
         if (u.type === "click") clickPower += u.power; else cps += u.power;
@@ -434,106 +333,54 @@ function buyUpgrade(id) {
 }
 
 async function fetchMessages() {
-    const { data, error } = await _supabase
-        .from('global_chat')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(30);
-
+    const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(30);
     if (data) {
-        const messagesHolder = document.getElementById('chat-messages');
-        messagesHolder.innerHTML = data.reverse().map(m => `
-            <div class="msg ${m.username === currentKing ? 'king-msg' : ''}">
-                <b>${m.username}:</b> ${m.message}
-            </div>`).join('');
-        
-        messagesHolder.scrollTop = messagesHolder.scrollHeight;
+        document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `
+            <div class="msg ${m.username === currentKing ? 'king-msg' : ''}"><b>${m.username}:</b> ${m.message}</div>`).join('');
+        const c = document.getElementById('chat-messages'); c.scrollTop = c.scrollHeight;
     }
 }
 
 async function sendChat(emoteMsg = null) {
-    if (!chatName) return;
     const input = document.getElementById('chat-msg-input');
     const message = emoteMsg || input.value;
-    if (!message) return;
+    if (!message || !chatName) return;
     await _supabase.from('global_chat').insert([{ username: chatName, message: message }]);
     input.value = ""; fetchMessages();
 }
 
-function sendEmote(char) { sendChat(char); }
-
-let unreadCount = 0;
-
 function toggleChat() {
     const b = document.getElementById('chat-box');
-    const badge = document.getElementById('chat-badge');
-    
     if (b.style.display === 'flex') {
         b.style.display = 'none';
     } else {
         b.style.display = 'flex';
+        unreadCount = 0;
+        document.getElementById('chat-badge').style.display = 'none';
         fetchMessages();
-        unreadCount = 0; // Reset count
-        badge.style.display = 'none';
     }
 }
-
-// Update your fetchMessages or Realtime listener to increment the badge
-async function fetchMessages() {
-    const { data, error } = await _supabase
-        .from('global_chat')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(30);
-
-    if (data) {
-        const chatBox = document.getElementById('chat-box');
-        const badge = document.getElementById('chat-badge');
-        
-        // If chat is closed, check for new messages
-        // (This is a simple version; real-time subscription is better for this)
-        document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `
-            <div class="msg ${m.username === currentKing ? 'king-msg' : ''}"><b>${m.username}:</b> ${m.message}</div>`).join('');
-        
-        const c = document.getElementById('chat-messages');
-        c.scrollTop = c.scrollHeight;
-    }
-}
-
-// --- ADD THIS TO YOUR startGame() FUNCTION ---
-// This listens for new messages in real-time and updates the badge
-_supabase
-    .channel('chat-updates')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_chat' }, (payload) => {
-        const chatBox = document.getElementById('chat-box');
-        const badge = document.getElementById('chat-badge');
-        
-        // Only show badge if the chat is currently hidden
-        if (chatBox.style.display !== 'flex') {
-            unreadCount++;
-            badge.innerText = unreadCount > 99 ? '99+' : unreadCount;
-            badge.style.display = 'flex';
-            
-            // Subtle shake animation for the icon when a new message hits
-            document.getElementById('chat-icon').style.transform = 'scale(1.1)';
-            setTimeout(() => document.getElementById('chat-icon').style.transform = 'scale(1)', 100);
-        } else {
-            // If chat is open, just refresh the messages immediately
-            fetchMessages();
-        }
-    })
-    .subscribe();
 
 async function fetchLeaderboard() {
     const { data } = await _supabase.from('leaderboard').select('username, clicks, golden_tortas').order('clicks', { ascending: false }).limit(10);
     if (data) {
         document.getElementById('lb-content').innerHTML = data.map((u, i) => `
-            <div class="lb-row"><span><span class="lb-rank">#${i+1}</span> ${u.username}</span><span>${Math.floor(u.clicks).toLocaleString()} <small>(${u.golden_tortas} GT)</small></span></div>`).join('');
-        if (data[0]) { 
-            currentKing = data[0].username; 
-            document.getElementById('king-display').innerText = `👑 King: ${currentKing}`; 
-        }
+            <div class="lb-row"><span>#${i+1} ${u.username}</span><span>${formatNum(u.clicks)}</span></div>`).join('');
+        if (data[0]) { currentKing = data[0].username; document.getElementById('king-display').innerText = `👑 King: ${currentKing}`; }
     }
+}
+
+async function triggerEvent(type) {
+    const expiresAt = new Date(Date.now() + 5 * 60000).toISOString();
+    await _supabase.from('game_events').insert([{ event_type: type, expires_at: expiresAt }]);
+    document.getElementById('admin-panel').style.display = 'none';
+}
+
+async function openAdmin() {
+    if(!chatName) return;
+    const { data } = await _supabase.from('leaderboard').select('admin').eq('username', chatName).single();
+    if (data?.admin) document.getElementById('admin-panel').style.display = 'block';
+    else alert("Access Denied.");
 }
 
 function showParticle(x, y, text) {
@@ -542,15 +389,10 @@ function showParticle(x, y, text) {
     document.body.appendChild(p); setTimeout(() => p.remove(), 800);
 }
 
-function resetGame() { if (confirm("Reset everything?")) { localStorage.clear(); location.reload(); } }
+function sendEmote(char) { sendChat(char); }
+function resetGame() { if (confirm("Reset?")) { localStorage.clear(); location.reload(); } }
 
 startGame();
 </script>
 </body>
 </html>
-
-
-
-
-
-
