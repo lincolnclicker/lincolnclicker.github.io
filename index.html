@@ -489,11 +489,25 @@ async function cloudLoad() {
 // Admin Logic
 async function adminAction(type) {
     const target = document.getElementById('admin-target-user').value;
-    const val = document.getElementById('admin-value').value;
-    if (!target) return alert("Enter target");
+    const val = parseFloat(document.getElementById('admin-value').value);
+    if (!target || isNaN(val)) return alert("Enter target and a valid number");
+
     if (type === 'mass') {
-        if (target === chatName) { energy += parseFloat(val); updateUI(); }
-        await _supabase.from('leaderboard').update({ clicks: parseFloat(val) }).eq('username', target);
+        // 1. If targeting yourself, update local game immediately
+        if (target === chatName) { 
+            energy += val; 
+            updateUI(); 
+        }
+        
+        // 2. Update the database (This adds to their current score)
+        const { data } = await _supabase.from('leaderboard').select('clicks').eq('username', target).single();
+        const currentMass = data ? data.clicks : 0;
+        
+        await _supabase.from('leaderboard')
+            .update({ clicks: currentMass + val })
+            .eq('username', target);
+            
+        alert(`Gave ${val.toLocaleString()} Mass to ${target}`);
     }
 }
 
@@ -580,6 +594,7 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
 
