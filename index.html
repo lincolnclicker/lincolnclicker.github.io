@@ -82,8 +82,10 @@
         .u-count { font-size: 1.5rem; font-weight: bold; opacity: 0.6; }
 
         .prestige-btn { background: var(--gold); color: black; font-weight: bold; width: 100%; padding: 15px; border-radius: 12px; border: none; cursor: pointer; margin-top: 10px; }
+ 
+        #chat-icon { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 30px; z-index: 1000; transition: transform 0.2s; }
+        #chat-badge { position: absolute; top: -5px; right: -5px; background: #ff4757; color: white; font-size: 12px; min-width: 20px; height: 20px; border-radius: 10px; border: 2px solid var(--bg); display: none; align-items: center; justify-content: center; font-weight: bold; padding: 2px; }
 
-        #chat-icon { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 30px; z-index: 1000; }
         #chat-box { position: fixed; bottom: 90px; right: 20px; width: 340px; height: 500px; background: var(--chat-bg); border: 2px solid var(--primary); border-radius: 12px; display: none; flex-direction: column; z-index: 1000; overflow: hidden; }
         #chat-messages { flex: 1; padding: 10px; overflow-y: auto; font-size: 0.85rem; background: #1a1e26; }
         
@@ -451,11 +453,71 @@ async function sendChat(emoteMsg = null) {
 
 function sendEmote(char) { sendChat(char); }
 
+let unreadCount = 0;
+
 function toggleChat() {
     const b = document.getElementById('chat-box');
-    b.style.display = (b.style.display === 'flex') ? 'none' : 'flex';
-    if (b.style.display === 'flex') fetchMessages();
+    const badge = document.getElementById('chat-badge');
+    
+    if (b.style.display === 'flex') {
+        b.style.display = 'none';
+    } else {
+        // Opening the chat
+        b.style.display = 'flex';
+        fetchMessages();
+        
+        // Clear the badge
+        unreadCount = 0;
+        badge.style.display = 'none';
+        badge.innerText = '0';
+    }
 }
+
+// Update your fetchMessages or Realtime listener to increment the badge
+async function fetchMessages() {
+    const { data, error } = await _supabase
+        .from('global_chat')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(30);
+
+    if (data) {
+        const chatBox = document.getElementById('chat-box');
+        const badge = document.getElementById('chat-badge');
+        
+        // If chat is closed, check for new messages
+        // (This is a simple version; real-time subscription is better for this)
+        document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `
+            <div class="msg ${m.username === currentKing ? 'king-msg' : ''}"><b>${m.username}:</b> ${m.message}</div>`).join('');
+        
+        const c = document.getElementById('chat-messages');
+        c.scrollTop = c.scrollHeight;
+    }
+}
+
+// --- ADD THIS TO YOUR startGame() FUNCTION ---
+// This listens for new messages in real-time and updates the badge
+_supabase
+    .channel('chat-updates')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'global_chat' }, (payload) => {
+        const chatBox = document.getElementById('chat-box');
+        const badge = document.getElementById('chat-badge');
+        
+        // Only show badge if the chat is currently hidden
+        if (chatBox.style.display !== 'flex') {
+            unreadCount++;
+            badge.innerText = unreadCount > 99 ? '99+' : unreadCount;
+            badge.style.display = 'flex';
+            
+            // Subtle shake animation for the icon when a new message hits
+            document.getElementById('chat-icon').style.transform = 'scale(1.1)';
+            setTimeout(() => document.getElementById('chat-icon').style.transform = 'scale(1)', 100);
+        } else {
+            // If chat is open, just refresh the messages immediately
+            fetchMessages();
+        }
+    })
+    .subscribe();
 
 async function fetchLeaderboard() {
     const { data } = await _supabase.from('leaderboard').select('username, clicks, golden_tortas').order('clicks', { ascending: false }).limit(10);
@@ -481,6 +543,7 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
 
