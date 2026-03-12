@@ -131,9 +131,11 @@
     
     <button onclick="triggerEvent('feast')" style="width:100%; background:var(--gold); color:black; padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">🔥 FEAST (2X TOTAL)</button>
     <button onclick="triggerEvent('storm')" style="width:100%; background:#00d2ff; color:black; padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">⚡ STORM (5X CLICK)</button>
-    
+    <button onclick="triggerEvent('low_carb')" style="width:100%; background:#ff4757; color:white; padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">🥗 LOW CARB (0.5X TOTAL)</button>
+
     <button onclick="adminAction('mass')" style="width:100%; background:var(--gold); padding:10px; border:none; margin-top:10px; font-weight:bold; cursor:pointer; border-radius:5px;">Give Mass</button>
     <button onclick="adminAction('timeout')" style="width:100%; background:#e67e22; padding:10px; border:none; margin-top:10px; color:white; font-weight:bold; cursor:pointer; border-radius:5px;">Set Timeout</button>
+    <button onclick="clearChatNow()" style="width:100%; background:#ff4757; padding:10px; border:none; color:white; margin-top:10px; cursor:pointer; border-radius:5px; font-weight:bold;">FORCE CLEAR CHAT</button>
     <button onclick="document.getElementById('admin-panel').style.display='none'" style="width:100%; background:none; border:none; color:#aaa; cursor:pointer; margin-top:15px; font-size:0.8rem; display:block; margin: 15px auto 0 auto;">Close</button>
 </div>
 
@@ -325,14 +327,12 @@ function handleNewEvent(event) {
 
     const mainImg = document.getElementById('lincoln-main');
     const DEFAULT_IMG = "IMG_0668.jpg"; 
-    const STORM_IMG = "IMG_0682.jpg"; 
+    const STORM_IMG = "IMG_0682.jpg"; // <--- CHANGE THIS to your storm filename!
 
-    // Fix for cross-browser date parsing
     const expiry = new Date(event.expires_at.replace(' ', 'T')).getTime();
-    
     const notice = document.createElement('div');
     notice.id = "event-notice";
-    notice.style = "position:fixed; top:10%; left:50%; transform:translateX(-50%); color:black; padding:15px 30px; border-radius:50px; font-weight:bold; z-index:10000; box-shadow:0 0 20px black; text-align:center; pointer-events:none; transition: all 0.3s ease;";
+    notice.style = "position:fixed; top:10%; left:50%; transform:translateX(-50%); color:black; padding:15px 30px; border-radius:50px; font-weight:bold; z-index:10000; box-shadow:0 0 20px black; text-align:center; pointer-events:none;";
     document.body.appendChild(notice);
 
     eventTimer = setInterval(() => {
@@ -342,12 +342,11 @@ function handleNewEvent(event) {
         if (timeLeft <= 0) {
             eventMultiplier = 1;
             currentEvent = null;
-            mainImg.src = DEFAULT_IMG; 
+            mainImg.src = DEFAULT_IMG; // RESET IMAGE
             mainImg.style.filter = "none";
             document.body.style.boxShadow = "none";
-            if (document.getElementById('event-notice')) notice.remove();
+            notice.remove();
             clearInterval(eventTimer);
-            updateUI(); // Refresh stats to normal
             return;
         }
 
@@ -359,113 +358,52 @@ function handleNewEvent(event) {
             notice.style.background = "#00d2ff";
             notice.innerText = `⚡ STORM! 5X CLICK (${seconds}s)`;
             
+            // SWAP IMAGE HERE
             if (!mainImg.src.includes(STORM_IMG)) {
                 mainImg.src = STORM_IMG;
                 mainImg.style.filter = "drop-shadow(0 0 20px #00d2ff) brightness(1.2)";
             }
         } 
-        else if (currentEvent === 'feast') {
-            eventMultiplier = 2;
-            notice.style.background = "var(--gold)";
-            notice.innerText = `🔥 FEAST! 2X TOTAL MASS (${seconds}s)`;
-            
-            mainImg.src = DEFAULT_IMG; 
-            mainImg.style.filter = "drop-shadow(0 0 20px var(--gold)) brightness(1.1)";
-            document.body.style.boxShadow = "inset 0 0 100px rgba(241, 196, 15, 0.3)";
-        }
-        updateUI(); // Keep the "Per Click" text updated in real-time
+        // ... (rest of your cases like feast or low_carb)
     }, 1000);
 }
-    
-    // This handles the actual clicking of the image
+
 document.getElementById('lincoln-main').addEventListener('click', (e) => {
-    // Math: (Base Power * Golden Torta Bonus) * Event Multiplier
-    const prestigeBoost = 1 + (goldenTortas * 0.1);
-    const val = (clickPower * prestigeBoost) * eventMultiplier;
-    
-    energy += val; 
-    totalClicks++;
-    
-    // Visuals: Show the +Mass floating text
+    let val = (clickPower * (1 + (goldenTortas * 0.1))) * eventMultiplier;
+    energy += val; totalClicks++;
     showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
-    
-    // Update the numbers on screen immediately
     updateUI();
 });
-    
-    setInterval(() => { 
-    let prestigeBoost = 1 + (goldenTortas * 0.1);
-    let baseCPS = cps * prestigeBoost;
-    
-    // Storm is for clicking, Feast is for global production
-    if (currentEvent === 'feast') {
-        baseCPS *= 2; 
-    }
 
-    energy += (baseCPS / 10); 
-    updateUI(); 
+setInterval(() => { 
+    let boostedCPS = (cps * (1 + (goldenTortas * 0.1))) * (currentEvent === 'storm' ? 1 : eventMultiplier);
+    energy += (boostedCPS / 10); updateUI(); 
 }, 100);
 
 function updateUI() {
-    // 1. Calculate Boosts
-    const prestigeBoost = 1 + (goldenTortas * 0.1);
-    
-    // Per Click: Base Power * GT Bonus * Event Multiplier (Storm or Feast)
-    const displayClick = (clickPower * prestigeBoost) * eventMultiplier;
-    
-    // Per Second: Base CPS * GT Bonus. 
-    // We only multiply by 2 if it's a Feast. Storm usually only affects clicks.
-    let displayCPS = (cps * prestigeBoost);
-    if (currentEvent === 'feast') {
-        displayCPS *= 2;
-    }
-
-    // 2. Update Top Panel
     document.getElementById('score-text').innerText = Math.floor(energy).toLocaleString();
-    document.getElementById('stat-click').innerText = displayClick.toFixed(1);
-    document.getElementById('stat-cps').innerText = displayCPS.toFixed(1);
+    document.getElementById('stat-click').innerText = ((clickPower * (1 + (goldenTortas * 0.1))) * eventMultiplier).toFixed(1);
+    document.getElementById('stat-cps').innerText = ((cps * (1 + (goldenTortas * 0.1))) * (currentEvent === 'storm' ? 1 : eventMultiplier)).toFixed(1);
     document.getElementById('stat-prestige').innerText = goldenTortas;
-    
-    // 3. Prestige Button Visibility (1 Billion Mass)
     document.getElementById('prestige-btn').style.display = energy >= 1000000000 ? 'block' : 'none';
     
-    // 4. Update Shop Upgrades
     upgrades.forEach(u => {
         const btn = document.getElementById(`up-${u.id}`);
         if (btn) {
-            const canAfford = energy >= u.cost;
-            btn.disabled = !canAfford;
-            
-            // Visual feedback for being able to afford
-            if (canAfford) {
-                btn.classList.add('can-afford');
-            } else {
-                btn.classList.remove('can-afford');
-            }
-            
+            btn.disabled = energy < u.cost;
+            energy >= u.cost ? btn.classList.add('can-afford') : btn.classList.remove('can-afford');
             document.getElementById(`cost-${u.id}`).innerText = u.cost.toLocaleString() + " Mass";
             document.getElementById(`count-${u.id}`).innerText = u.count;
         }
     });
 
-    // 5. Dynamic Backgrounds & Location Labels
-    const body = document.body; 
-    const label = document.getElementById('env-label');
-    
-    if (energy < 100000) { 
-        body.className = 'bg-kitchen'; 
-        label.innerText = "LOCATION: THE KITCHEN"; 
-    } else if (energy < 10000000) { 
-        body.className = 'bg-buffet'; 
-        label.innerText = "LOCATION: INFINITE BUFFET"; 
-    } else if (energy < 1000000000) { 
-        body.className = 'bg-factory'; 
-        label.innerText = "LOCATION: TORTA FACTORY"; 
-    } else { 
-        body.className = 'bg-space'; 
-        label.innerText = "LOCATION: OUTER SPACE"; 
-    }
+    const body = document.body; const label = document.getElementById('env-label');
+    if (energy < 100000) { body.className = 'bg-kitchen'; label.innerText = "LOCATION: THE KITCHEN"; }
+    else if (energy < 10000000) { body.className = 'bg-buffet'; label.innerText = "LOCATION: INFINITE BUFFET"; }
+    else if (energy < 1000000000) { body.className = 'bg-factory'; label.innerText = "LOCATION: TORTA FACTORY"; }
+    else { body.className = 'bg-space'; label.innerText = "LOCATION: OUTER SPACE"; }
 }
+
 async function cloudSave() {
     if (!chatName) return;
     const saveObj = { energy, clickPower, cps, goldenTortas, totalClicks, upgrades: upgrades.map(u => ({id: u.id, count: u.count, cost: u.cost})) };
@@ -489,25 +427,11 @@ async function cloudLoad() {
 // Admin Logic
 async function adminAction(type) {
     const target = document.getElementById('admin-target-user').value;
-    const val = parseFloat(document.getElementById('admin-value').value);
-    if (!target || isNaN(val)) return alert("Enter target and a valid number");
-
+    const val = document.getElementById('admin-value').value;
+    if (!target) return alert("Enter target");
     if (type === 'mass') {
-        // 1. If targeting yourself, update local game immediately
-        if (target === chatName) { 
-            energy += val; 
-            updateUI(); 
-        }
-        
-        // 2. Update the database (This adds to their current score)
-        const { data } = await _supabase.from('leaderboard').select('clicks').eq('username', target).single();
-        const currentMass = data ? data.clicks : 0;
-        
-        await _supabase.from('leaderboard')
-            .update({ clicks: currentMass + val })
-            .eq('username', target);
-            
-        alert(`Gave ${val.toLocaleString()} Mass to ${target}`);
+        if (target === chatName) { energy += parseFloat(val); updateUI(); }
+        await _supabase.from('leaderboard').update({ clicks: parseFloat(val) }).eq('username', target);
     }
 }
 
@@ -581,38 +505,12 @@ function showParticle(x, y, text) {
 function resetGame() { if (confirm("Reset everything?")) { localStorage.clear(); location.reload(); } }
 
 async function startGame() {
-    initShop(); 
-    cloudLoad();
-
-    // Listen for new events in real-time
-    _supabase.channel('game-events')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, (p) => handleNewEvent(p.new))
-        .subscribe();
-
-    // Fix: Use a cleaner ISO string for the initial check to avoid the 400 error
-    const now = new Date().toISOString();
-    
-    const { data, error } = await _supabase
-        .from('game_events')
-        .select('*')
-        .gt('expires_at', now)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-    // Check for errors to help debugging
-    if (error) {
-        console.error("Error fetching active events:", error.message);
-    } else if (data && data[0]) {
-        handleNewEvent(data[0]);
-    }
-
-    // Timers
-    setInterval(cloudSave, 20000); 
-    setInterval(fetchLeaderboard, 15000);
-    setInterval(() => { 
-        if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); 
-    }, 5000);
-    
+    initShop(); cloudLoad();
+    _supabase.channel('game-events').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, (p) => handleNewEvent(p.new)).subscribe();
+    const { data } = await _supabase.from('game_events').select('*').gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false }).limit(1);
+    if (data && data[0]) handleNewEvent(data[0]);
+    setInterval(cloudSave, 20000); setInterval(fetchLeaderboard, 15000);
+    setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
     fetchLeaderboard();
 }
 
@@ -620,4 +518,5 @@ startGame();
 </script>
 </body>
 </html>
+
 
