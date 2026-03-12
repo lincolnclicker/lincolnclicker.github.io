@@ -103,6 +103,21 @@
         
         .particle { position: fixed; pointer-events: none; animation: flyUp 0.8s forwards; font-weight: bold; color: var(--gold); z-index: 999; }
         
+        #sync-alert {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ff4444;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-family: sans-serif;
+    z-index: 9999;
+    display: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+        
         @keyframes flyUp {  
             0% { transform: translateY(0); opacity: 1; }  
             100% { transform: translateY(-120px); opacity: 0; }  
@@ -405,10 +420,42 @@ function updateUI() {
 }
 
 async function cloudSave() {
-    if (!chatName) return;
-    const saveObj = { energy, clickPower, cps, goldenTortas, totalClicks, upgrades: upgrades.map(u => ({id: u.id, count: u.count, cost: u.cost})) };
-    localStorage.setItem('lincoln_local_save', JSON.stringify(saveObj));
-    await _supabase.from('leaderboard').upsert({ username: chatName, clicks: energy, golden_tortas: goldenTortas }, { onConflict: 'username' });
+    if (!chatName || chatName === "Anonymous") return;
+
+    const { data, error } = await _supabase
+        .from('leaderboard')
+        .upsert({ 
+            username: chatName, 
+            clicks: energy,
+            golden_tortas: goldenTortas // Ensure this matches your table column name
+        }, { onConflict: 'username' });
+
+    if (error) {
+        console.error("Detailed Sync Error:", error);
+        showSyncAlert(`Sync Failed: ${error.message}`);
+    } else {
+        console.log("Cloud Save Successful!");
+        // Optional: Hide alert if it was showing
+        const alertBox = document.getElementById('sync-alert');
+        if (alertBox) alertBox.style.display = 'none';
+    }
+}
+
+// Helper function to show the visual alert
+function showSyncAlert(msg) {
+    let alertBox = document.getElementById('sync-alert');
+    if (!alertBox) {
+        alertBox = document.createElement('div');
+        alertBox.id = 'sync-alert';
+        document.body.appendChild(alertBox);
+    }
+    alertBox.innerText = msg;
+    alertBox.style.display = 'block';
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        alertBox.style.display = 'none';
+    }, 5000);
 }
 
 async function cloudLoad() {
@@ -518,5 +565,6 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
