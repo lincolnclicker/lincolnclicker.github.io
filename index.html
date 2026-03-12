@@ -422,42 +422,28 @@ function updateUI() {
 async function cloudSave() {
     if (!chatName || chatName === "Anonymous") return;
 
+    // Use Math.floor to turn 118.5000... into 118
+    const roundedClicks = Math.floor(energy);
+    const roundedTortas = Math.floor(goldenTortas);
+
     const { data, error } = await _supabase
         .from('leaderboard')
         .upsert({ 
             username: chatName, 
-            clicks: energy,
-            golden_tortas: goldenTortas // Ensure this matches your table column name
+            clicks: roundedClicks,         // Send the whole number
+            golden_tortas: roundedTortas   // Send the whole number
         }, { onConflict: 'username' });
 
     if (error) {
         console.error("Detailed Sync Error:", error);
         showSyncAlert(`Sync Failed: ${error.message}`);
     } else {
-        console.log("Cloud Save Successful!");
-        // Optional: Hide alert if it was showing
+        // Success! Hide the alert if it was there
         const alertBox = document.getElementById('sync-alert');
         if (alertBox) alertBox.style.display = 'none';
     }
 }
-
-// Helper function to show the visual alert
-function showSyncAlert(msg) {
-    let alertBox = document.getElementById('sync-alert');
-    if (!alertBox) {
-        alertBox = document.createElement('div');
-        alertBox.id = 'sync-alert';
-        document.body.appendChild(alertBox);
-    }
-    alertBox.innerText = msg;
-    alertBox.style.display = 'block';
     
-    // Auto-hide after 5 seconds
-    setTimeout(() => {
-        alertBox.style.display = 'none';
-    }, 5000);
-}
-
 async function cloudLoad() {
     const local = localStorage.getItem('lincoln_local_save');
     if (local) {
@@ -565,6 +551,7 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
 
