@@ -581,12 +581,38 @@ function showParticle(x, y, text) {
 function resetGame() { if (confirm("Reset everything?")) { localStorage.clear(); location.reload(); } }
 
 async function startGame() {
-    initShop(); cloudLoad();
-    _supabase.channel('game-events').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, (p) => handleNewEvent(p.new)).subscribe();
-    const { data } = await _supabase.from('game_events').select('*').gt('expires_at', new Date().toISOString()).order('created_at', { ascending: false }).limit(1);
-    if (data && data[0]) handleNewEvent(data[0]);
-    setInterval(cloudSave, 20000); setInterval(fetchLeaderboard, 15000);
-    setInterval(() => { if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); }, 5000);
+    initShop(); 
+    cloudLoad();
+
+    // Listen for new events in real-time
+    _supabase.channel('game-events')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, (p) => handleNewEvent(p.new))
+        .subscribe();
+
+    // Fix: Use a cleaner ISO string for the initial check to avoid the 400 error
+    const now = new Date().toISOString();
+    
+    const { data, error } = await _supabase
+        .from('game_events')
+        .select('*')
+        .gt('expires_at', now)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+    // Check for errors to help debugging
+    if (error) {
+        console.error("Error fetching active events:", error.message);
+    } else if (data && data[0]) {
+        handleNewEvent(data[0]);
+    }
+
+    // Timers
+    setInterval(cloudSave, 20000); 
+    setInterval(fetchLeaderboard, 15000);
+    setInterval(() => { 
+        if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); 
+    }, 5000);
+    
     fetchLeaderboard();
 }
 
@@ -594,3 +620,4 @@ startGame();
 </script>
 </body>
 </html>
+
