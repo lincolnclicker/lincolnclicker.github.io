@@ -540,25 +540,25 @@ function updateUI() {
 async function cloudSave() {
     if (!chatName || chatName === "Anonymous") return;
 
-    // Use Math.floor to turn 118.5000... into 118
-    const roundedClicks = Math.floor(energy);
-    const roundedTortas = Math.floor(goldenTortas);
+    // Use Math.round to ensure we only send clean integers to Supabase
+    const savedClicks = Math.round(energy);
+    const savedTortas = Math.round(goldenTortas);
 
-    const { data, error } = await _supabase
+    const { error } = await _supabase
         .from('leaderboard')
         .upsert({ 
             username: chatName, 
-            clicks: roundedClicks,         // Send the whole number
-            golden_tortas: roundedTortas   // Send the whole number
+            clicks: savedClicks, 
+            golden_tortas: savedTortas 
         }, { onConflict: 'username' });
 
     if (error) {
-        console.error("Detailed Sync Error:", error);
-        showSyncAlert(`Sync Failed: ${error.message}`);
+        console.error("Sync Error:", error.message);
+        document.getElementById('sync-status').innerText = "Sync Error!";
+        document.getElementById('sync-status').style.color = "#ff4757";
     } else {
-        // Success! Hide the alert if it was there
-        const alertBox = document.getElementById('sync-alert');
-        if (alertBox) alertBox.style.display = 'none';
+        document.getElementById('sync-status').innerText = "Sync Active";
+        document.getElementById('sync-status').style.color = "#777";
     }
 }
     
@@ -694,6 +694,7 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
 
