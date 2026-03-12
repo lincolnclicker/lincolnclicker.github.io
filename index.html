@@ -400,7 +400,7 @@ function handleNewEvent(event) {
     }, 1000);
 }
     
-// Add this so the announcement listener doesn't crash the game
+// --- ANNOUNCEMENTS & VISUALS ---
 function showAnnouncementPopup(text) {
     const alertBox = document.createElement('div');
     alertBox.style = `
@@ -420,90 +420,74 @@ function showAnnouncementPopup(text) {
         setTimeout(() => alertBox.remove(), 1000);
     }, 5000);
 }
-    
-    energy += val; 
-    totalClicks++;
-    
-    // Visuals: Show the +Mass floating text
-    showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
-    
-    // Update the numbers on screen immediately
-    updateUI();
-});
-    
-    setInterval(() => { 
-    let prestigeBoost = 1 + (goldenTortas * 0.1);
-    let baseCPS = cps * prestigeBoost;
-    
-    // Storm is for clicking, Feast is for global production
-    if (currentEvent === 'feast') {
-        baseCPS *= 2; 
-    }
 
-    energy += (baseCPS / 10); 
+function showParticle(x, y, text) {
+    const p = document.createElement('div'); 
+    p.className = 'particle'; 
+    p.innerText = text;
+    p.style.left = x + 'px'; 
+    p.style.top = y + 'px';
+    document.body.appendChild(p); 
+    setTimeout(() => p.remove(), 800);
+}
+
+// --- CORE GAME LOOP (CPS) ---
+setInterval(() => { 
+    const prestigeBoost = 1 + (goldenTortas * 0.1);
+    let currentCPS = cps * prestigeBoost;
+    
+    // Feast doubles total mass production per second
+    if (currentEvent === 'feast') currentCPS *= 2;
+
+    energy += (currentCPS / 10); 
     updateUI(); 
 }, 100);
 
+// --- UI REFRESH ---
 function updateUI() {
-    // 1. Calculate Boosts
     const prestigeBoost = 1 + (goldenTortas * 0.1);
     
-    // Per Click: Base Power * GT Bonus * Event Multiplier (Storm or Feast)
+    // Calculate display values
     const displayClick = (clickPower * prestigeBoost) * eventMultiplier;
-    
-    // Per Second: Base CPS * GT Bonus. 
-    // We only multiply by 2 if it's a Feast. Storm usually only affects clicks.
     let displayCPS = (cps * prestigeBoost);
-    if (currentEvent === 'feast') {
-        displayCPS *= 2;
-    }
+    if (currentEvent === 'feast') displayCPS *= 2;
 
-    // 2. Update Top Panel
+    // Update Text
     document.getElementById('score-text').innerText = Math.floor(energy).toLocaleString();
     document.getElementById('stat-click').innerText = displayClick.toFixed(1);
     document.getElementById('stat-cps').innerText = displayCPS.toFixed(1);
     document.getElementById('stat-prestige').innerText = goldenTortas;
     
-    // 3. Prestige Button Visibility (1 Billion Mass)
+    // Prestige Visibility
     document.getElementById('prestige-btn').style.display = energy >= 1000000000 ? 'block' : 'none';
     
-    // 4. Update Shop Upgrades
+    // Update Upgrades
     upgrades.forEach(u => {
         const btn = document.getElementById(`up-${u.id}`);
         if (btn) {
             const canAfford = energy >= u.cost;
             btn.disabled = !canAfford;
-            
-            // Visual feedback for being able to afford
-            if (canAfford) {
-                btn.classList.add('can-afford');
-            } else {
-                btn.classList.remove('can-afford');
-            }
-            
+            btn.classList.toggle('can-afford', canAfford);
             document.getElementById(`cost-${u.id}`).innerText = u.cost.toLocaleString() + " Mass";
             document.getElementById(`count-${u.id}`).innerText = u.count;
         }
     });
 
-    // 5. Dynamic Backgrounds & Location Labels
+    // Background & Location Scaling
     const body = document.body; 
     const label = document.getElementById('env-label');
-    
     if (energy < 100000) { 
-        body.className = 'bg-kitchen'; 
-        label.innerText = "LOCATION: THE KITCHEN"; 
+        body.className = 'bg-kitchen'; label.innerText = "LOCATION: THE KITCHEN"; 
     } else if (energy < 10000000) { 
-        body.className = 'bg-buffet'; 
-        label.innerText = "LOCATION: INFINITE BUFFET"; 
+        body.className = 'bg-buffet'; label.innerText = "LOCATION: INFINITE BUFFET"; 
     } else if (energy < 1000000000) { 
-        body.className = 'bg-factory'; 
-        label.innerText = "LOCATION: TORTA FACTORY"; 
+        body.className = 'bg-factory'; label.innerText = "LOCATION: TORTA FACTORY"; 
     } else { 
-        body.className = 'bg-space'; 
-        label.innerText = "LOCATION: OUTER SPACE"; 
+        body.className = 'bg-space'; label.innerText = "LOCATION: OUTER SPACE"; 
     }
 }
+
+// --- DATA & ADMIN ---
 async function cloudSave() {
     if (!chatName) return;
     const saveObj = { energy, clickPower, cps, goldenTortas, totalClicks, upgrades: upgrades.map(u => ({id: u.id, count: u.count, cost: u.cost})) };
@@ -524,158 +508,29 @@ async function cloudLoad() {
     updateUI();
 }
 
-// Admin Logic
 async function adminAction(type) {
     const target = document.getElementById('admin-target-user').value;
     const val = parseFloat(document.getElementById('admin-value').value);
     if (!target || isNaN(val)) return alert("Enter target and a valid number");
 
     if (type === 'mass') {
-        // 1. If targeting yourself, update local game immediately
-        if (target === chatName) { 
-            energy += val; 
-            updateUI(); 
-        }
-        
-        // 2. Update the database (This adds to their current score)
+        if (target === chatName) { energy += val; updateUI(); }
         const { data } = await _supabase.from('leaderboard').select('clicks').eq('username', target).single();
-        const currentMass = data ? data.clicks : 0;
-        
-        await _supabase.from('leaderboard')
-            .update({ clicks: currentMass + val })
-            .eq('username', target);
-            
+        await _supabase.from('leaderboard').update({ clicks: (data?.clicks || 0) + val }).eq('username', target);
         alert(`Gave ${val.toLocaleString()} Mass to ${target}`);
+    } else if (type === 'timeout') {
+        // Sets a future date for the timeout to end
+        const timeoutEnd = new Date(Date.now() + val * 60000).toISOString();
+        await _supabase.from('leaderboard').update({ timeout_until: timeoutEnd }).eq('username', target);
+        alert(`${target} timed out for ${val} minutes.`);
     }
 }
-
-function initShop() {
-    const shop = document.getElementById('shop'); shop.innerHTML = '';
-    upgrades.forEach(u => {
-        const btn = document.createElement('button');
-        btn.className = 'upgrade'; btn.id = `up-${u.id}`;
-        btn.onclick = () => buyUpgrade(u.id);
-        btn.innerHTML = `<div class="u-info"><span class="u-name">${u.name}</span><span class="u-desc">${u.desc}</span><span class="u-cost" id="cost-${u.id}">${u.cost.toLocaleString()} Mass</span></div><div class="u-count" id="count-${u.id}">${u.count}</div>`;
-        shop.appendChild(btn);
-    });
-}
-
-function buyUpgrade(id) {
-    const u = upgrades[id];
-    if (energy >= u.cost) {
-        energy -= u.cost; u.count++;
-        if (u.type === "click") clickPower += u.power; else cps += u.power;
-        u.cost = Math.ceil(u.cost * 1.35); updateUI(); cloudSave();
-    }
-}
-
-function toggleChat() {
-    const b = document.getElementById('chat-box');
-    if (b.style.display === 'flex') { b.style.display = 'none'; return; }
-    if (!chatName) {
-        let input = prompt("Enter Username:");
-        if (!input) return;
-        chatName = input.trim();
-        localStorage.setItem('chat_name', chatName);
-    }
-    b.style.display = 'flex'; fetchMessages();
-}
-
-async function fetchMessages() {
-    const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(30);
-    if (data) {
-        document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `
-            <div class="msg ${m.username === currentKing ? 'king-msg' : ''}"><b>${m.username}:</b> ${m.message}</div>`).join('');
-        const c = document.getElementById('chat-messages'); c.scrollTop = c.scrollHeight;
-    }
-}
-
-async function sendChat(emoteMsg = null) {
-    if (!chatName) return;
-    const input = document.getElementById('chat-msg-input');
-    const message = emoteMsg || input.value;
-    if (!message) return;
-    await _supabase.from('global_chat').insert([{ username: chatName, message: message }]);
-    input.value = ""; fetchMessages();
-}
-
-function sendEmote(char) { sendChat(char); }
-
-async function fetchLeaderboard() {
-    const { data } = await _supabase.from('leaderboard').select('username, clicks, golden_tortas').order('clicks', { ascending: false }).limit(10);
-    if (data) {
-        document.getElementById('lb-content').innerHTML = data.map((u, i) => `
-            <div class="lb-row"><span><span class="lb-rank">#${i+1}</span> ${u.username}</span><span>${Math.floor(u.clicks).toLocaleString()} <small>(${u.golden_tortas} GT)</small></span></div>`).join('');
-        if (data[0]) { currentKing = data[0].username; document.getElementById('king-display').innerText = `👑 King: ${currentKing}`; }
-    }
-}
-
-function showParticle(x, y, text) {
-    const p = document.createElement('div'); p.className = 'particle'; p.innerText = text;
-    p.style.left = x + 'px'; p.style.top = y + 'px';
-    document.body.appendChild(p); setTimeout(() => p.remove(), 800);
-}
-
-function resetGame() { if (confirm("Reset everything?")) { localStorage.clear(); location.reload(); } }
-
-async function startGame() {
-    // 1. Initialize UI and Load Data
-    initShop(); 
-    await cloudLoad(); // Loading cloud data before starting timers
-
-    // 2. The Manual Click Listener
-    // Moved here to ensure the DOM is ready before clicking starts
-    document.getElementById('lincoln-main').addEventListener('click', (e) => {
-        const prestigeBoost = 1 + (goldenTortas * 0.1);
-        const val = (clickPower * prestigeBoost) * eventMultiplier;
-        
-        energy += val; 
-        totalClicks++;
-        
-        // Show floating text (+Mass)
-        showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
-        
-        // Update UI immediately for responsiveness
-        updateUI();
-    });
-
-    // 3. Realtime Listener: Game Events (Storms/Feasts)
-    _supabase.channel('game-events')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'game_events' }, (p) => handleNewEvent(p.new))
-        .subscribe();
-
-    // Check if there is an active event currently running when the page loads
-    const { data: eventData } = await _supabase.from('game_events')
-        .select('*')
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false })
-        .limit(1);
-    if (eventData && eventData[0]) handleNewEvent(eventData[0]);
-
-    // 4. Realtime Listener: Global Announcements (The Admin Popups)
-    _supabase.channel('global-announcements')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'announcements' }, payload => {
-            showAnnouncementPopup(payload.new.message);
-        })
-        .subscribe();
-
-    // 5. Game Loops (Timers)
-    setInterval(cloudSave, 20000);           // Save to Supabase every 20 seconds
-    setInterval(fetchLeaderboard, 15000);    // Update ranks every 15 seconds
     
-    // Update Chat every 5 seconds, but only if the chat box is actually open
-    setInterval(() => { 
-        if(document.getElementById('chat-box').style.display === 'flex') fetchMessages(); 
-    }, 5000);
-
-    // Initial fetch to show leaderboard immediately
-    fetchLeaderboard();
-}
-
 startGame();
 </script>
 </body>
 </html>
+
 
 
 
