@@ -329,7 +329,9 @@ function handleNewEvent(event) {
     const DEFAULT_IMG = "IMG_0668.jpg"; 
     const STORM_IMG = "IMG_0682.jpg"; 
 
+    // Fix for cross-browser date parsing
     const expiry = new Date(event.expires_at.replace(' ', 'T')).getTime();
+    
     const notice = document.createElement('div');
     notice.id = "event-notice";
     notice.style = "position:fixed; top:10%; left:50%; transform:translateX(-50%); color:black; padding:15px 30px; border-radius:50px; font-weight:bold; z-index:10000; box-shadow:0 0 20px black; text-align:center; pointer-events:none; transition: all 0.3s ease;";
@@ -345,15 +347,15 @@ function handleNewEvent(event) {
             mainImg.src = DEFAULT_IMG; 
             mainImg.style.filter = "none";
             document.body.style.boxShadow = "none";
-            notice.remove();
+            if (document.getElementById('event-notice')) notice.remove();
             clearInterval(eventTimer);
+            updateUI(); // Refresh stats to normal
             return;
         }
 
         const seconds = Math.ceil(timeLeft / 1000);
         currentEvent = event.event_type;
 
-        // --- STORM EVENT (5x Click) ---
         if (currentEvent === 'storm') {
             eventMultiplier = 5;
             notice.style.background = "#00d2ff";
@@ -364,63 +366,108 @@ function handleNewEvent(event) {
                 mainImg.style.filter = "drop-shadow(0 0 20px #00d2ff) brightness(1.2)";
             }
         } 
-        // --- FEAST EVENT (2x Total) ---
         else if (currentEvent === 'feast') {
             eventMultiplier = 2;
             notice.style.background = "var(--gold)";
             notice.innerText = `🔥 FEAST! 2X TOTAL MASS (${seconds}s)`;
             
-            mainImg.src = DEFAULT_IMG; // Keep standard image for Feast
+            mainImg.src = DEFAULT_IMG; 
             mainImg.style.filter = "drop-shadow(0 0 20px var(--gold)) brightness(1.1)";
             document.body.style.boxShadow = "inset 0 0 100px rgba(241, 196, 15, 0.3)";
         }
+        updateUI(); // Keep the "Per Click" text updated in real-time
     }, 1000);
 }
-
+    
+    // This handles the actual clicking of the image
 document.getElementById('lincoln-main').addEventListener('click', (e) => {
-    let val = (clickPower * (1 + (goldenTortas * 0.1))) * eventMultiplier;
-    energy += val; totalClicks++;
+    // Math: (Base Power * Golden Torta Bonus) * Event Multiplier
+    const prestigeBoost = 1 + (goldenTortas * 0.1);
+    const val = (clickPower * prestigeBoost) * eventMultiplier;
+    
+    energy += val; 
+    totalClicks++;
+    
+    // Visuals: Show the +Mass floating text
     showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
+    
+    // Update the numbers on screen immediately
     updateUI();
 });
-
-setInterval(() => { 
-    let prestigeBoost = 1 + (goldenTortas * 0.1);
-    let boostedCPS = (cps * prestigeBoost);
     
-    // Apply Feast to CPS (Storm usually only affects clicks)
+    setInterval(() => { 
+    let prestigeBoost = 1 + (goldenTortas * 0.1);
+    let baseCPS = cps * prestigeBoost;
+    
+    // Storm is for clicking, Feast is for global production
     if (currentEvent === 'feast') {
-        boostedCPS *= 2; 
+        baseCPS *= 2; 
     }
 
-    energy += (boostedCPS / 10); 
+    energy += (baseCPS / 10); 
     updateUI(); 
 }, 100);
 
 function updateUI() {
+    // 1. Calculate Boosts
+    const prestigeBoost = 1 + (goldenTortas * 0.1);
+    
+    // Per Click: Base Power * GT Bonus * Event Multiplier (Storm or Feast)
+    const displayClick = (clickPower * prestigeBoost) * eventMultiplier;
+    
+    // Per Second: Base CPS * GT Bonus. 
+    // We only multiply by 2 if it's a Feast. Storm usually only affects clicks.
+    let displayCPS = (cps * prestigeBoost);
+    if (currentEvent === 'feast') {
+        displayCPS *= 2;
+    }
+
+    // 2. Update Top Panel
     document.getElementById('score-text').innerText = Math.floor(energy).toLocaleString();
-    document.getElementById('stat-click').innerText = ((clickPower * (1 + (goldenTortas * 0.1))) * eventMultiplier).toFixed(1);
-    document.getElementById('stat-cps').innerText = ((cps * (1 + (goldenTortas * 0.1))) * (currentEvent === 'storm' ? 1 : eventMultiplier)).toFixed(1);
+    document.getElementById('stat-click').innerText = displayClick.toFixed(1);
+    document.getElementById('stat-cps').innerText = displayCPS.toFixed(1);
     document.getElementById('stat-prestige').innerText = goldenTortas;
+    
+    // 3. Prestige Button Visibility (1 Billion Mass)
     document.getElementById('prestige-btn').style.display = energy >= 1000000000 ? 'block' : 'none';
     
+    // 4. Update Shop Upgrades
     upgrades.forEach(u => {
         const btn = document.getElementById(`up-${u.id}`);
         if (btn) {
-            btn.disabled = energy < u.cost;
-            energy >= u.cost ? btn.classList.add('can-afford') : btn.classList.remove('can-afford');
+            const canAfford = energy >= u.cost;
+            btn.disabled = !canAfford;
+            
+            // Visual feedback for being able to afford
+            if (canAfford) {
+                btn.classList.add('can-afford');
+            } else {
+                btn.classList.remove('can-afford');
+            }
+            
             document.getElementById(`cost-${u.id}`).innerText = u.cost.toLocaleString() + " Mass";
             document.getElementById(`count-${u.id}`).innerText = u.count;
         }
     });
 
-    const body = document.body; const label = document.getElementById('env-label');
-    if (energy < 100000) { body.className = 'bg-kitchen'; label.innerText = "LOCATION: THE KITCHEN"; }
-    else if (energy < 10000000) { body.className = 'bg-buffet'; label.innerText = "LOCATION: INFINITE BUFFET"; }
-    else if (energy < 1000000000) { body.className = 'bg-factory'; label.innerText = "LOCATION: TORTA FACTORY"; }
-    else { body.className = 'bg-space'; label.innerText = "LOCATION: OUTER SPACE"; }
+    // 5. Dynamic Backgrounds & Location Labels
+    const body = document.body; 
+    const label = document.getElementById('env-label');
+    
+    if (energy < 100000) { 
+        body.className = 'bg-kitchen'; 
+        label.innerText = "LOCATION: THE KITCHEN"; 
+    } else if (energy < 10000000) { 
+        body.className = 'bg-buffet'; 
+        label.innerText = "LOCATION: INFINITE BUFFET"; 
+    } else if (energy < 1000000000) { 
+        body.className = 'bg-factory'; 
+        label.innerText = "LOCATION: TORTA FACTORY"; 
+    } else { 
+        body.className = 'bg-space'; 
+        label.innerText = "LOCATION: OUTER SPACE"; 
+    }
 }
-
 async function cloudSave() {
     if (!chatName) return;
     const saveObj = { energy, clickPower, cps, goldenTortas, totalClicks, upgrades: upgrades.map(u => ({id: u.id, count: u.count, cost: u.cost})) };
@@ -535,5 +582,6 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
