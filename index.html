@@ -501,6 +501,13 @@ function createRaindrop() {
     setTimeout(() => { drop.remove(); }, 1000);
 }
 
+document.getElementById('lincoln-main').addEventListener('click', (e) => {
+    let val = (clickPower * (1 + (goldenTortas * 0.1))) * eventMultiplier;
+    energy += val; totalClicks++;
+    showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
+    updateUI();
+});
+      
 setInterval(() => { 
     let boostedCPS = (cps * (1 + (goldenTortas * 0.1))) * (currentEvent === 'storm' ? 1 : eventMultiplier);
     energy += (boostedCPS / 10); updateUI(); 
@@ -726,6 +733,7 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
 
