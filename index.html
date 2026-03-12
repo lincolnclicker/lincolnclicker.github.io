@@ -179,7 +179,8 @@
 </head>
 <body class="bg-kitchen">
 
-
+<audio id="bgm" src="backround.mp3" loop prefetch></audio>
+  
     <div id="announcement-bar" onclick="this.style.display='none'">
     <span id="announcement-text"></span>
     <span style="margin-left:20px; font-size:0.7rem; opacity:0.6;">(Click to dismiss)</span>
@@ -290,6 +291,23 @@ let upgrades = initialUpgrades.map(u => ({...u, count: 0}));
 
 // 1. Update the openAdmin function to check the database
 
+    
+  const music = document.getElementById('bgm');
+music.volume = 0.3; // Set volume to 30% so it's not overwhelming
+
+// Function to start music (only happens once)
+function startMusic() {
+    music.play().catch(error => {
+        console.log("Autoplay prevented. Music will start on next click.");
+    });
+    // Remove the listener so it doesn't keep trying to "start" every click
+    document.removeEventListener('click', startMusic);
+    document.removeEventListener('touchstart', startMusic);
+}
+
+// Listen for the very first interaction to trigger audio
+document.addEventListener('click', startMusic);
+document.addEventListener('touchstart', startMusic);
     
     // 1. Admin Function to send the message
 async function postAnnouncement() {
@@ -733,6 +751,7 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
 
