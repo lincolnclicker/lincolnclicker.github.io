@@ -501,13 +501,6 @@ function createRaindrop() {
     setTimeout(() => { drop.remove(); }, 1000);
 }
 
-    document.getElementById('lincoln-main').addEventListener('click', (e) => {
-    let val = (clickPower * (1 + (goldenTortas * 0.1))) * eventMultiplier;
-    energy += val; totalClicks++;
-    showParticle(e.clientX, e.clientY, `+${val.toFixed(1)}`);
-    updateUI();
-});
-
 setInterval(() => { 
     let boostedCPS = (cps * (1 + (goldenTortas * 0.1))) * (currentEvent === 'storm' ? 1 : eventMultiplier);
     energy += (boostedCPS / 10); updateUI(); 
@@ -563,19 +556,58 @@ async function cloudSave() {
 }
     
 async function cloudLoad() {
+    // 1. Try to load from Supabase (Cloud)
+    if (chatName && chatName !== "Anonymous") {
+        const { data, error } = await _supabase
+            .from('leaderboard')
+            .select('clicks, golden_tortas')
+            .eq('username', chatName)
+            .single();
+
+        if (data && !error) {
+            // Priority: Use Cloud Data
+            energy = data.clicks || 0;
+            goldenTortas = data.golden_tortas || 0;
+            console.log("Cloud save loaded for:", chatName);
+        }
+    }
+
+    // 2. Load Upgrades and Stats from Local Storage 
+    // (We keep upgrades local for now to save database space)
     const local = localStorage.getItem('lincoln_local_save');
     if (local) {
         const d = JSON.parse(local);
-        energy = d.energy || 0; clickPower = d.clickPower || 1; cps = d.cps || 0; 
-        goldenTortas = d.goldenTortas || 0; totalClicks = d.totalClicks || 0;
+        
+        // Only use local energy if cloud failed
+        if (!energy) energy = d.energy || 0; 
+        
+        clickPower = d.clickPower || 1; 
+        cps = d.cps || 0; 
+        totalClicks = d.totalClicks || 0;
+        
         d.upgrades?.forEach((savedU, i) => { 
-            if(upgrades[i]) { upgrades[i].count = savedU.count; upgrades[i].cost = savedU.cost; } 
+            if(upgrades[i]) { 
+                upgrades[i].count = savedU.count; 
+                upgrades[i].cost = savedU.cost; 
+            } 
         });
     }
+
+    // 3. Refresh the screen
     updateUI();
 }
 
-// Admin Logic
+
+   localStorage.setItem('lincoln_local_save', JSON.stringify({
+    energy: energy,
+    clickPower: clickPower,
+    cps: cps,
+    goldenTortas: goldenTortas,
+    totalClicks: totalClicks,
+    upgrades: upgrades
+})); 
+    
+    // Admin Logic
 async function adminAction(type) {
     const target = document.getElementById('admin-target-user').value;
     const val = document.getElementById('admin-value').value;
@@ -694,6 +726,7 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
 
