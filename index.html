@@ -118,6 +118,12 @@
             animation: pulse-gold 2s infinite;
             border: 2px solid white;
         }
+    
+    @keyframes flyIn {
+    0% { transform: translateX(-50%) translateY(-100px); opacity: 0; }
+    100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+    
     </style>
 </head>
 <body class="bg-kitchen">
@@ -394,11 +400,26 @@ function handleNewEvent(event) {
     }, 1000);
 }
     
-    // This handles the actual clicking of the image
-document.getElementById('lincoln-main').addEventListener('click', (e) => {
-    // Math: (Base Power * Golden Torta Bonus) * Event Multiplier
-    const prestigeBoost = 1 + (goldenTortas * 0.1);
-    const val = (clickPower * prestigeBoost) * eventMultiplier;
+// Add this so the announcement listener doesn't crash the game
+function showAnnouncementPopup(text) {
+    const alertBox = document.createElement('div');
+    alertBox.style = `
+        position: fixed; top: 20%; left: 50%; transform: translateX(-50%);
+        background: rgba(108, 92, 231, 0.95); color: white; padding: 20px 40px;
+        border-radius: 15px; border: 3px solid #f1c40f; font-size: 1.5rem;
+        z-index: 20000; text-align: center; box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        animation: flyIn 0.5s ease-out; pointer-events: none;
+    `;
+    alertBox.innerHTML = `<div style="color:#f1c40f; font-size:0.8rem; margin-bottom:5px;">ADMIN ANNOUNCEMENT</div>${text}`;
+    
+    document.body.appendChild(alertBox);
+
+    setTimeout(() => {
+        alertBox.style.opacity = '0';
+        alertBox.style.transition = 'opacity 1s';
+        setTimeout(() => alertBox.remove(), 1000);
+    }, 5000);
+}
     
     energy += val; 
     totalClicks++;
@@ -655,6 +676,7 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
 
