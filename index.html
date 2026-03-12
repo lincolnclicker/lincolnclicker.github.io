@@ -434,11 +434,20 @@ function buyUpgrade(id) {
 }
 
 async function fetchMessages() {
-    const { data } = await _supabase.from('global_chat').select('*').order('created_at', { ascending: false }).limit(30);
+    const { data, error } = await _supabase
+        .from('global_chat')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(30);
+
     if (data) {
-        document.getElementById('chat-messages').innerHTML = data.reverse().map(m => `
-            <div class="msg ${m.username === currentKing ? 'king-msg' : ''}"><b>${m.username}:</b> ${m.message}</div>`).join('');
-        const c = document.getElementById('chat-messages'); c.scrollTop = c.scrollHeight;
+        const messagesHolder = document.getElementById('chat-messages');
+        messagesHolder.innerHTML = data.reverse().map(m => `
+            <div class="msg ${m.username === currentKing ? 'king-msg' : ''}">
+                <b>${m.username}:</b> ${m.message}
+            </div>`).join('');
+        
+        messagesHolder.scrollTop = messagesHolder.scrollHeight;
     }
 }
 
@@ -462,14 +471,10 @@ function toggleChat() {
     if (b.style.display === 'flex') {
         b.style.display = 'none';
     } else {
-        // Opening the chat
         b.style.display = 'flex';
         fetchMessages();
-        
-        // Clear the badge
-        unreadCount = 0;
+        unreadCount = 0; // Reset count
         badge.style.display = 'none';
-        badge.innerText = '0';
     }
 }
 
@@ -543,6 +548,7 @@ startGame();
 </script>
 </body>
 </html>
+
 
 
 
