@@ -14,7 +14,7 @@
             overflow: hidden;
         }
 
-        /* The "Blurry" background version of your site */
+        /* Blurry background using your screenshot */
         .site-screenshot {
             position: fixed;
             width: 100%;
@@ -22,7 +22,7 @@
             background-image: url('IMG_0718.jpeg');
             background-size: cover;
             background-position: center;
-            filter: blur(8px) brightness(0.4);
+            filter: blur(10px) brightness(0.3);
             z-index: 1;
         }
 
@@ -39,34 +39,37 @@
         }
 
         #lincoln-down {
-            width: 200px;
-            height: 200px;
+            width: 220px;
+            height: 220px;
             border-radius: 50%;
-            border: 5px solid #ffcc00;
+            border: 6px solid #ffcc00;
             margin-bottom: 20px;
-            box-shadow: 0 0 50px rgba(255, 204, 0, 0.2);
+            box-shadow: 0 0 40px rgba(255, 204, 0, 0.4);
+            object-fit: cover;
         }
 
         h1 {
-            font-size: 3rem;
+            font-size: 3.5rem;
             text-transform: uppercase;
             color: #ffcc00;
-            text-shadow: 2px 2px 10px #000;
+            text-shadow: 3px 3px 15px #000;
             margin: 0;
         }
 
         p {
-            font-size: 1.2rem;
-            background: rgba(0,0,0,0.7);
-            padding: 10px 20px;
-            border-radius: 8px;
+            font-size: 1.4rem;
+            background: rgba(0,0,0,0.8);
+            padding: 15px 30px;
+            border-radius: 12px;
+            border: 1px solid #444;
+            max-width: 80%;
         }
 
-        /* CAUTION TAPE */
+        /* ANIMATED CAUTION TAPE */
         .caution-tape {
             position: absolute;
-            width: 150%;
-            height: 60px;
+            width: 200%;
+            height: 70px;
             background: #ffcc00;
             background-image: repeating-linear-gradient(
                 45deg,
@@ -77,28 +80,27 @@
             );
             display: flex;
             align-items: center;
-            justify-content: center;
             color: #000;
             font-weight: 900;
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             text-transform: uppercase;
-            letter-spacing: 5px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
             z-index: 20;
-            white-space: nowrap;
             overflow: hidden;
         }
 
-        .tape-1 { top: 30%; transform: rotate(-10deg) translateX(-10%); }
-        .tape-2 { bottom: 30%; transform: rotate(10deg) translateX(-10%); }
-
-        @keyframes slide {
-            from { transform: translateX(0); }
-            to { transform: translateX(-50%); }
-        }
+        .tape-1 { top: 25%; transform: rotate(-7deg) translateX(-10%); }
+        .tape-2 { bottom: 25%; transform: rotate(7deg) translateX(-10%); }
 
         .tape-text {
-            animation: slide 10s linear infinite;
+            display: flex;
+            white-space: nowrap;
+            animation: scroll-tape 15s linear infinite;
+        }
+
+        @keyframes scroll-tape {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
         }
     </style>
 </head>
@@ -107,25 +109,24 @@
     <div class="site-screenshot"></div>
 
     <div class="caution-tape tape-1">
-        <div class="tape-text">CAUTION &nbsp;&nbsp; WEBSITE DOWN &nbsp;&nbsp; MASS GRIND PAUSED &nbsp;&nbsp; CAUTION &nbsp;&nbsp; WEBSITE DOWN &nbsp;&nbsp; </div>
+        <div class="tape-text">
+            &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; 
+            &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; 
+        </div>
     </div>
+
     <div class="caution-tape tape-2">
-        <div class="tape-text">DO NOT CROSS &nbsp;&nbsp; UNDER MAINTENANCE &nbsp;&nbsp; LINCOLN IS TIRED &nbsp;&nbsp; DO NOT CROSS &nbsp;&nbsp; </div>
+        <div class="tape-text">
+            &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; TORTA OVERLOAD &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; 
+            &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; TORTA OVERLOAD &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; 
+        </div>
     </div>
 
     <div class="maintenance-container">
         <img src="IMG_0668.jpg" id="lincoln-down">
-        <h1>Website Currently Down</h1>
-        <p>We are currently upgrading the Torta Factory. <br>Please check back later to resume the grind.</p>
+        <h1>Website Down</h1>
+        <p>The Torta Factory is currently undergoing emergency maintenance.<br>The Heavyweights will return shortly.</p>
     </div>
 
-    <script>
-        // Set this to false when you want the site to come back up!
-        const isDown = true;
-
-        if (!isDown) {
-            window.location.href = "index.html"; 
-        }
-    </script>
 </body>
 </html>
