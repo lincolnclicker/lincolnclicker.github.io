@@ -14,7 +14,6 @@
             overflow: hidden;
         }
 
-        /* Blurry background using your site screenshot */
         .site-screenshot {
             position: fixed;
             width: 100%;
@@ -24,7 +23,7 @@
             background-position: center;
             filter: blur(12px) brightness(0.25);
             z-index: 1;
-            transform: scale(1.1); /* Prevents white edges from blur */
+            transform: scale(1.1);
         }
 
         .maintenance-container {
@@ -70,41 +69,42 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.8);
         }
 
-        p {
-            font-size: clamp(0.9rem, 4vw, 1.2rem);
-            margin: 0 0 15px 0;
-            color: #ddd;
-        }
-
         #timer {
             font-family: 'Courier New', Courier, monospace;
             font-size: clamp(1.4rem, 6vw, 2.2rem);
             color: #ffcc00;
             font-weight: bold;
             letter-spacing: 2px;
-            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+            margin-top: 10px;
         }
 
-        /* ANIMATED CAUTION TAPE */
+        /* Maintenance Log Styling */
+        .log-container {
+            margin-top: 25px;
+            font-family: 'Courier New', monospace;
+            color: #55efc4;
+            font-size: 0.75rem;
+            background: rgba(0,0,0,0.6);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border-left: 3px solid #55efc4;
+            width: fit-content;
+            max-width: 80%;
+            text-transform: uppercase;
+        }
+
         .caution-tape {
             position: absolute;
             width: 250%;
             height: clamp(45px, 9vw, 80px);
             background: #ffcc00;
-            background-image: repeating-linear-gradient(
-                45deg,
-                transparent,
-                transparent 40px,
-                #000 40px,
-                #000 80px
-            );
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 40px, #000 40px, #000 80px);
             display: flex;
             align-items: center;
             color: #000;
             font-weight: 900;
             font-size: clamp(1.1rem, 4.5vw, 2rem);
             text-transform: uppercase;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
             z-index: 20;
             overflow: hidden;
         }
@@ -131,58 +131,80 @@
     <div class="caution-tape tape-1">
         <div class="tape-text">
             &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; 
-            &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; 
         </div>
     </div>
 
     <div class="caution-tape tape-2">
         <div class="tape-text">
             &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; TORTA OVERLOAD &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; 
-            &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; TORTA OVERLOAD &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; 
         </div>
     </div>
 
     <div class="maintenance-container">
-        <img src="IMG_0688.jpg" id="lincoln-down" alt="Lincoln">
+        <img src="IMG_0688.jpg" id="lincoln-down">
         
         <h1>Website Down</h1>
         
         <div class="status-box">
-            <p>The Torta Factory is undergoing emergency maintenance.<br>The Heavyweights will return in:</p>
-            <div id="timer">Loading...</div>
+            <p style="margin:0; color:#bbb;">The Factory returns in:</p>
+            <div id="timer">00d 00h 00m 00s</div>
+        </div>
+
+        <div class="log-container">
+            SYSTEM_LOG: <span id="log-text">Initializing repair protocols...</span>
         </div>
     </div>
 
     <script>
-        // Set the Target: Monday, March 30, 2026 at 12:00:00 PM
+        // COUNTDOWN LOGIC
         const countDownDate = new Date("March 30, 2026 12:00:00").getTime();
-
-        const x = setInterval(function() {
+        const timerUpdate = setInterval(function() {
             const now = new Date().getTime();
             const distance = countDownDate - now;
-
-            // Calculations
             const days = Math.floor(distance / (1000 * 60 * 60 * 24));
             const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-            const timerDisplay = document.getElementById("timer");
-
-            // Format with leading zeros
+            const display = document.getElementById("timer");
             if (distance > 0) {
-                timerDisplay.innerHTML = 
-                    (days < 10 ? "0" + days : days) + "d " + 
-                    (hours < 10 ? "0" + hours : hours) + "h " + 
-                    (minutes < 10 ? "0" + minutes : minutes) + "m " + 
-                    (seconds < 10 ? "0" + seconds : seconds) + "s";
+                display.innerHTML = (days<10?"0"+days:days)+"d "+(hours<10?"0"+hours:hours)+"h "+(minutes<10?"0"+minutes:minutes)+"m "+(seconds<10?"0"+seconds:seconds)+"s";
             } else {
-                clearInterval(x);
-                timerDisplay.innerHTML = "FACTORY OPEN!";
-                timerDisplay.style.color = "#55efc4"; // Green for open
+                clearInterval(timerUpdate);
+                display.innerHTML = "FACTORY OPEN!";
+                display.style.color = "#55efc4";
             }
         }, 1000);
-    </script>
 
+        // 100 RANDOM LOGS
+        const logs = [
+            "Calibrating calorie intake...", "Cleaning deep fryer #4...", "Lincoln is taking a tactical nap...", "Replacing Torta gaskets...", "Upgrading Chud-Logic processors...",
+            "Searching for lost burger patty...", "Mopping up spilled gravy...", "Deflating excess ego...", "Polishing the Golden Tortas...", "Oiling the clicker gears...",
+            "Checking mayonnaise levels...", "Rebooting the Lard-o-Meter...", "Consulting the Torta Oracle...", "Scanning for salad (0 found)...", "Buffing the top hat...",
+            "Restocking the infinite buffet...", "Tightening the belt loops...", "Analyzing grease viscosity...", "Dismissing vegetable rumors...", "Heating up the griddle...",
+            "Optimizing mass accumulation...", "Debugging the Torta Pounder...", "Updating snack protocols...", "Deploying secret sauce...", "Checking fridge for leaks...",
+            "Calculating maximum chewiness...", "Inspecting the bun supply...", "Verifying cheese melt point...", "Tuning the crunch frequency...", "Resetting the calorie counter...",
+            "Patching the gravy boat...", "Refilling the soda fountain...", "Sharpening the pizza cutter...", "Calibrating the fry timer...", "Stabilizing the burger stack...",
+            "Expanding the kitchen floor...", "Adding more butter...", "Testing fork durability...", "Washing the chef's hat...", "Rerouting power to the toaster...",
+            "Sifting the flour...", "Ordering more bacon...", "Marinating the steaks...", "Peeling 5000 potatoes...", "Unclogging the milkshake straw...",
+            "Monitoring glucose spikes...", "Adjusting the salt shaker...", "Defrosting the giant freezer...", "Organizing the spice rack...", "Cleaning the grease trap...",
+            "Leveling the dining tables...", "Fixing the neon sign...", "Rotating the donut display...", "Double-checking the order tickets...", "Training the new Chuds...",
+            "Simulating a food coma...", "Measuring the pancake diameter...", "Applying the secret rub...", "Stoking the charcoal...", "Sweeping the crumbs...",
+            "Checking the expiration dates...", "Baking the giant bun...", "Fermenting the pickles...", "Toasting the sesame seeds...", "Hardening the crust...",
+            "Softening the center...", "Whisking the eggs...", "Flipping the burgers...", "Draining the pasta...", "Melting the chocolate...",
+            "Boiling the water...", "Simmering the stew...", "Chilling the drinks...", "Wiping the counters...", "Setting the table...",
+            "Polishing the silverware...", "Folding the napkins...", "Emptying the trash...", "Ventilating the kitchen...", "Checking the gas lines...",
+            "Locking the pantry...", "Counting the napkins...", "Slicing the tomatoes...", "Shredding the lettuce...", "Dicing the onions...",
+            "Mashing the avocados...", "Mixing the batter...", "Preheating to 450°F...", "Cooling the pies...", "Glazing the donuts...",
+            "Sprinkling the sugar...", "Drizzling the syrup...", "Plating the special...", "Ringing the bell...", "Cleaning the grill...",
+            "Resting the meat...", "Checking the internal temp...", "Packaging the leftovers...", "Final safety inspection...", "Ready for Monday..."
+        ];
+
+        let logIdx = 0;
+        setInterval(() => {
+            logIdx = (logIdx + 1) % logs.length;
+            document.getElementById('log-text').innerText = logs[logIdx];
+        }, 3500);
+    </script>
 </body>
 </html>
