@@ -10,10 +10,11 @@
             padding: 0;
             height: 100%;
             background: #0a0a0a;
-            font-family: 'Arial Black', sans-serif;
+            font-family: 'Arial Rounded MT Bold', 'Arial Black', sans-serif;
             overflow: hidden;
         }
 
+        /* Blurry background using your site screenshot */
         .site-screenshot {
             position: fixed;
             width: 100%;
@@ -21,8 +22,9 @@
             background-image: url('IMG_0718.jpeg');
             background-size: cover;
             background-position: center;
-            filter: blur(10px) brightness(0.3);
+            filter: blur(12px) brightness(0.25);
             z-index: 1;
+            transform: scale(1.1); /* Prevents white edges from blur */
         }
 
         .maintenance-container {
@@ -41,50 +43,53 @@
         #lincoln-down {
             width: 180px;
             height: 180px;
-            max-width: 40vw;
-            max-height: 40vw;
+            max-width: 35vw;
+            max-height: 35vw;
             border-radius: 50%;
-            border: 5px solid #ffcc00;
+            border: 6px solid #ffcc00;
             margin-bottom: 20px;
-            box-shadow: 0 0 40px rgba(255, 204, 0, 0.4);
+            box-shadow: 0 0 50px rgba(255, 204, 0, 0.4);
             object-fit: cover;
         }
 
         h1 {
-            font-size: clamp(1.5rem, 8vw, 3.5rem);
+            font-size: clamp(1.8rem, 8vw, 3.8rem);
             text-transform: uppercase;
             color: #ffcc00;
-            text-shadow: 3px 3px 15px #000;
-            margin: 0 0 10px 0;
+            text-shadow: 3px 3px 20px #000;
+            margin: 0 0 15px 0;
         }
 
         .status-box {
-            background: rgba(0,0,0,0.85);
-            padding: 20px 30px;
-            border-radius: 12px;
-            border: 1px solid #444;
-            max-width: 600px;
-            line-height: 1.4;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 25px;
+            border-radius: 20px;
+            border: 2px solid #444;
+            max-width: 550px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
         }
 
         p {
             font-size: clamp(0.9rem, 4vw, 1.2rem);
             margin: 0 0 15px 0;
+            color: #ddd;
         }
 
         #timer {
             font-family: 'Courier New', Courier, monospace;
-            font-size: clamp(1.2rem, 5vw, 2rem);
+            font-size: clamp(1.4rem, 6vw, 2.2rem);
             color: #ffcc00;
             font-weight: bold;
             letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
         }
 
-        /* RESPONSIVE CAUTION TAPE */
+        /* ANIMATED CAUTION TAPE */
         .caution-tape {
             position: absolute;
-            width: 200%;
-            height: clamp(40px, 8vw, 70px);
+            width: 250%;
+            height: clamp(45px, 9vw, 80px);
             background: #ffcc00;
             background-image: repeating-linear-gradient(
                 45deg,
@@ -97,20 +102,20 @@
             align-items: center;
             color: #000;
             font-weight: 900;
-            font-size: clamp(1rem, 4vw, 1.8rem);
+            font-size: clamp(1.1rem, 4.5vw, 2rem);
             text-transform: uppercase;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
             z-index: 20;
             overflow: hidden;
         }
 
-        .tape-1 { top: 20%; transform: rotate(-7deg) translateX(-10%); }
-        .tape-2 { bottom: 20%; transform: rotate(7deg) translateX(-10%); }
+        .tape-1 { top: 18%; transform: rotate(-8deg) translateX(-15%); }
+        .tape-2 { bottom: 18%; transform: rotate(8deg) translateX(-15%); }
 
         .tape-text {
             display: flex;
             white-space: nowrap;
-            animation: scroll-tape 20s linear infinite;
+            animation: scroll-tape 25s linear infinite;
         }
 
         @keyframes scroll-tape {
@@ -126,50 +131,55 @@
     <div class="caution-tape tape-1">
         <div class="tape-text">
             &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; 
+            &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; 
         </div>
     </div>
 
     <div class="caution-tape tape-2">
         <div class="tape-text">
             &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; TORTA OVERLOAD &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; 
+            &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; TORTA OVERLOAD &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; 
         </div>
     </div>
 
     <div class="maintenance-container">
-        <img src="IMG_0688.jpg" id="lincoln-down">
+        <img src="IMG_0688.jpg" id="lincoln-down" alt="Lincoln">
+        
         <h1>Website Down</h1>
+        
         <div class="status-box">
             <p>The Torta Factory is undergoing emergency maintenance.<br>The Heavyweights will return in:</p>
-            <div id="timer">03d 00h 00m 00s</div>
+            <div id="timer">Loading...</div>
         </div>
     </div>
 
     <script>
-        // Set the date we're counting down to (3 days from now)
-        const countDownDate = new Date().getTime() + (3 * 24 * 60 * 60 * 1000);
+        // Set the Target: Monday, March 30, 2026 at 12:00:00 PM
+        const countDownDate = new Date("March 30, 2026 12:00:00").getTime();
 
-        // Update the count down every 1 second
         const x = setInterval(function() {
             const now = new Date().getTime();
             const distance = countDownDate - now;
 
-            // Time calculations for days, hours, minutes and seconds
+            // Calculations
             const days = Math.floor(distance / (1000 * 60 * 60 * 24));
             const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-            // Output the result in the element with id="timer"
-            document.getElementById("timer").innerHTML = 
-                (days < 10 ? "0" + days : days) + "d " + 
-                (hours < 10 ? "0" + hours : hours) + "h " + 
-                (minutes < 10 ? "0" + minutes : minutes) + "m " + 
-                (seconds < 10 ? "0" + seconds : seconds) + "s";
+            const timerDisplay = document.getElementById("timer");
 
-            // If the count down is over, write some text 
-            if (distance < 0) {
+            // Format with leading zeros
+            if (distance > 0) {
+                timerDisplay.innerHTML = 
+                    (days < 10 ? "0" + days : days) + "d " + 
+                    (hours < 10 ? "0" + hours : hours) + "h " + 
+                    (minutes < 10 ? "0" + minutes : minutes) + "m " + 
+                    (seconds < 10 ? "0" + seconds : seconds) + "s";
+            } else {
                 clearInterval(x);
-                document.getElementById("timer").innerHTML = "FACTORY OPEN!";
+                timerDisplay.innerHTML = "FACTORY OPEN!";
+                timerDisplay.style.color = "#55efc4"; // Green for open
             }
         }, 1000);
     </script>
