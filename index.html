@@ -12,6 +12,7 @@
             background: #0a0a0a;
             font-family: 'Arial Rounded MT Bold', 'Arial Black', sans-serif;
             overflow: hidden;
+            user-select: none;
         }
 
         .site-screenshot {
@@ -40,92 +41,145 @@
         }
 
         #lincoln-down {
-            width: 180px;
-            height: 180px;
-            max-width: 35vw;
-            max-height: 35vw;
+            width: 150px;
+            height: 150px;
             border-radius: 50%;
-            border: 6px solid #ffcc00;
-            margin-bottom: 20px;
+            border: 5px solid #ffcc00;
+            margin-bottom: 15px;
             box-shadow: 0 0 50px rgba(255, 204, 0, 0.4);
             object-fit: cover;
+            transition: transform 0.3s ease;
         }
 
+        #lincoln-down:hover { transform: scale(1.05); }
+
         h1 {
-            font-size: clamp(1.8rem, 8vw, 3.8rem);
+            font-size: clamp(1.8rem, 6vw, 3rem);
             text-transform: uppercase;
             color: #ffcc00;
             text-shadow: 3px 3px 20px #000;
-            margin: 0 0 15px 0;
+            margin: 0 0 10px 0;
         }
 
         .status-box {
             background: rgba(0, 0, 0, 0.85);
-            padding: 25px;
+            padding: 20px;
             border-radius: 20px;
             border: 2px solid #444;
-            max-width: 550px;
+            max-width: 500px;
             width: 90%;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
         }
 
         #timer {
             font-family: 'Courier New', Courier, monospace;
-            font-size: clamp(1.4rem, 6vw, 2.2rem);
+            font-size: clamp(1.4rem, 5vw, 2.2rem);
             color: #ffcc00;
             font-weight: bold;
             letter-spacing: 2px;
-            margin-top: 10px;
         }
 
-        /* Maintenance Log Styling */
+        .teaser-section {
+            margin-top: 20px;
+            background: rgba(255, 204, 0, 0.05);
+            border: 1px dashed #ffcc00;
+            padding: 15px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .teaser-title {
+            font-size: 0.8rem;
+            color: #ffcc00;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+
+        .item-grid {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .mystery-item {
+            width: 70px;
+            height: 70px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            filter: blur(8px) grayscale(1);
+            border: 1px solid #333;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .mystery-item:active { transform: scale(0.9); }
+
         .log-container {
             margin-top: 25px;
             font-family: 'Courier New', monospace;
             color: #55efc4;
-            font-size: 0.75rem;
-            background: rgba(0,0,0,0.6);
-            padding: 10px 20px;
+            font-size: 0.7rem;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 15px;
             border-radius: 8px;
             border-left: 3px solid #55efc4;
-            width: fit-content;
             max-width: 80%;
-            text-transform: uppercase;
         }
 
+        /* Caution Tape */
         .caution-tape {
             position: absolute;
             width: 250%;
-            height: clamp(45px, 9vw, 80px);
+            height: clamp(50px, 8vw, 70px);
             background: #ffcc00;
             background-image: repeating-linear-gradient(45deg, transparent, transparent 40px, #000 40px, #000 80px);
             display: flex;
             align-items: center;
             color: #000;
             font-weight: 900;
-            font-size: clamp(1.1rem, 4.5vw, 2rem);
+            font-size: 1.5rem;
             text-transform: uppercase;
             z-index: 20;
             overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
         }
 
-        .tape-1 { top: 18%; transform: rotate(-8deg) translateX(-15%); }
-        .tape-2 { bottom: 18%; transform: rotate(8deg) translateX(-15%); }
+        .tape-1 { top: 15%; transform: rotate(-8deg) translateX(-15%); }
+        .tape-2 { bottom: 15%; transform: rotate(8deg) translateX(-15%); }
 
         .tape-text {
             display: flex;
             white-space: nowrap;
-            animation: scroll-tape 25s linear infinite;
+            animation: scroll-tape 30s linear infinite;
         }
 
         @keyframes scroll-tape {
             from { transform: translateX(0); }
             to { transform: translateX(-50%); }
         }
+
+        #popup {
+            position: fixed;
+            bottom: 20px;
+            background: #ffcc00;
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
     </style>
 </head>
 <body>
 
+    <div id="popup">Patience, Heavyweight... it's a secret.</div>
     <div class="site-screenshot"></div>
 
     <div class="caution-tape tape-1">
@@ -141,13 +195,22 @@
     </div>
 
     <div class="maintenance-container">
-        <img src="IMG_0688.jpg" id="lincoln-down">
+        <img src="IMG_0668.jpg" id="lincoln-down">
         
-        <h1>Website Down</h1>
+        <h1>Factory Closed</h1>
         
         <div class="status-box">
-            <p style="margin:0; color:#bbb;">The Factory returns in:</p>
+            <p style="margin:0; color:#bbb; font-size: 0.8rem; letter-spacing: 1px;">RESUMING IN:</p>
             <div id="timer">00d 00h 00m 00s</div>
+        </div>
+
+        <div class="teaser-section">
+            <div class="teaser-title">MONDAY UPDATE LEAKS</div>
+            <div class="item-grid">
+                <div class="mystery-item" onclick="showSecret()">🍔</div>
+                <div class="mystery-item" onclick="showSecret()">🥤</div>
+                <div class="mystery-item" onclick="showSecret()">🍰</div>
+            </div>
         </div>
 
         <div class="log-container">
@@ -156,9 +219,10 @@
     </div>
 
     <script>
-        // COUNTDOWN LOGIC
+        // TARGET DATE: Monday, March 30, 2026 at 12:00:00 PM
         const countDownDate = new Date("March 30, 2026 12:00:00").getTime();
-        const timerUpdate = setInterval(function() {
+        
+        setInterval(function() {
             const now = new Date().getTime();
             const distance = countDownDate - now;
             const days = Math.floor(distance / (1000 * 60 * 60 * 24));
@@ -170,13 +234,17 @@
             if (distance > 0) {
                 display.innerHTML = (days<10?"0"+days:days)+"d "+(hours<10?"0"+hours:hours)+"h "+(minutes<10?"0"+minutes:minutes)+"m "+(seconds<10?"0"+seconds:seconds)+"s";
             } else {
-                clearInterval(timerUpdate);
                 display.innerHTML = "FACTORY OPEN!";
                 display.style.color = "#55efc4";
             }
         }, 1000);
 
-        // 100 RANDOM LOGS
+        function showSecret() {
+            const p = document.getElementById('popup');
+            p.style.display = 'block';
+            setTimeout(() => { p.style.display = 'none'; }, 2000);
+        }
+
         const logs = [
             "Calibrating calorie intake...", "Cleaning deep fryer #4...", "Lincoln is taking a tactical nap...", "Replacing Torta gaskets...", "Upgrading Chud-Logic processors...",
             "Searching for lost burger patty...", "Mopping up spilled gravy...", "Deflating excess ego...", "Polishing the Golden Tortas...", "Oiling the clicker gears...",
@@ -197,14 +265,14 @@
             "Locking the pantry...", "Counting the napkins...", "Slicing the tomatoes...", "Shredding the lettuce...", "Dicing the onions...",
             "Mashing the avocados...", "Mixing the batter...", "Preheating to 450°F...", "Cooling the pies...", "Glazing the donuts...",
             "Sprinkling the sugar...", "Drizzling the syrup...", "Plating the special...", "Ringing the bell...", "Cleaning the grill...",
-            "Resting the meat...", "Checking the internal temp...", "Packaging the leftovers...", "Final safety inspection...", "Ready for Monday..."
+            "Resting the meat...", "Checking the internal temp...", "Packaging leftovers...", "Final safety inspection...", "Ready for Monday update..."
         ];
 
         let logIdx = 0;
         setInterval(() => {
             logIdx = (logIdx + 1) % logs.length;
             document.getElementById('log-text').innerText = logs[logIdx];
-        }, 3500);
+        }, 3000);
     </script>
 </body>
 </html>
