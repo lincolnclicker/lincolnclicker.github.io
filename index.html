@@ -41,11 +41,11 @@
         }
 
         #lincoln-down {
-            width: 150px;
-            height: 150px;
+            width: 140px;
+            height: 140px;
             border-radius: 50%;
             border: 5px solid #ffcc00;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             box-shadow: 0 0 50px rgba(255, 204, 0, 0.4);
             object-fit: cover;
         }
@@ -75,10 +75,10 @@
             letter-spacing: 2px;
         }
 
-        /* FIXED SILHOUETTE STYLES */
+        /* UPDATED LEAK SECTION */
         .teaser-section {
             margin-top: 20px;
-            background: rgba(255, 204, 0, 0.1);
+            background: rgba(255, 204, 0, 0.05);
             border: 2px dashed #ffcc00;
             padding: 15px;
             border-radius: 15px;
@@ -103,27 +103,31 @@
         .mystery-item {
             width: 75px;
             height: 75px;
-            background: #ffcc00; /* Yellow background makes the silhouette pop */
+            background: #ffcc00; 
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             cursor: pointer;
-            transition: 0.2s;
             position: relative;
-            overflow: hidden;
-            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.4);
+            transition: transform 0.2s;
         }
 
-        /* This creates the black silhouette look */
+        /* The silhouette look + Flicker effect */
         .mystery-item span {
-            filter: brightness(0) blur(4px); 
-            opacity: 0.8;
+            filter: brightness(0) blur(2px);
+            opacity: 0.9;
+            animation: flicker 4s infinite;
         }
 
-        .mystery-item:hover { transform: scale(1.05); background: #ffe066; }
-        .mystery-item:active { transform: scale(0.95); }
+        @keyframes flicker {
+            0%, 18%, 22%, 25%, 53%, 57%, 100% { filter: brightness(0) blur(2px); opacity: 0.9; }
+            20%, 24%, 55% { filter: brightness(0) blur(0px); opacity: 0.4; transform: translateX(2px); }
+        }
+
+        .mystery-item:hover { transform: translateY(-5px); }
 
         .log-container {
             margin-top: 25px;
@@ -134,10 +138,9 @@
             padding: 8px 15px;
             border-radius: 8px;
             border-left: 3px solid #55efc4;
-            max-width: 80%;
         }
 
-        /* Caution Tape */
+        /* Caution Tapes */
         .caution-tape {
             position: absolute;
             width: 250%;
@@ -178,7 +181,6 @@
             font-weight: bold;
             display: none;
             z-index: 100;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.6);
         }
     </style>
 </head>
@@ -188,24 +190,19 @@
     <div class="site-screenshot"></div>
 
     <div class="caution-tape tape-1">
-        <div class="tape-text">
-            &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; 
-        </div>
+        <div class="tape-text">&nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; </div>
     </div>
 
     <div class="caution-tape tape-2">
-        <div class="tape-text">
-            &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; TORTA OVERLOAD &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; 
-        </div>
+        <div class="tape-text">&nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; TORTA OVERLOAD &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; </div>
     </div>
 
     <div class="maintenance-container">
         <img src="IMG_0668.jpg" id="lincoln-down">
-        
         <h1>Factory Closed</h1>
         
         <div class="status-box">
-            <p style="margin:0; color:#bbb; font-size: 0.8rem; letter-spacing: 1px;">RE-OPENING MONDAY IN:</p>
+            <p style="margin:0; color:#bbb; font-size: 0.8rem;">RE-OPENING MONDAY IN:</p>
             <div id="timer">00d 00h 00m 00s</div>
         </div>
 
@@ -239,26 +236,16 @@
                 display.innerHTML = (days<10?"0"+days:days)+"d "+(hours<10?"0"+hours:hours)+"h "+(minutes<10?"0"+minutes:minutes)+"m "+(seconds<10?"0"+seconds:seconds)+"s";
             } else {
                 display.innerHTML = "FACTORY OPEN!";
-                display.style.color = "#55efc4";
             }
         }, 1000);
 
         function showSecret() {
             const p = document.getElementById('popup');
             p.style.display = 'block';
-            setTimeout(() => { p.style.display = 'none'; }, 2500);
+            setTimeout(() => { p.style.display = 'none'; }, 2000);
         }
 
-        const logs = [
-            "Calibrating calorie intake...", "Cleaning deep fryer #4...", "Lincoln is taking a tactical nap...", 
-            "Replacing Torta gaskets...", "Upgrading Chud-Logic processors...", "Searching for lost burger patty...", 
-            "Mopping up spilled gravy...", "Deflating excess ego...", "Polishing the Golden Tortas...", 
-            "Oiling the clicker gears...", "Checking mayonnaise levels...", "Rebooting the Lard-o-Meter...", 
-            "Consulting the Torta Oracle...", "Scanning for salad (0 found)...", "Buffing the top hat...",
-            "Ordering 500 crates of bacon...", "Testing the crunch frequency...", "Stoking the furnace...",
-            "Final safety inspection...", "Ready for Monday update..."
-        ];
-
+        const logs = ["Calibrating calorie intake...", "Lincoln is taking a nap...", "Oiling the clicker gears...", "Searching for lost burger...", "Ready for Monday update..."];
         let logIdx = 0;
         setInterval(() => {
             logIdx = (logIdx + 1) % logs.length;
