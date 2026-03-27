@@ -14,7 +14,6 @@
             overflow: hidden;
         }
 
-        /* Blurry background using your screenshot */
         .site-screenshot {
             position: fixed;
             width: 100%;
@@ -36,40 +35,44 @@
             height: 100vh;
             text-align: center;
             color: white;
+            padding: 0 20px;
         }
 
         #lincoln-down {
-            width: 220px;
-            height: 220px;
+            width: 180px; /* Smaller base size */
+            height: 180px;
+            max-width: 40vw; /* Responsive scaling */
+            max-height: 40vw;
             border-radius: 50%;
-            border: 6px solid #ffcc00;
+            border: 5px solid #ffcc00;
             margin-bottom: 20px;
             box-shadow: 0 0 40px rgba(255, 204, 0, 0.4);
             object-fit: cover;
         }
 
         h1 {
-            font-size: 3.5rem;
+            font-size: clamp(1.5rem, 8vw, 3.5rem); /* Auto-scales font size */
             text-transform: uppercase;
             color: #ffcc00;
             text-shadow: 3px 3px 15px #000;
-            margin: 0;
+            margin: 0 0 10px 0;
         }
 
         p {
-            font-size: 1.4rem;
-            background: rgba(0,0,0,0.8);
-            padding: 15px 30px;
+            font-size: clamp(0.9rem, 4vw, 1.3rem); /* Auto-scales font size */
+            background: rgba(0,0,0,0.85);
+            padding: 15px 25px;
             border-radius: 12px;
             border: 1px solid #444;
-            max-width: 80%;
+            max-width: 600px;
+            line-height: 1.4;
         }
 
-        /* ANIMATED CAUTION TAPE */
+        /* RESPONSIVE CAUTION TAPE */
         .caution-tape {
             position: absolute;
             width: 200%;
-            height: 70px;
+            height: clamp(40px, 8vw, 70px); /* Height scales with screen */
             background: #ffcc00;
             background-image: repeating-linear-gradient(
                 45deg,
@@ -82,20 +85,20 @@
             align-items: center;
             color: #000;
             font-weight: 900;
-            font-size: 1.8rem;
+            font-size: clamp(1rem, 4vw, 1.8rem); /* Text inside tape scales */
             text-transform: uppercase;
             box-shadow: 0 10px 30px rgba(0,0,0,0.7);
             z-index: 20;
             overflow: hidden;
         }
 
-        .tape-1 { top: 25%; transform: rotate(-7deg) translateX(-10%); }
-        .tape-2 { bottom: 25%; transform: rotate(7deg) translateX(-10%); }
+        .tape-1 { top: 20%; transform: rotate(-7deg) translateX(-10%); }
+        .tape-2 { bottom: 20%; transform: rotate(7deg) translateX(-10%); }
 
         .tape-text {
             display: flex;
             white-space: nowrap;
-            animation: scroll-tape 15s linear infinite;
+            animation: scroll-tape 20s linear infinite;
         }
 
         @keyframes scroll-tape {
@@ -111,13 +114,11 @@
     <div class="caution-tape tape-1">
         <div class="tape-text">
             &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; 
-            &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; WEBSITE DOWN &nbsp; CAUTION &nbsp; MASS GRIND PAUSED &nbsp; 
         </div>
     </div>
 
     <div class="caution-tape tape-2">
         <div class="tape-text">
-            &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; TORTA OVERLOAD &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; 
             &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; TORTA OVERLOAD &nbsp; DO NOT CROSS &nbsp; UNDER MAINTENANCE &nbsp; 
         </div>
     </div>
