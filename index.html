@@ -48,10 +48,7 @@
             margin-bottom: 15px;
             box-shadow: 0 0 50px rgba(255, 204, 0, 0.4);
             object-fit: cover;
-            transition: transform 0.3s ease;
         }
-
-        #lincoln-down:hover { transform: scale(1.05); }
 
         h1 {
             font-size: clamp(1.8rem, 6vw, 3rem);
@@ -78,10 +75,11 @@
             letter-spacing: 2px;
         }
 
+        /* FIXED SILHOUETTE STYLES */
         .teaser-section {
             margin-top: 20px;
-            background: rgba(255, 204, 0, 0.05);
-            border: 1px dashed #ffcc00;
+            background: rgba(255, 204, 0, 0.1);
+            border: 2px dashed #ffcc00;
             padding: 15px;
             border-radius: 15px;
             width: 90%;
@@ -103,21 +101,29 @@
         }
 
         .mystery-item {
-            width: 70px;
-            height: 70px;
-            background: rgba(255,255,255,0.05);
+            width: 75px;
+            height: 75px;
+            background: #ffcc00; /* Yellow background makes the silhouette pop */
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
-            filter: blur(8px) grayscale(1);
-            border: 1px solid #333;
+            font-size: 2.5rem;
             cursor: pointer;
             transition: 0.2s;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.5);
         }
 
-        .mystery-item:active { transform: scale(0.9); }
+        /* This creates the black silhouette look */
+        .mystery-item span {
+            filter: brightness(0) blur(4px); 
+            opacity: 0.8;
+        }
+
+        .mystery-item:hover { transform: scale(1.05); background: #ffe066; }
+        .mystery-item:active { transform: scale(0.95); }
 
         .log-container {
             margin-top: 25px;
@@ -135,18 +141,17 @@
         .caution-tape {
             position: absolute;
             width: 250%;
-            height: clamp(50px, 8vw, 70px);
+            height: 65px;
             background: #ffcc00;
             background-image: repeating-linear-gradient(45deg, transparent, transparent 40px, #000 40px, #000 80px);
             display: flex;
             align-items: center;
             color: #000;
             font-weight: 900;
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             text-transform: uppercase;
             z-index: 20;
             overflow: hidden;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
         }
 
         .tape-1 { top: 15%; transform: rotate(-8deg) translateX(-15%); }
@@ -165,15 +170,15 @@
 
         #popup {
             position: fixed;
-            bottom: 20px;
+            bottom: 30px;
             background: #ffcc00;
             color: #000;
-            padding: 10px 20px;
+            padding: 12px 25px;
             border-radius: 50px;
             font-weight: bold;
             display: none;
             z-index: 100;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.6);
         }
     </style>
 </head>
@@ -200,16 +205,16 @@
         <h1>Factory Closed</h1>
         
         <div class="status-box">
-            <p style="margin:0; color:#bbb; font-size: 0.8rem; letter-spacing: 1px;">RESUMING IN:</p>
+            <p style="margin:0; color:#bbb; font-size: 0.8rem; letter-spacing: 1px;">RE-OPENING MONDAY IN:</p>
             <div id="timer">00d 00h 00m 00s</div>
         </div>
 
         <div class="teaser-section">
             <div class="teaser-title">MONDAY UPDATE LEAKS</div>
             <div class="item-grid">
-                <div class="mystery-item" onclick="showSecret()">🍔</div>
-                <div class="mystery-item" onclick="showSecret()">🥤</div>
-                <div class="mystery-item" onclick="showSecret()">🍰</div>
+                <div class="mystery-item" onclick="showSecret()"><span>🍔</span></div>
+                <div class="mystery-item" onclick="showSecret()"><span>🥤</span></div>
+                <div class="mystery-item" onclick="showSecret()"><span>🍰</span></div>
             </div>
         </div>
 
@@ -219,7 +224,6 @@
     </div>
 
     <script>
-        // TARGET DATE: Monday, March 30, 2026 at 12:00:00 PM
         const countDownDate = new Date("March 30, 2026 12:00:00").getTime();
         
         setInterval(function() {
@@ -242,30 +246,17 @@
         function showSecret() {
             const p = document.getElementById('popup');
             p.style.display = 'block';
-            setTimeout(() => { p.style.display = 'none'; }, 2000);
+            setTimeout(() => { p.style.display = 'none'; }, 2500);
         }
 
         const logs = [
-            "Calibrating calorie intake...", "Cleaning deep fryer #4...", "Lincoln is taking a tactical nap...", "Replacing Torta gaskets...", "Upgrading Chud-Logic processors...",
-            "Searching for lost burger patty...", "Mopping up spilled gravy...", "Deflating excess ego...", "Polishing the Golden Tortas...", "Oiling the clicker gears...",
-            "Checking mayonnaise levels...", "Rebooting the Lard-o-Meter...", "Consulting the Torta Oracle...", "Scanning for salad (0 found)...", "Buffing the top hat...",
-            "Restocking the infinite buffet...", "Tightening the belt loops...", "Analyzing grease viscosity...", "Dismissing vegetable rumors...", "Heating up the griddle...",
-            "Optimizing mass accumulation...", "Debugging the Torta Pounder...", "Updating snack protocols...", "Deploying secret sauce...", "Checking fridge for leaks...",
-            "Calculating maximum chewiness...", "Inspecting the bun supply...", "Verifying cheese melt point...", "Tuning the crunch frequency...", "Resetting the calorie counter...",
-            "Patching the gravy boat...", "Refilling the soda fountain...", "Sharpening the pizza cutter...", "Calibrating the fry timer...", "Stabilizing the burger stack...",
-            "Expanding the kitchen floor...", "Adding more butter...", "Testing fork durability...", "Washing the chef's hat...", "Rerouting power to the toaster...",
-            "Sifting the flour...", "Ordering more bacon...", "Marinating the steaks...", "Peeling 5000 potatoes...", "Unclogging the milkshake straw...",
-            "Monitoring glucose spikes...", "Adjusting the salt shaker...", "Defrosting the giant freezer...", "Organizing the spice rack...", "Cleaning the grease trap...",
-            "Leveling the dining tables...", "Fixing the neon sign...", "Rotating the donut display...", "Double-checking the order tickets...", "Training the new Chuds...",
-            "Simulating a food coma...", "Measuring the pancake diameter...", "Applying the secret rub...", "Stoking the charcoal...", "Sweeping the crumbs...",
-            "Checking the expiration dates...", "Baking the giant bun...", "Fermenting the pickles...", "Toasting the sesame seeds...", "Hardening the crust...",
-            "Softening the center...", "Whisking the eggs...", "Flipping the burgers...", "Draining the pasta...", "Melting the chocolate...",
-            "Boiling the water...", "Simmering the stew...", "Chilling the drinks...", "Wiping the counters...", "Setting the table...",
-            "Polishing the silverware...", "Folding the napkins...", "Emptying the trash...", "Ventilating the kitchen...", "Checking the gas lines...",
-            "Locking the pantry...", "Counting the napkins...", "Slicing the tomatoes...", "Shredding the lettuce...", "Dicing the onions...",
-            "Mashing the avocados...", "Mixing the batter...", "Preheating to 450°F...", "Cooling the pies...", "Glazing the donuts...",
-            "Sprinkling the sugar...", "Drizzling the syrup...", "Plating the special...", "Ringing the bell...", "Cleaning the grill...",
-            "Resting the meat...", "Checking the internal temp...", "Packaging leftovers...", "Final safety inspection...", "Ready for Monday update..."
+            "Calibrating calorie intake...", "Cleaning deep fryer #4...", "Lincoln is taking a tactical nap...", 
+            "Replacing Torta gaskets...", "Upgrading Chud-Logic processors...", "Searching for lost burger patty...", 
+            "Mopping up spilled gravy...", "Deflating excess ego...", "Polishing the Golden Tortas...", 
+            "Oiling the clicker gears...", "Checking mayonnaise levels...", "Rebooting the Lard-o-Meter...", 
+            "Consulting the Torta Oracle...", "Scanning for salad (0 found)...", "Buffing the top hat...",
+            "Ordering 500 crates of bacon...", "Testing the crunch frequency...", "Stoking the furnace...",
+            "Final safety inspection...", "Ready for Monday update..."
         ];
 
         let logIdx = 0;
