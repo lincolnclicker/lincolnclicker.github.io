@@ -39,9 +39,9 @@
         }
 
         #lincoln-down {
-            width: 180px; /* Smaller base size */
+            width: 180px;
             height: 180px;
-            max-width: 40vw; /* Responsive scaling */
+            max-width: 40vw;
             max-height: 40vw;
             border-radius: 50%;
             border: 5px solid #ffcc00;
@@ -51,28 +51,40 @@
         }
 
         h1 {
-            font-size: clamp(1.5rem, 8vw, 3.5rem); /* Auto-scales font size */
+            font-size: clamp(1.5rem, 8vw, 3.5rem);
             text-transform: uppercase;
             color: #ffcc00;
             text-shadow: 3px 3px 15px #000;
             margin: 0 0 10px 0;
         }
 
-        p {
-            font-size: clamp(0.9rem, 4vw, 1.3rem); /* Auto-scales font size */
+        .status-box {
             background: rgba(0,0,0,0.85);
-            padding: 15px 25px;
+            padding: 20px 30px;
             border-radius: 12px;
             border: 1px solid #444;
             max-width: 600px;
             line-height: 1.4;
         }
 
+        p {
+            font-size: clamp(0.9rem, 4vw, 1.2rem);
+            margin: 0 0 15px 0;
+        }
+
+        #timer {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: clamp(1.2rem, 5vw, 2rem);
+            color: #ffcc00;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
         /* RESPONSIVE CAUTION TAPE */
         .caution-tape {
             position: absolute;
             width: 200%;
-            height: clamp(40px, 8vw, 70px); /* Height scales with screen */
+            height: clamp(40px, 8vw, 70px);
             background: #ffcc00;
             background-image: repeating-linear-gradient(
                 45deg,
@@ -85,7 +97,7 @@
             align-items: center;
             color: #000;
             font-weight: 900;
-            font-size: clamp(1rem, 4vw, 1.8rem); /* Text inside tape scales */
+            font-size: clamp(1rem, 4vw, 1.8rem);
             text-transform: uppercase;
             box-shadow: 0 10px 30px rgba(0,0,0,0.7);
             z-index: 20;
@@ -126,8 +138,41 @@
     <div class="maintenance-container">
         <img src="IMG_0688.jpg" id="lincoln-down">
         <h1>Website Down</h1>
-        <p>The Torta Factory is currently undergoing emergency maintenance.<br>The Heavyweights will return shortly.</p>
+        <div class="status-box">
+            <p>The Torta Factory is undergoing emergency maintenance.<br>The Heavyweights will return in:</p>
+            <div id="timer">03d 00h 00m 00s</div>
+        </div>
     </div>
+
+    <script>
+        // Set the date we're counting down to (3 days from now)
+        const countDownDate = new Date().getTime() + (3 * 24 * 60 * 60 * 1000);
+
+        // Update the count down every 1 second
+        const x = setInterval(function() {
+            const now = new Date().getTime();
+            const distance = countDownDate - now;
+
+            // Time calculations for days, hours, minutes and seconds
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // Output the result in the element with id="timer"
+            document.getElementById("timer").innerHTML = 
+                (days < 10 ? "0" + days : days) + "d " + 
+                (hours < 10 ? "0" + hours : hours) + "h " + 
+                (minutes < 10 ? "0" + minutes : minutes) + "m " + 
+                (seconds < 10 ? "0" + seconds : seconds) + "s";
+
+            // If the count down is over, write some text 
+            if (distance < 0) {
+                clearInterval(x);
+                document.getElementById("timer").innerHTML = "FACTORY OPEN!";
+            }
+        }, 1000);
+    </script>
 
 </body>
 </html>
