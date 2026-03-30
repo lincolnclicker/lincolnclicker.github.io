@@ -48,7 +48,11 @@
             margin-bottom: 10px;
             box-shadow: 0 0 50px rgba(255, 204, 0, 0.4);
             object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.1s;
         }
+
+        #lincoln-down:active { transform: scale(0.9); }
 
         h1 {
             font-size: clamp(1.8rem, 6vw, 3rem);
@@ -75,7 +79,6 @@
             letter-spacing: 2px;
         }
 
-        /* UPDATED LEAK SECTION */
         .teaser-section {
             margin-top: 20px;
             background: rgba(255, 204, 0, 0.05);
@@ -112,10 +115,8 @@
             cursor: pointer;
             position: relative;
             box-shadow: inset 0 0 15px rgba(0,0,0,0.4);
-            transition: transform 0.2s;
         }
 
-        /* The silhouette look + Flicker effect */
         .mystery-item span {
             filter: brightness(0) blur(2px);
             opacity: 0.9;
@@ -124,10 +125,8 @@
 
         @keyframes flicker {
             0%, 18%, 22%, 25%, 53%, 57%, 100% { filter: brightness(0) blur(2px); opacity: 0.9; }
-            20%, 24%, 55% { filter: brightness(0) blur(0px); opacity: 0.4; transform: translateX(2px); }
+            20%, 24%, 55% { filter: brightness(0) blur(0px); opacity: 0.4; }
         }
-
-        .mystery-item:hover { transform: translateY(-5px); }
 
         .log-container {
             margin-top: 25px;
@@ -140,7 +139,6 @@
             border-left: 3px solid #55efc4;
         }
 
-        /* Caution Tapes */
         .caution-tape {
             position: absolute;
             width: 250%;
@@ -198,20 +196,20 @@
     </div>
 
     <div class="maintenance-container">
-        <img src="IMG_0668.jpg" id="lincoln-down">
-        <h1>Factory Closed</h1>
+        <img src="IMG_0688.jpg" id="lincoln-down" onclick="lincolnClick()">
+        <h1>POSTPONED</h1>
         
         <div class="status-box">
-            <p style="margin:0; color:#bbb; font-size: 0.8rem;">RE-OPENING MONDAY IN:</p>
+            <p style="margin:0; color:#bbb; font-size: 0.8rem;">RE-OPENING EASTER SUNDAY IN:</p>
             <div id="timer">00d 00h 00m 00s</div>
         </div>
 
         <div class="teaser-section">
-            <div class="teaser-title">MONDAY UPDATE LEAKS</div>
+            <div class="teaser-title">EASTER UPDATE LEAKS</div>
             <div class="item-grid">
                 <div class="mystery-item" onclick="showSecret()"><span>🍔</span></div>
                 <div class="mystery-item" onclick="showSecret()"><span>🥤</span></div>
-                <div class="mystery-item" onclick="showSecret()"><span>🍰</span></div>
+                <div class="mystery-item" onclick="showSecret()"><span>🥚</span></div>
             </div>
         </div>
 
@@ -221,7 +219,8 @@
     </div>
 
     <script>
-        const countDownDate = new Date("March 30, 2026 12:00:00").getTime();
+        // TARGET DATE: Sunday, April 5, 2026 at 12:00:00 PM
+        const countDownDate = new Date("April 5, 2026 12:00:00").getTime();
         
         setInterval(function() {
             const now = new Date().getTime();
@@ -239,13 +238,23 @@
             }
         }, 1000);
 
-        function showSecret() {
-            const p = document.getElementById('popup');
-            p.style.display = 'block';
-            setTimeout(() => { p.style.display = 'none'; }, 2000);
+        let clickCount = 0;
+        function lincolnClick() {
+            clickCount++;
+            if(clickCount >= 10) {
+                showSecret("SECRET REVEALED: EASTER EGG HUNT ADDED!");
+                clickCount = 0;
+            }
         }
 
-        const logs = ["Calibrating calorie intake...", "Lincoln is taking a nap...", "Oiling the clicker gears...", "Searching for lost burger...", "Ready for Monday update..."];
+        function showSecret(msg) {
+            const p = document.getElementById('popup');
+            p.innerText = msg || "Patience, Heavyweight... it's a secret.";
+            p.style.display = 'block';
+            setTimeout(() => { p.style.display = 'none'; }, 3000);
+        }
+
+        const logs = ["Postponing update...", "Hiding Easter eggs...", "Lincoln found a chocolate torta...", "Calibrating the Lard-o-Meter...", "Expanding the kitchen..."];
         let logIdx = 0;
         setInterval(() => {
             logIdx = (logIdx + 1) % logs.length;
