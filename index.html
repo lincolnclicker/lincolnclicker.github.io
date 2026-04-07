@@ -3,294 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Site Down | Lincoln Clicker</title>
+    <title>Loading Lincoln's Ultimate...</title>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
+        body {
+            background-color: #0f0f0f;
+            color: #ffafcc; /* Soft Pink */
+            font-family: 'Arial Rounded MT Bold', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             height: 100vh;
-            background: #0a0a0a;
-            font-family: 'Arial Rounded MT Bold', 'Arial Black', sans-serif;
+            margin: 0;
             overflow: hidden;
-            user-select: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
         }
 
-        .site-screenshot {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('IMG_0729.jpg');
-            background-size: cover;
-            background-position: center;
-            filter: blur(20px) brightness(0.25);
-            z-index: 1;
-            transform: scale(1.1);
-        }
-
-        .maintenance-container {
-            position: relative;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            flex-grow: 1;
+        .loader-container {
             text-align: center;
-            color: white;
-            padding: 10px;
-        }
-
-        #lincoln-down {
-            width: clamp(100px, 25vh, 160px);
-            height: clamp(100px, 25vh, 160px);
-            border-radius: 50%;
-            border: 5px solid #ffcc00;
-            margin-bottom: 10px;
-            box-shadow: 0 0 50px rgba(255, 204, 0, 0.4);
-            object-fit: cover;
-            cursor: pointer;
-            transition: transform 0.1s;
-        }
-
-        #lincoln-down:active { transform: scale(0.9); }
-
-        h1 {
-            font-size: clamp(1.5rem, 6vw, 2.8rem);
-            text-transform: uppercase;
-            color: #ffcc00;
-            text-shadow: 2px 2px 15px #000;
-            margin: 5px 0;
-        }
-
-        .status-box {
-            background: rgba(0, 0, 0, 0.85);
-            padding: 15px;
-            border-radius: 20px;
-            border: 2px solid #444;
-            max-width: 450px;
-            width: 85%;
-        }
-
-        #timer {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: clamp(1.2rem, 5vw, 2rem);
-            color: #ffcc00;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-
-        .teaser-section {
-            margin-top: 15px;
-            background: rgba(255, 204, 0, 0.05);
-            border: 1px dashed #ffcc00;
-            padding: 10px;
-            border-radius: 15px;
-            width: 85%;
-            max-width: 450px;
-        }
-
-        .teaser-title {
-            font-size: 0.7rem;
-            color: #ffcc00;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-            font-weight: bold;
-        }
-
-        .item-grid {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-        }
-
-        .mystery-item {
-            width: 65px;
-            height: 65px;
-            background: #222; 
-            border: 2px solid #ffcc00;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.2rem;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 0 15px rgba(255, 204, 0, 0.2);
-        }
-
-        .mystery-item span {
-            filter: brightness(0) invert(1) blur(4px);
-            opacity: 0.5;
-            transition: 0.3s;
-            animation: glitch-leak 2s infinite alternate;
-        }
-
-        @keyframes glitch-leak {
-            0% { transform: translate(0); filter: blur(4px) hue-rotate(0deg); }
-            20% { transform: translate(-2px, 1px); }
-            40% { transform: translate(2px, -1px); filter: blur(2px) hue-rotate(90deg); }
-            100% { transform: translate(0); opacity: 0.8; }
-        }
-
-        .mystery-item:hover span {
-            filter: brightness(1) blur(0px);
-            opacity: 1;
-            animation: none;
-        }
-
-        .log-container {
-            margin-top: 15px;
-            font-family: 'Courier New', monospace;
-            color: #55efc4;
-            font-size: 0.65rem;
-            background: rgba(0,0,0,0.8);
-            padding: 8px 15px;
-            border-radius: 8px;
-            border-left: 3px solid #55efc4;
-            min-height: 20px;
             width: 80%;
             max-width: 400px;
         }
 
-        .caution-tape {
-            position: relative;
-            width: 100%;
-            height: 50px;
-            background: #ffcc00;
-            background-image: repeating-linear-gradient(45deg, transparent, transparent 40px, #000 40px, #000 80px);
-            display: flex;
-            align-items: center;
-            color: #000;
-            font-weight: 900;
-            font-size: 1.2rem;
-            text-transform: uppercase;
-            z-index: 20;
+        h1 {
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255, 175, 204, 0.5);
+        }
+
+        /* The outer bar */
+        .progress-bg {
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid #e0b0ff; /* Lavender */
+            height: 25px;
+            border-radius: 20px;
             overflow: hidden;
-            flex-shrink: 0;
+            position: relative;
+            box-shadow: 0 0 15px rgba(224, 176, 255, 0.2);
         }
 
-        .tape-text {
-            display: flex;
-            white-space: nowrap;
-            animation: scroll-tape 30s linear infinite;
+        /* The moving fill */
+        .progress-fill {
+            background: linear-gradient(90deg, #7bf1a8, #fff3b0); /* Grass to Sunshine */
+            height: 100%;
+            width: 0%;
+            transition: width 0.1s linear;
         }
 
-        @keyframes scroll-tape {
-            from { transform: translateX(0); }
-            to { transform: translateX(-50%); }
-        }
-
-        #popup {
-            position: fixed;
-            bottom: 70px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #ffcc00;
-            color: #000;
-            padding: 10px 25px;
-            border-radius: 50px;
+        .status-text {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #7bf1a8; /* Grass Green */
             font-weight: bold;
-            display: none;
-            z-index: 100;
-            border: 2px solid white;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            text-align: center;
+        }
+
+        /* Just a little floating animation for the title */
+        .float {
+            animation: floating 2s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
     </style>
 </head>
 <body>
 
-    <div class="caution-tape">
-        <div class="tape-text">&nbsp; ENCRYPTED DATA LEAK &nbsp; SYSTEM REBUILDING &nbsp; NEW ASSETS DETECTED &nbsp; ENCRYPTED DATA LEAK &nbsp; SYSTEM REBUILDING &nbsp; </div>
+<div class="loader-container">
+    <h1 class="float">LOADING...</h1>
+    <div class="progress-bg">
+        <div class="progress-fill" id="fill"></div>
     </div>
+    <p class="status-text" id="status">Waking up Lincoln...</p>
+</div>
 
-    <div id="popup">Patience, Heavyweight... it's a secret.</div>
-    <div class="site-screenshot"></div>
+<script>
+    const messages = [
+        "Waking up Lincoln...",
+        "Polishing Golden Tortas...",
+        "Hiding Easter Eggs...",
+        "Charging up Click Power...",
+        "Preparing the Candy Workshop..."
+    ];
 
-    <div class="maintenance-container">
-        <img src="IMG_0688.jpg" id="lincoln-down" onclick="lincolnClick()">
-        
-        <h1>SPRING REVELRY</h1>
-        
-        <div class="status-box">
-            <p style="margin:0; color:#bbb; font-size: 0.75rem;">GLOBAL HUNT BEGINS IN:</p>
-            <div id="timer">00d 00h 00m 00s</div>
-        </div>
+    let progress = 0;
+    const fillElement = document.getElementById('fill');
+    const statusElement = document.getElementById('status');
+    
+    // Adjust totalTime to make it faster or slower (in milliseconds)
+    const totalTime = 3000; 
+    const intervalTime = 30; 
+    const step = 100 / (totalTime / intervalTime);
 
-        <div class="teaser-section">
-            <div class="teaser-title">DECRYPTED PREVIEW ITEMS</div>
-            <div class="item-grid">
-                <div class="mystery-item" onclick="showSecret('LEAK: Mystery Eggs can be cracked for rewards!')"><span>🥚</span></div>
-                <div class="mystery-item" onclick="showSecret('LEAK: Golden Carrots spotted in the Great Egg Nebula!')"><span>🥕</span></div>
-                <div class="mystery-item" onclick="showSecret('LEAK: New Location - The Great Egg Nebula')"><span>🌌</span></div>
-            </div>
-        </div>
+    const loadingInterval = setInterval(() => {
+        progress += step;
+        fillElement.style.width = Math.min(progress, 100) + "%";
 
-        <div class="log-container">
-            SYSTEM_LOG: <span id="log-text">Initializing repair protocols...</span>
-        </div>
-    </div>
-
-    <div class="caution-tape">
-        <div class="tape-text">&nbsp; DO NOT CROSS &nbsp; PRESTIGE SYSTEM INSTALLING &nbsp; EGG NEBULA MAPPED &nbsp; DO NOT CROSS &nbsp; PRESTIGE SYSTEM INSTALLING &nbsp; </div>
-    </div>
-
-    <script>
-        const countDownDate = new Date("April 5, 2026 12:00:00").getTime();
-        
-        setInterval(function() {
-            const now = new Date().getTime();
-            const distance = countDownDate - now;
-            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-            const display = document.getElementById("timer");
-            if (distance > 0) {
-                display.innerHTML = (days<10?"0"+days:days)+"d "+(hours<10?"0"+hours:hours)+"h "+(minutes<10?"0"+minutes:minutes)+"m "+(seconds<10?"0"+seconds:seconds)+"s";
-            } else {
-                display.innerHTML = "SPRING REVELRY IS LIVE!";
-            }
-        }, 1000);
-
-        let clickCount = 0;
-        function lincolnClick() {
-            clickCount++;
-            if(clickCount >= 10) {
-                showSecret("ENCRYPTION BROKEN: 15+ New Shop Items Found!");
-                clickCount = 0;
-            }
+        // Change messages randomly as it loads
+        if (Math.random() > 0.95) {
+            statusElement.innerText = messages[Math.floor(Math.random() * messages.length)];
         }
 
-        function showSecret(msg) {
-            const p = document.getElementById('popup');
-            p.innerText = msg || "Patience, Heavyweight... it's a secret.";
-            p.style.display = 'block';
-            setTimeout(() => { p.style.display = 'none'; }, 3500);
+        if (progress >= 100) {
+            clearInterval(loadingInterval);
+            statusElement.innerText = "READY!";
+            statusElement.style.color = "#fff3b0";
+            
+            // Short delay at 100% for satisfaction, then redirect
+            setTimeout(() => {
+                window.location.href = "game.html";
+            }, 300);
         }
+    }, intervalTime);
+</script>
 
-        const logs = [
-            "Injecting Mystery Egg mechanics...",
-            "Mapping the Great Egg Nebula environment...",
-            "Polishing Golden Carrot prestige assets...",
-            "Testing 'Marshmallow Chick' click power...",
-            "Syncing Global Hunt progress bar...",
-            "Lincoln is eating the Chocolate Fountain assets...",
-            "Finalizing the Spring Revelry update..."
-        ];
-        
-        let logIdx = 0;
-        setInterval(() => {
-            logIdx = (logIdx + 1) % logs.length;
-            document.getElementById('log-text').innerText = logs[logIdx];
-        }, 2500);
-    </script>
 </body>
 </html>
