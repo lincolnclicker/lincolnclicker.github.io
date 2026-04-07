@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lincoln's Egg-celent Adventure</title>
+    <link rel="icon" type="image/jpeg" href="IMG_0668.jpeg">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Container moved to the top right to stack buttons vertically */
+        .nav-buttons {
+            position: fixed;
+            top: 20px;
+            right: 20px; /* Moved to right side */
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1001;
+            align-items: flex-end; /* Aligns buttons to the right edge */
+        }
+
+        #log-open-btn, #feedback-open-btn {
+            padding: 8px 15px;
+            color: white;
+            border: 2px solid white;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+            width: fit-content;
+        }
+
+        #log-open-btn { background: var(--deep-purple); }
+        #feedback-open-btn { background: var(--bubblegum); }
+
+        #log-open-btn:hover, #feedback-open-btn:hover { transform: scale(1.05); }
+
+        /* Styling for the Feedback Modal */
+        #feedback-overlay {
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.7); 
+            z-index: 2000; 
+            justify-content: center; 
+            align-items: center;
+        }
+        .feedback-modal {
+            background: white; 
+            padding: 25px; 
+            border-radius: 20px; 
+            width: 320px; 
+            text-align: center; 
+            border: 4px solid var(--bubblegum);
+        }
+        .feedback-input {
+            width: 100%; 
+            padding: 10px; 
+            margin-bottom: 10px; 
+            border-radius: 10px; 
+            border: 1px solid #ccc; 
+            font-family: inherit; 
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body class="bg-kitchen">
+
+<div class="nav-buttons">
+    <button id="log-open-btn" onclick="toggleLog(true)">Update Log</button>
+    <button id="feedback-open-btn" onclick="toggleFeedback(true)">Send Feedback</button>
+</div>
+
+<div id="feedback-overlay">
+    <div class="feedback-modal">
+        <h2 style="color:var(--deep-purple); margin-top: 0;">SUGGESTION BOX</h2>
+        <p style="font-size: 0.7rem; color: #666; margin-bottom: 15px;">Send an idea to the developer!</p>
+        
+        <form action="https://formspree.io/f/mreokodz" method="POST" style="display: flex; flex-direction: column;">
+            <input type="text" name="subject" placeholder="Subject" required class="feedback-input">
+            <textarea name="message" placeholder="Your idea..." required class="feedback-input" style="height: 80px; resize: none;"></textarea>
+            
+            <button type="submit" style="background: var(--grass); color: white; border: none; padding: 12px; border-radius: 12px; cursor: pointer; font-weight: bold;">SEND MESSAGE</button>
+            <button type="button" onclick="toggleFeedback(false)" style="background: none; border: none; color: #aaa; cursor: pointer; font-size: 0.8rem; text-decoration: underline; margin-top: 10px;">Close</button>
+        </form>
+    </div>
+</div>
+
+<div id="log-overlay">
+    <div id="log-modal">
+        <h2 style="text-align:center; color:var(--bubblegum);">PATCH NOTES</h2>
+        
+        <div class="log-section">
+            <h3 style="color: var(--deep-purple);">⚖️ Economy Re-Balance</h3>
+            <p>The game has been tuned for faster Prestige! The <b>Big Reveal</b> now unlocks at <b>100 Million Eggs</b>. All shop prices have been lowered to match this new goal.</p>
+        </div>
+
+        <div class="log-section">
+            <h3 style="color: var(--deep-purple);">💤 Offline Gains</h3>
+            <p>Lincoln doesn't stop when you do! You now earn <b>50% of your CPS</b> while the game is closed. Come back to a pile of eggs every time!</p>
+        </div>
+
+        <div class="log-section">
+            <h3 style="color: var(--deep-purple);">🔑 Secret Codes</h3>
+            <p>Keep your eyes peeled for secret passwords! Enter them in the new "Secret Codes" box to unlock instant eggs, carrots, or power-ups. Shh use code "BUNNY"</p>
+        </div>
+
+        <div class="log-section">
+            <h3>🎩 Lincoln's Wardrobe</h3>
+            <p>Style meets power! You can now spend your <b>Golden Carrots</b> on exclusive hats for Lincoln. Each hat provides a unique permanent buff to help you conquer the hunt!</p>
+        </div>
+
+        <div class="log-section">
+            <h3>🌟 The Golden Egg</h3>
+            <p>A rare Golden Egg now has a 30% chance to float across your screen every 30 seconds! Click it fast—it disappears after 10 seconds. Catching it gives you a massive bonus worth 15% of your total eggs!</p>
+        </div>
+
+        <div class="log-section">
+            <h3>❓ Mystery Eggs</h3>
+            <p>Feeling lucky? Spend your eggs to crack a Mystery Egg. You might hit the <b>5x Jackpot</b>, get a small treat, or find nothing at all! The cost increases each time you play.</p>
+        </div>
+
+        <div class="log-section">
+            <h3>📈 Global Hunt Progress</h3>
+            <p>The hunt progress bar now updates daily! We reach the "Spring Revelry" in exactly 7 days. Reach 100 Million eggs to unlock the <b>Big Reveal</b> and earn Golden Carrots.</p>
+        </div>
+
+        <div class="log-section">
+            <h3>🛍️ New Shop Items</h3>
+            <p>Added 15 unique upgrades including the <b>Diamond Egg</b>, <b>Candy Kingdom</b>, and the ultimate <b>Easter Morning Sun</b>.</p>
+        </div>
+
+        <button class="close-log-btn" onclick="toggleLog(false)">START HUNTING!</button>
+    </div>
+</div>
+
+<div id="game-wrapper">
+    <div class="left-column">
+        <div class="clicker-section">
+            <div id="score-panel">
+                <h1 id="score-text">0</h1>
+                <p id="env-label" style="margin: 5px 0 2px 0; letter-spacing: 2px; font-size: 0.7rem; font-weight: bold; color: var(--bubblegum);">LOCATION: THE GARDEN GATE</p>
+                <p id="save-status" style="margin: 0; font-size: 0.6rem; color: #aaa; font-style: italic;">Ready to hunt!</p>
+                
+                <div style="font-size: 0.8rem; background: var(--white); padding: 10px; border-radius: 20px; margin-top: 10px; border: 1px solid var(--lavender);">
+                    Click Power: <span id="stat-click">1</span> | Eggs/sec: <span id="stat-cps">0</span><br>
+                    <span style="color:var(--gold); font-weight: bold;">Golden Carrots: <span id="stat-prestige">0</span></span>
+                </div>
+
+                <div id="global-bar-container">
+                    <div id="global-bar-fill"></div>
+                </div>
+                <p id="global-text" style="font-size: 0.6rem; margin-top: 5px;">GLOBAL HUNT PROGRESS: 0% TO SPRING REVELRY</p>
+            </div>
+
+            <div id="egg-animation-container">
+                <div id="shaking-egg">
+                    <div class="egg-top"></div>
+                    <div class="egg-bottom"></div>
+                    <div id="egg-prize"></div>
+                </div>
+            </div>
+
+            <div class="img-container">
+                <img src="IMG_0668.jpeg" id="lincoln-main" alt="Lincoln">
+            </div>
+            
+            <button id="mystery-egg-btn" onclick="crackMysteryEgg()">CRACK MYSTERY EGG (Cost: 500)</button>
+
+            <div style="background: rgba(255,255,255,0.8); padding: 12px; border-radius: 20px; margin-top: 15px; border: 2px dashed var(--deep-purple); width: 100%; box-sizing: border-box;">
+                <h4 style="margin: 0 0 8px 0; font-size: 0.8rem; color: var(--deep-purple);">SECRET CODES</h4>
+                <div style="display:flex; gap: 5px;">
+                    <input type="text" id="code-input" placeholder="Enter code..." style="flex-grow: 1; padding: 8px; border-radius: 10px; border: 1px solid #ccc; font-size: 0.8rem;">
+                    <button onclick="checkCode()" style="background: var(--deep-purple); color: white; border: none; padding: 8px 12px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 0.7rem;">REDEEM</button>
+                </div>
+                <p id="code-feedback" style="font-size: 0.6rem; margin-top: 5px; color: var(--deep-purple); font-weight: bold; min-height: 10px;"></p>
+            </div>
+
+            <button class="prestige-btn" id="prestige-btn" style="display:none; margin-top:10px; padding:10px; background:var(--gold); border:none; border-radius:10px; cursor:pointer;" onclick="prestige()">BIG REVEAL (WEIGH IN)</button>
+            <div style="margin-top:20px;">
+                <button onclick="resetGame()" style="background:none; border:none; color:var(--deep-purple); cursor:pointer; font-size: 0.7rem; text-decoration: underline; opacity: 0.5;">Reset Adventure</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="shop-container">
+        <div style="background: rgba(255,255,255,0.8); padding: 15px; border-radius: 20px; margin-bottom: 15px; border: 2px solid var(--gold); box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+            <h3 style="margin: 0 0 5px 0; font-size: 0.9rem; text-align: center; color: var(--deep-purple);">🎩 LINCOLN'S WARDROBE</h3>
+            <p style="font-size: 0.6rem; text-align: center; margin-bottom: 10px; color: #666;">Permanent Unlocks • Spend Carrots to Buy</p>
+            <div id="wardrobe-list" style="display: flex; gap: 8px; overflow-x: auto; padding: 5px; justify-content: center;">
+                </div>
+        </div>
+
+        <div id="shop">
+            </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
