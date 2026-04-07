@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-site-verification" content="KzMufPWiBQGWTYkrNuZEMmMAvzH1C07OTqr4Zvykxa8" />
     <title>Loading Lincoln's Ultimate...</title>
     <style>
         body {
             background-color: #0f0f0f;
-            color: #ffafcc; /* Soft Pink */
+            color: #ffafcc;
             font-family: 'Arial Rounded MT Bold', sans-serif;
             display: flex;
             flex-direction: column;
@@ -30,10 +31,9 @@
             text-shadow: 0 0 10px rgba(255, 175, 204, 0.5);
         }
 
-        /* The outer bar */
         .progress-bg {
             background: rgba(255, 255, 255, 0.1);
-            border: 3px solid #e0b0ff; /* Lavender */
+            border: 3px solid #e0b0ff;
             height: 25px;
             border-radius: 20px;
             overflow: hidden;
@@ -41,9 +41,8 @@
             box-shadow: 0 0 15px rgba(224, 176, 255, 0.2);
         }
 
-        /* The moving fill */
         .progress-fill {
-            background: linear-gradient(90deg, #7bf1a8, #fff3b0); /* Grass to Sunshine */
+            background: linear-gradient(90deg, #7bf1a8, #fff3b0);
             height: 100%;
             width: 0%;
             transition: width 0.1s linear;
@@ -52,11 +51,10 @@
         .status-text {
             margin-top: 15px;
             font-size: 0.9rem;
-            color: #7bf1a8; /* Grass Green */
+            color: #7bf1a8;
             font-weight: bold;
         }
 
-        /* Just a little floating animation for the title */
         .float {
             animation: floating 2s ease-in-out infinite;
         }
@@ -78,6 +76,10 @@
 </div>
 
 <script>
+    // --- SETTINGS ---
+    const loadingEnabled = true; // Set to false to stop the loading from completing
+    const totalTime = 3000; 
+    
     const messages = [
         "Waking up Lincoln...",
         "Polishing Golden Tortas...",
@@ -90,29 +92,32 @@
     const fillElement = document.getElementById('fill');
     const statusElement = document.getElementById('status');
     
-    // Adjust totalTime to make it faster or slower (in milliseconds)
-    const totalTime = 3000; 
     const intervalTime = 30; 
     const step = 100 / (totalTime / intervalTime);
 
     const loadingInterval = setInterval(() => {
-        progress += step;
-        fillElement.style.width = Math.min(progress, 100) + "%";
+        // Only increase progress if loadingEnabled is true
+        if (loadingEnabled) {
+            progress += step;
+            fillElement.style.width = Math.min(progress, 100) + "%";
 
-        // Change messages randomly as it loads
-        if (Math.random() > 0.95) {
-            statusElement.innerText = messages[Math.floor(Math.random() * messages.length)];
-        }
+            if (Math.random() > 0.95) {
+                statusElement.innerText = messages[Math.floor(Math.random() * messages.length)];
+            }
 
-        if (progress >= 100) {
-            clearInterval(loadingInterval);
-            statusElement.innerText = "READY!";
-            statusElement.style.color = "#fff3b0";
-            
-            // Short delay at 100% for satisfaction, then redirect
-            setTimeout(() => {
-                window.location.href = "game.html";
-            }, 300);
+            if (progress >= 100) {
+                clearInterval(loadingInterval);
+                statusElement.innerText = "READY!";
+                statusElement.style.color = "#fff3b0";
+                
+                setTimeout(() => {
+                    window.location.href = "game.html";
+                }, 300);
+            }
+        } else {
+            // If loading is disabled, show a "System Paused" message
+            statusElement.innerText = "SYSTEM PAUSED - PLEASE WAIT";
+            statusElement.style.color = "#ff6b6b";
         }
     }, intervalTime);
 </script>
